@@ -1,0 +1,297 @@
+.req {
+  color: #dc2626;
+}
+
+.readonly-input {
+  background: #f3f4f6 !important;
+  color: #4b5563;
+}
+
+.parte-form-card textarea {
+  border: 1px solid #e5e9f2;
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  font: inherit;
+  resize: vertical;
+}
+
+.gps-block {
+  margin-top: 0.85rem;
+  padding: 0.85rem;
+  border: 1px solid #e8ecf3;
+  border-radius: 12px;
+  background: #fafbfd;
+}
+
+.gps-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+}
+
+.modal-card.is-draggable {
+  position: relative;
+  margin: 0;
+}
+
+.modal-drag-handle {
+  cursor: move;
+  user-select: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid #eef1f6;
+  margin-bottom: 0.25rem;
+}
+
+.modal-drag-handle h3 {
+  margin: 0;
+}
+
+.modal-drag-hint {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #8b95a8;
+  white-space: nowrap;
+}
+
+.mod-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.mod-kicker {
+  margin: 0;
+  color: #7c5cbf;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mod-header h2 {
+  margin: 0.2rem 0;
+  font-size: 1.35rem;
+}
+
+.mod-desc {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.mod-tabs {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #e8ecf3;
+  padding-bottom: 0.35rem;
+}
+
+.mod-tabs button {
+  border: 0;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 10px;
+  color: #6b7280;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mod-tabs button.active {
+  background: #f1ebff;
+  color: #6f4fb8;
+}
+
+.btn-accent,
+.btn-ghost,
+.btn-danger,
+.btn-warn {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.65rem 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-accent {
+  background: #7c5cbf;
+  color: #fff;
+}
+
+.btn-ghost {
+  background: #fff;
+  border: 1px solid #e5e9f2;
+  color: #1a2338;
+}
+
+.btn-danger {
+  background: #fef3f2;
+  color: #b42318;
+}
+
+.btn-warn {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.mod-error {
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  background: #fef3f2;
+  color: #b42318;
+  border: 1px solid #fecdca;
+}
+
+.mod-muted {
+  color: #8b95a8;
+}
+
+.panel-card {
+  background: #fff;
+  border: 1px solid #e8ecf3;
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 8px 24px rgba(30, 42, 74, 0.04);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.data-table th,
+.data-table td {
+  text-align: left;
+  padding: 0.7rem 0.55rem;
+  border-bottom: 1px solid #eef1f6;
+  vertical-align: middle;
+}
+
+.data-table th {
+  color: #8b95a8;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-estado {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.badge-estado.ACTIVO {
+  background: #eaf8ef;
+  color: #1f7a45;
+}
+.badge-estado.SUSPENDIDO {
+  background: #fff7ed;
+  color: #c2410c;
+}
+.badge-estado.BAJA {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.row-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.row-actions button {
+  border: 1px solid #e5e9f2;
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+  color: #5b6478;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.4);
+  display: grid;
+  place-items: center;
+  z-index: 2000;
+  padding: 1rem;
+}
+
+.modal-card {
+  width: min(560px, 100%);
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.25rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.modal-card h3 {
+  margin: 0;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.form-grid label,
+.stack-form label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.form-grid input,
+.form-grid select,
+.stack-form input,
+.stack-form select,
+.stack-form textarea {
+  border: 1px solid #e5e9f2;
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  font: inherit;
+}
+
+.form-grid .full {
+  grid-column: 1 / -1;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+@media (max-width: 720px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mod-header {
+    flex-direction: column;
+  }
+}

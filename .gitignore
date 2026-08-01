@@ -1,0 +1,46 @@
+# Entorno
+.env
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.Python
+
+# Node / React
+node_modules/
+frontend/dist/
+frontend/build/
+*.log
+npm-debug.log*
+
+# Django
+backend/staticfiles/
+backend/media/
+*.sqlite3
+
+# Airflow
+airflow/logs/**
+!airflow/logs/.gitkeep
+airflow/Datos/**/Crudo/**
+!airflow/Datos/**/Crudo/.gitkeep
+airflow/Datos/**/Procesados/**
+!airflow/Datos/**/Procesados/.gitkeep
+airflow/Datos/**/Terminado/**
+!airflow/Datos/**/Terminado/.gitkeep
+
+# Datos locales de volúmenes
+minio/data/**
+!minio/data/.gitkeep
+clickhouse/data/
+postgres/data/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Docker
+*.pid
