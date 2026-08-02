@@ -1,9 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
-import { supervisorApi } from "../../api";
+import PaginationBar from "../../../../shared/components/PaginationBar";
+import { supervisorApi, unwrapPage } from "../../api";
 import PartesPendientesLista from "./componentes/PartesPendientesLista";
 import ParteRevisionPanel from "./componentes/ParteRevisionPanel";
 import "../../../../shared/styles/ModuloPage.css";
+import "../../../../shared/components/PaginationBar.css";
+
+const PAGE_SIZE = 10;
+const DEBOUNCE_MS = 350;
+
+const PRIORIDADES = [
+  { value: "", label: "Todas las prioridades" },
+  { value: "CRITICA", label: "Crítica" },
+  { value: "ALTA", label: "Alta" },
+  { value: "MEDIA", label: "Media" },
+  { value: "BAJA", label: "Baja" },
+];
 
 export default function PendientesPage() {
   const [items, setItems] = useState([]);
@@ -15,33 +28,103 @@ export default function PendientesPage() {
   const [ok, setOk] = useState("");
   const [pdfUrl, setPdfUrl] = useState(null);
 
-  async function load() {
-    setLoading(true);
-    setError("");
-    try {
-      const list = await supervisorApi.listPendientes();
-      setItems(list);
-      if (selected) {
-        const refreshed = list.find((p) => p.id === selected.id);
-        setSelected(refreshed || null);
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [q, setQ] = useState("");
+  const [qDebounced, setQDebounced] = useState("");
+  const [prioridad, setPrioridad] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [count, setCount] = useState(0);
+
+  const selectedIdRef = useRef(null);
+  const reqIdRef = useRef(0);
+  selectedIdRef.current = selected?.id ?? null;
+
+  // Búsqueda automática (sin botón Buscar)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const next = q.trim();
+      setQDebounced((prev) => {
+        if (prev !== next) setPage(1);
+        return next;
+      });
+    }, DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [q]);
 
   useEffect(() => {
+    const reqId = ++reqIdRef.current;
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      setError("");
+      try {
+        const raw = await supervisorApi.listPendientes({
+          q: qDebounced,
+          prioridad,
+          page,
+          page_size: PAGE_SIZE,
+        });
+        if (cancelled || reqId !== reqIdRef.current) return;
+
+        const pageData = unwrapPage(raw);
+        setItems(pageData.results);
+        setCount(pageData.count);
+        setTotalPages(pageData.total_pages);
+        // Solo ajustar página si el backend la corrigió (ej. fuera de rango)
+        if (pageData.page !== page) {
+          setPage(pageData.page);
+          return;
+        }
+
+        const sid = selectedIdRef.current;
+        if (sid) {
+          const refreshed = pageData.results.find((p) => p.id === sid);
+          if (refreshed) {
+            setSelected(refreshed);
+          } else {
+            try {
+              const detail = await supervisorApi.getParte(sid);
+              if (cancelled || reqId !== reqIdRef.current) return;
+              if (detail?.estado_revision === "EN_REVISION") setSelected(detail);
+              else setSelected(null);
+            } catch {
+              if (!cancelled) setSelected(null);
+            }
+          }
+        }
+      } catch (err) {
+        if (!cancelled && reqId === reqIdRef.current) setError(err.message);
+      } finally {
+        if (!cancelled && reqId === reqIdRef.current) setLoading(false);
+      }
+    }
+
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [qDebounced, prioridad, page]);
 
   useEffect(() => {
     return () => {
       if (pdfUrl) URL.revokeObjectURL(pdfUrl);
     };
   }, [pdfUrl]);
+
+  async function reload() {
+    const raw = await supervisorApi.listPendientes({
+      q: qDebounced,
+      prioridad,
+      page,
+      page_size: PAGE_SIZE,
+    });
+    const pageData = unwrapPage(raw);
+    setItems(pageData.results);
+    setCount(pageData.count);
+    setTotalPages(pageData.total_pages);
+    if (pageData.page !== page) setPage(pageData.page);
+  }
 
   async function handleRechazar() {
     if (!selected) return;
@@ -57,6 +140,7 @@ export default function PendientesPage() {
       setOk("Parte rechazado. El agente lo recibe en su buzón con tu comentario.");
       setSelected(null);
       setMotivo("");
+      await reload();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -76,7 +160,7 @@ export default function PendientesPage() {
       await supervisorApi.aprobar(selected.id);
       setOk("Parte aprobado y bloqueado. Enviado a la base central con PDF definitivo.");
       setSelected(null);
-      await load();
+      await reload();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -137,11 +221,50 @@ export default function PendientesPage() {
             aprobar (bloquea + PDF definitivo) o rechazar con comentario.
           </p>
         </div>
-        <button type="button" className="btn-ghost" onClick={load}>
+        <button
+          type="button"
+          className="btn-ghost"
+          onClick={() => {
+            setLoading(true);
+            reload()
+              .catch((err) => setError(err.message))
+              .finally(() => setLoading(false));
+          }}
+        >
           <MaterialIcon name="refresh" />
           Actualizar
         </button>
       </header>
+
+      <div
+        className="panel-card filters-bar"
+        style={{ gridTemplateColumns: "minmax(0, 1.8fr) minmax(160px, 0.7fr)" }}
+      >
+        <label>
+          Buscar
+          <input
+            placeholder="Nº caso, agente, título, lugar o delito..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </label>
+        <label>
+          Prioridad
+          <select
+            value={prioridad}
+            onChange={(e) => {
+              setPrioridad(e.target.value);
+              setPage(1);
+            }}
+          >
+            {PRIORIDADES.map((opt) => (
+              <option key={opt.value || "all"} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
       {error && <p className="mod-error">{error}</p>}
       {ok && (
@@ -158,18 +281,36 @@ export default function PendientesPage() {
         </p>
       )}
 
-      {loading ? (
+      {loading && !items.length ? (
         <p className="mod-muted">Cargando bandeja...</p>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: "1rem" }}>
-          <div className="panel-card" style={{ overflowX: "auto" }}>
-            <PartesPendientesLista
-              items={items}
-              selectedId={selected?.id}
-              onSelect={setSelected}
+          <div>
+            <div className="panel-card" style={{ overflowX: "auto" }}>
+              {loading && (
+                <p className="mod-muted" style={{ marginTop: 0 }}>
+                  Actualizando...
+                </p>
+              )}
+              <PartesPendientesLista
+                items={items}
+                selectedId={selected?.id}
+                onSelect={setSelected}
+              />
+            </div>
+            <PaginationBar
+              page={page}
+              totalPages={totalPages}
+              count={count}
+              pageSize={PAGE_SIZE}
+              disabled={loading}
+              onPageChange={setPage}
             />
           </div>
-          <aside className="panel-card" style={{ display: "grid", gap: "0.75rem", alignContent: "start" }}>
+          <aside
+            className="panel-card"
+            style={{ display: "grid", gap: "0.75rem", alignContent: "start" }}
+          >
             <ParteRevisionPanel
               parte={selected}
               motivo={motivo}
@@ -212,7 +353,10 @@ export default function PendientesPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <strong>Vista previa PDF · {selected?.titulo || selected?.numero_caso || `Parte #${selected?.id}`}</strong>
+              <strong>
+                Vista previa PDF ·{" "}
+                {selected?.titulo || selected?.numero_caso || `Parte #${selected?.id}`}
+              </strong>
               <button type="button" className="btn-ghost" onClick={closePdf}>
                 <MaterialIcon name="close" />
                 Cerrar

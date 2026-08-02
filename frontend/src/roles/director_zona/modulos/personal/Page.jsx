@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
+import PaginationBar from "../../../../shared/components/PaginationBar";
 import { directorApi } from "../../api";
 import "../../../../shared/styles/ModuloPage.css";
+import "../../../../shared/components/PaginationBar.css";
 import "../DirectorZona.css";
+
+const PAGE_SIZE = 10;
 
 const ESTADO_TONE = {
   ACTIVO: "ok",
@@ -13,6 +17,13 @@ const ESTADO_TONE = {
   PERMISO: "warn",
 };
 
+const ROLES = [
+  { value: "", label: "Todos los roles" },
+  { value: "AGENTE_OPERATIVO", label: "Agente Operativo" },
+  { value: "SUPERVISOR_UNIDAD", label: "Supervisor de Unidad" },
+  { value: "DETECTIVE", label: "Detective / Investigador" },
+];
+
 export default function PersonalPage() {
   const [tab, setTab] = useState("estado");
   const [data, setData] = useState(null);
@@ -21,7 +32,10 @@ export default function PersonalPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
+  const [q, setQ] = useState("");
   const [filtro, setFiltro] = useState("TODOS");
+  const [rol, setRol] = useState("");
+  const [page, setPage] = useState(1);
   const [form, setForm] = useState({
     supervisor_id: "",
     calificacion: 4,
@@ -56,11 +70,42 @@ export default function PersonalPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const personal = useMemo(() => {
+  // Al cambiar criterios, volver a página 1
+  useEffect(() => {
+    setPage(1);
+  }, [q, filtro, rol]);
+
+  const filtered = useMemo(() => {
     const list = data?.personal || [];
-    if (filtro === "TODOS") return list;
-    return list.filter((p) => p.estado === filtro);
-  }, [data, filtro]);
+    const term = q.trim().toLowerCase();
+    return list.filter((p) => {
+      if (filtro !== "TODOS" && p.estado !== filtro) return false;
+      if (rol && p.rol !== rol) return false;
+      if (!term) return true;
+      const haystack = [
+        p.nombre,
+        p.email,
+        p.rol_label,
+        p.rol,
+        p.unidad,
+        p.jurisdiccion,
+        p.zona,
+        p.estado,
+        p.estado_detalle,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(term);
+    });
+  }, [data, filtro, rol, q]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE) || 1);
+  const safePage = Math.min(page, totalPages);
+  const pageItems = useMemo(() => {
+    const start = (safePage - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, safePage]);
 
   async function submitEval(e) {
     e.preventDefault();
@@ -148,7 +193,30 @@ export default function PersonalPage() {
             ))}
           </div>
 
-          <div className="dir-filters panel-card">
+          <div
+            className="panel-card filters-bar"
+            style={{
+              gridTemplateColumns: "minmax(0, 1.6fr) repeat(2, minmax(150px, 0.7fr))",
+            }}
+          >
+            <label>
+              Buscar
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Nombre, correo, rol, unidad…"
+              />
+            </label>
+            <label>
+              Rol
+              <select value={rol} onChange={(e) => setRol(e.target.value)}>
+                {ROLES.map((opt) => (
+                  <option key={opt.value || "all"} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label>
               Estado
               <select value={filtro} onChange={(e) => setFiltro(e.target.value)}>
@@ -161,11 +229,18 @@ export default function PersonalPage() {
                 <option value="PERMISO">Permiso</option>
               </select>
             </label>
-            <p className="mod-muted" style={{ margin: 0, alignSelf: "end" }}>
-              Disponibles para operar hoy: <strong>{data?.disponibles_hoy ?? 0}</strong> /{" "}
-              {data?.total ?? 0}
-            </p>
           </div>
+
+          <p className="mod-muted" style={{ margin: "0.35rem 0 0" }}>
+            Disponibles para operar hoy: <strong>{data?.disponibles_hoy ?? 0}</strong> /{" "}
+            {data?.total ?? 0}
+            {filtered.length !== (data?.total ?? 0) && (
+              <>
+                {" "}
+                · Coincidencias: <strong>{filtered.length}</strong>
+              </>
+            )}
+          </p>
 
           <section className="panel-card">
             <table className="data-table">
@@ -179,7 +254,7 @@ export default function PersonalPage() {
                 </tr>
               </thead>
               <tbody>
-                {personal.map((p) => (
+                {pageItems.map((p) => (
                   <tr key={p.id}>
                     <td>
                       <strong>{p.nombre}</strong>
@@ -195,16 +270,22 @@ export default function PersonalPage() {
                     <td>{p.estado_detalle}</td>
                   </tr>
                 ))}
-                {!personal.length && (
+                {!pageItems.length && (
                   <tr>
                     <td colSpan={5} className="mod-muted">
-                      No hay personal asignado a esta jurisdicción. Asigne
-                      `profile.jurisdiccion` a supervisores/agentes.
+                      No hay personal con esos criterios. Prueba otro nombre, rol o estado.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
+            <PaginationBar
+              page={safePage}
+              totalPages={totalPages}
+              count={filtered.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+            />
           </section>
         </>
       ) : (

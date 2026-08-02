@@ -47,6 +47,20 @@ export const directorApi = {
   /* —— Supervisión de casos —— */
   casosCriticos: () => apiFetch(`${DIR}/supervision/casos-criticos/`),
   casoCritico: (id) => apiFetch(`${DIR}/supervision/casos-criticos/${id}/`),
+  fetchPartePdf: async (id, { download = false } = {}) => {
+    const headers = {};
+    const token = getToken();
+    if (token) headers.Authorization = `Token ${token}`;
+    const q = download ? "?download=1" : "";
+    const response = await fetch(`${API_URL}${DIR}/supervision/partes/${id}/pdf/${q}`, {
+      headers,
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.detail || "No se pudo obtener el PDF");
+    }
+    return response.blob();
+  },
 
   /* —— Personal regional —— */
   estadoPersonal: () => apiFetch(`${DIR}/personal/estado/`),

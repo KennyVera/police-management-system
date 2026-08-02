@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import status
@@ -7,6 +8,7 @@ from rest_framework.response import Response
 from accounts.permissions import SupervisorOnly
 from operativo.models import Notificacion, ParteAprehension
 from operativo.notifications import notify_user
+from operativo.pagination import paginate_qs
 from operativo.pdf_service import build_pdf_bytes, generar_pdf_parte
 from operativo.parquet_service import generar_parquet_parte
 from operativo.serializers import ParteAprehensionSerializer
@@ -23,7 +25,22 @@ def partes_pendientes(request):
         .prefetch_related("multimedia")
         .order_by("enviado_revision_en")
     )
-    return Response(ParteAprehensionSerializer(qs, many=True).data)
+    q = (request.query_params.get("q") or "").strip()
+    if q:
+        qs = qs.filter(
+            Q(numero_caso__icontains=q)
+            | Q(titulo__icontains=q)
+            | Q(lugar__icontains=q)
+            | Q(sector_zona__icontains=q)
+            | Q(creado_por__first_name__icontains=q)
+            | Q(creado_por__last_name__icontains=q)
+            | Q(creado_por__email__icontains=q)
+            | Q(tipo_delito__nombre__icontains=q)
+        )
+    prioridad = (request.query_params.get("prioridad") or "").strip().upper()
+    if prioridad:
+        qs = qs.filter(prioridad=prioridad)
+    return paginate_qs(request, qs, ParteAprehensionSerializer)
 
 
 @api_view(["GET"])
@@ -38,9 +55,26 @@ def partes_historial(request):
         )
         .select_related("tipo_delito", "creado_por", "alerta", "revisado_por")
         .prefetch_related("multimedia")
-        .order_by("-actualizado_en")[:100]
+        .order_by("-actualizado_en")
     )
-    return Response(ParteAprehensionSerializer(qs, many=True).data)
+    q = (request.query_params.get("q") or "").strip()
+    if q:
+        qs = qs.filter(
+            Q(numero_caso__icontains=q)
+            | Q(titulo__icontains=q)
+            | Q(lugar__icontains=q)
+            | Q(sector_zona__icontains=q)
+            | Q(creado_por__first_name__icontains=q)
+            | Q(creado_por__last_name__icontains=q)
+            | Q(motivo_rechazo__icontains=q)
+        )
+    estado = (request.query_params.get("estado") or "").strip().upper()
+    if estado in {
+        ParteAprehension.EstadoRevision.APROBADO,
+        ParteAprehension.EstadoRevision.OBSERVADO,
+    }:
+        qs = qs.filter(estado_revision=estado)
+    return paginate_qs(request, qs, ParteAprehensionSerializer)
 
 
 @api_view(["GET"])

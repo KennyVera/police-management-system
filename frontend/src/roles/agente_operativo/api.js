@@ -4,14 +4,44 @@ const RO = "/api/roles/agente_operativo/registro_operativo";
 const DT = "/api/roles/agente_operativo/despacho_tareas";
 const DASH = "/api/roles/agente_operativo/dashboard";
 
+/** Normaliza respuesta paginada `{ results, count, ... }` o array legado. */
+export function unwrapPage(data) {
+  if (Array.isArray(data)) {
+    return {
+      results: data,
+      count: data.length,
+      page: 1,
+      page_size: data.length || 10,
+      total_pages: 1,
+    };
+  }
+  return {
+    results: data?.results || [],
+    count: data?.count ?? 0,
+    page: data?.page ?? 1,
+    page_size: data?.page_size ?? 10,
+    total_pages: data?.total_pages ?? 1,
+  };
+}
+
+function cleanParams(params = {}) {
+  const out = {};
+  Object.entries(params).forEach(([k, v]) => {
+    if (v === undefined || v === null || v === "") return;
+    out[k] = v;
+  });
+  return out;
+}
+
 export const agenteApi = {
   dashboard: () => apiFetch(`${DASH}/`),
   meta: () => apiFetch(`${RO}/meta/`),
 
   listPartes: (params = {}) => {
-    const q = new URLSearchParams(params).toString();
+    const q = new URLSearchParams(cleanParams(params)).toString();
     return apiFetch(`${RO}/partes/${q ? `?${q}` : ""}`);
   },
+  getParte: (id) => apiFetch(`${RO}/partes/${id}/`),
   createParte: (body) =>
     apiFetch(`${RO}/partes/`, { method: "POST", body: JSON.stringify(body) }),
   updateParte: (id, body) =>
@@ -33,7 +63,7 @@ export const agenteApi = {
   },
 
   listNovedades: (params = {}) => {
-    const q = new URLSearchParams(params).toString();
+    const q = new URLSearchParams(cleanParams(params)).toString();
     return apiFetch(`${RO}/novedades/${q ? `?${q}` : ""}`);
   },
   createNovedad: (body) =>
@@ -42,7 +72,7 @@ export const agenteApi = {
     apiFetch(`${RO}/novedades/${id}/`, { method: "PATCH", body: JSON.stringify(body) }),
 
   listMultimedia: (params = {}) => {
-    const q = new URLSearchParams(params).toString();
+    const q = new URLSearchParams(cleanParams(params)).toString();
     return apiFetch(`${RO}/multimedia/${q ? `?${q}` : ""}`);
   },
   uploadMultimedia: async (formData) => {

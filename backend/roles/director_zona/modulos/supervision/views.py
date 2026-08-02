@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from django.db.models import Q
+from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from accounts.permissions import EsJefeDeZona
-from operativo.models import ExpedienteCaso
+from operativo.models import ExpedienteCaso, ParteAprehension
+from operativo.pdf_service import build_pdf_bytes
 from roles.director_zona.scope import ZoneScopeError, users_in_zone, zone_scope
 
 
@@ -17,6 +19,73 @@ def _user_label(u):
         return ""
     name = f"{u.first_name} {u.last_name}".strip()
     return name or u.username
+
+
+def _parte_in_zone(obj: ParteAprehension, sectores: list[str]) -> bool:
+    if not sectores:
+        return False
+    sector = (obj.sector_zona or "").strip()
+    lugar = (obj.lugar or "").strip()
+    if sector and sector in sectores:
+        return True
+    if lugar and lugar in sectores:
+        return True
+    # coincidencia parcial (ej. "Distrito 2 — Zona Norte" vs códigos)
+    for s in sectores:
+        if not s:
+            continue
+        if sector and (s in sector or sector in s):
+            return True
+        if lugar and (s in lugar or lugar in s):
+            return True
+    return False
+
+
+@api_view(["GET"])
+@permission_classes([EsJefeDeZona])
+def parte_pdf(request, pk):
+    """PDF de un parte de la zona (solo lectura / descarga)."""
+    try:
+        scope = zone_scope(request.user)
+    except ZoneScopeError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        obj = (
+            ParteAprehension.objects.select_related(
+                "tipo_delito", "creado_por", "alerta", "revisado_por"
+            )
+            .prefetch_related("multimedia")
+            .get(pk=pk)
+        )
+    except ParteAprehension.DoesNotExist:
+        return Response({"detail": "Parte no encontrado."}, status=404)
+
+    if not _parte_in_zone(obj, list(scope.sectores or [])):
+        return Response(
+            {"detail": "El parte no pertenece a su jurisdicción."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    try:
+        pdf_bytes = build_pdf_bytes(obj)
+    except Exception as exc:  # noqa: BLE001
+        return Response(
+            {"detail": f"No se pudo generar el PDF: {exc}"},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    filename = f"{obj.numero_caso or f'parte-{obj.id}'}.pdf"
+    download = str(request.query_params.get("download", "")).lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    disposition = "attachment" if download else "inline"
+    response["Content-Disposition"] = f'{disposition}; filename="{filename}"'
+    response["Content-Length"] = str(len(pdf_bytes))
+    return response
 
 
 @api_view(["GET"])

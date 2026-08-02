@@ -10,6 +10,7 @@ from accounts.permissions import AgenteOnly
 from catalogos.models import TipoDelito
 from operativo.minio_service import upload_evidencia
 from operativo.models import AlertaDespacho, MultimediaEvidencia, NovedadIncidente, ParteAprehension
+from operativo.pagination import paginate_qs
 from operativo.pdf_service import build_pdf_bytes
 from operativo.serializers import (
     MultimediaEvidenciaSerializer,
@@ -54,10 +55,12 @@ def meta(request):
 @permission_classes([AgenteOnly])
 def partes_collection(request):
     if request.method == "GET":
-        qs = ParteAprehension.objects.filter(creado_por=request.user).select_related(
-            "tipo_delito", "creado_por", "alerta"
+        qs = (
+            ParteAprehension.objects.filter(creado_por=request.user)
+            .select_related("tipo_delito", "creado_por", "alerta")
+            .order_by("-creado_en", "-id")
         )
-        q = request.query_params.get("q")
+        q = (request.query_params.get("q") or "").strip()
         if q:
             qs = qs.filter(
                 Q(detenido_nombres__icontains=q)
@@ -66,8 +69,16 @@ def partes_collection(request):
                 | Q(lugar__icontains=q)
                 | Q(numero_caso__icontains=q)
                 | Q(titulo__icontains=q)
+                | Q(sector_zona__icontains=q)
+                | Q(tipo_delito__nombre__icontains=q)
             )
-        return Response(ParteAprehensionSerializer(qs, many=True).data)
+        estado = (request.query_params.get("estado") or "").strip().upper()
+        if estado:
+            qs = qs.filter(estado_revision=estado)
+        tipo_delito = request.query_params.get("tipo_delito")
+        if tipo_delito:
+            qs = qs.filter(tipo_delito_id=tipo_delito)
+        return paginate_qs(request, qs, ParteAprehensionSerializer)
 
     # Alta solo vinculada a una alerta en el lugar
     alerta_id = request.data.get("alerta")
@@ -228,16 +239,18 @@ def parte_enviar_revision(request, pk):
 @permission_classes([AgenteOnly])
 def novedades_collection(request):
     if request.method == "GET":
-        qs = NovedadIncidente.objects.filter(creado_por=request.user).select_related(
-            "creado_por"
+        qs = (
+            NovedadIncidente.objects.filter(creado_por=request.user)
+            .select_related("creado_por")
+            .order_by("-creado_en", "-id")
         )
         tipo = request.query_params.get("tipo")
         if tipo:
             qs = qs.filter(tipo=tipo)
-        q = request.query_params.get("q")
+        q = (request.query_params.get("q") or "").strip()
         if q:
             qs = qs.filter(Q(lugar__icontains=q) | Q(descripcion__icontains=q))
-        return Response(NovedadIncidenteSerializer(qs, many=True).data)
+        return paginate_qs(request, qs, NovedadIncidenteSerializer)
 
     serializer = NovedadIncidenteSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -269,13 +282,22 @@ def novedad_detail(request, pk):
 @parser_classes([MultiPartParser, FormParser])
 def multimedia_collection(request):
     if request.method == "GET":
-        qs = MultimediaEvidencia.objects.filter(subido_por=request.user).select_related(
-            "subido_por"
+        qs = (
+            MultimediaEvidencia.objects.filter(subido_por=request.user)
+            .select_related("subido_por", "parte", "novedad")
+            .order_by("-creado_en", "-id")
         )
         origen = request.query_params.get("origen")
         if origen:
             qs = qs.filter(origen=origen)
-        return Response(MultimediaEvidenciaSerializer(qs, many=True).data)
+        q = (request.query_params.get("q") or "").strip()
+        if q:
+            qs = qs.filter(
+                Q(descripcion__icontains=q)
+                | Q(nombre_archivo__icontains=q)
+                | Q(parte__numero_caso__icontains=q)
+            )
+        return paginate_qs(request, qs, MultimediaEvidenciaSerializer)
 
     archivo = request.FILES.get("archivo")
     if not archivo:

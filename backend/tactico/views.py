@@ -367,7 +367,7 @@ def delitos_desglose(request):
 @api_view(["GET"])
 @permission_classes([EsJefeDeZona])
 def partes_auditoria(request):
-    """Auditoría de lectura: partes policiales de la zona (ClickHouse)."""
+    """Auditoría de lectura: partes policiales de la zona (ClickHouse), paginado."""
     scope, err = _scope_or_error(request)
     if err:
         return err
@@ -375,12 +375,19 @@ def partes_auditoria(request):
     try:
         fecha_hasta = _parse_date(request.query_params.get("fecha_hasta"), "fecha_hasta")
         fecha_desde = _parse_date(request.query_params.get("fecha_desde"), "fecha_desde")
-        limit = min(max(int(request.query_params.get("limit", 50)), 1), 500)
+        page = max(1, int(request.query_params.get("page") or 1))
+        page_size = min(max(int(request.query_params.get("page_size") or 10), 1), 50)
+        # compat: limit legacy → page_size
+        if request.query_params.get("limit") and not request.query_params.get("page_size"):
+            page_size = min(max(int(request.query_params.get("limit")), 1), 50)
     except ValueError as exc:
         return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
     q = (request.query_params.get("q") or "").strip()
-    params = {**scope.geo_params, "limit": limit}
+    prioridad = (request.query_params.get("prioridad") or "").strip().upper()
+    estado = (request.query_params.get("estado") or "").strip().upper()
+
+    params = {**scope.geo_params}
     clauses = ""
     if fecha_desde:
         clauses += " AND fecha_hora >= {fecha_desde:DateTime}"
@@ -396,22 +403,42 @@ def partes_auditoria(request):
             "positionCaseInsensitive(numero_caso, {q:String}) > 0 OR "
             "positionCaseInsensitive(titulo, {q:String}) > 0 OR "
             "positionCaseInsensitive(tipo_delito, {q:String}) > 0 OR "
-            "positionCaseInsensitive(agente, {q:String}) > 0"
+            "positionCaseInsensitive(agente, {q:String}) > 0 OR "
+            "positionCaseInsensitive(sector_zona, {q:String}) > 0 OR "
+            "positionCaseInsensitive(lugar, {q:String}) > 0"
             ")"
         )
         params["q"] = q
+    if prioridad:
+        clauses += " AND upperUTF8(prioridad) = {prioridad:String}"
+        params["prioridad"] = prioridad
+    if estado:
+        clauses += " AND upperUTF8(estado_revision) = {estado:String}"
+        params["estado"] = estado
 
+    where = " WHERE 1 = 1 " + scope.geo_sql + clauses
+    count_sql = f"SELECT toUInt32(uniqExact(parte_id)) AS c FROM {FACT}{where}"
+    offset = (page - 1) * page_size
+    params_page = {**params, "limit": page_size, "offset": offset}
+
+    # LIMIT 1 BY parte_id evita duplicados del ETL; luego pagina
     sql = (
         "SELECT parte_id, numero_caso, titulo, tipo_delito, fecha_hora, prioridad, "
         "lugar, sector_zona, estado_revision, agente, latitud, longitud "
-        f"FROM {FACT} WHERE 1 = 1 "
-        + scope.geo_sql
-        + clauses
-        + " ORDER BY fecha_hora DESC"
-        + " LIMIT {limit:UInt32}"
+        f"FROM {FACT}{where}"
+        " ORDER BY fecha_hora DESC"
+        " LIMIT 1 BY parte_id"
+        " LIMIT {limit:UInt32} OFFSET {offset:UInt32}"
     )
     try:
-        rows = execute_readonly(sql, params)
+        count_rows = execute_readonly(count_sql, params)
+        total = int((count_rows[0] or {}).get("c") or 0) if count_rows else 0
+        total_pages = max(1, (total + page_size - 1) // page_size) if total else 1
+        if page > total_pages:
+            page = total_pages
+            offset = (page - 1) * page_size
+            params_page["offset"] = offset
+        rows = execute_readonly(sql, params_page) if total else []
     except ClickHouseReadOnlyError as exc:
         return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as exc:  # noqa: BLE001
@@ -447,7 +474,12 @@ def partes_auditoria(request):
                 "nombre": scope.jurisdiccion_nombre,
                 "codigo": scope.jurisdiccion_codigo,
             },
-            "total": len(partes),
+            "count": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": total_pages,
+            "total": total,  # compat
             "partes": partes,
+            "results": partes,  # compat unwrapPage
         }
     )

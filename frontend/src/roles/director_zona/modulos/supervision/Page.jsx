@@ -1,8 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
+import PaginationBar from "../../../../shared/components/PaginationBar";
 import { directorApi } from "../../api";
 import "../../../../shared/styles/ModuloPage.css";
+import "../../../../shared/components/PaginationBar.css";
 import "../DirectorZona.css";
+
+const PAGE_SIZE = 10;
+const DEBOUNCE_MS = 350;
+
+const PRIORIDADES = [
+  { value: "", label: "Todas las prioridades" },
+  { value: "CRITICA", label: "Crítica" },
+  { value: "ALTA", label: "Alta" },
+  { value: "MEDIA", label: "Media" },
+  { value: "BAJA", label: "Baja" },
+];
+
+const ESTADOS = [
+  { value: "", label: "Todos los estados" },
+  { value: "APROBADO", label: "Aprobado" },
+  { value: "EN_REVISION", label: "Pendiente" },
+  { value: "OBSERVADO", label: "Rechazado" },
+];
 
 function formatWhen(iso) {
   if (!iso) return "—";
@@ -19,15 +39,31 @@ export default function SupervisionPage() {
   const [casos, setCasos] = useState([]);
   const [detalle, setDetalle] = useState(null);
   const [q, setQ] = useState("");
+  const [qDebounced, setQDebounced] = useState("");
+  const [prioridad, setPrioridad] = useState("");
+  const [estado, setEstado] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingPartes, setLoadingPartes] = useState(false);
   const [error, setError] = useState("");
   const [zona, setZona] = useState("");
+  const [pdfBusyId, setPdfBusyId] = useState(null);
+  const [pdfUrl, setPdfUrl] = useState(null);
+  const [pdfTitle, setPdfTitle] = useState("");
+  const reqIdRef = useRef(0);
 
-  async function loadPartes(search = q) {
-    const data = await directorApi.partesAuditoria({ q: search, limit: 80 });
-    setPartes(data.partes || []);
-    setZona(data.jurisdiccion?.nombre || "");
-  }
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const next = q.trim();
+      setQDebounced((prev) => {
+        if (prev !== next) setPage(1);
+        return next;
+      });
+    }, DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [q]);
 
   async function loadCasos() {
     const data = await directorApi.casosCriticos();
@@ -35,28 +71,155 @@ export default function SupervisionPage() {
     setZona(data.jurisdiccion?.nombre || zona);
   }
 
-  async function load() {
-    setLoading(true);
-    setError("");
-    try {
-      await Promise.all([loadPartes(), loadCasos()]);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    load();
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError("");
+      try {
+        await loadCasos();
+      } catch (err) {
+        if (!cancelled) setError(err.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (tab !== "partes") return undefined;
+    const reqId = ++reqIdRef.current;
+    let cancelled = false;
+
+    async function loadPartes() {
+      setLoadingPartes(true);
+      setError("");
+      try {
+        const data = await directorApi.partesAuditoria({
+          q: qDebounced,
+          prioridad,
+          estado,
+          page,
+          page_size: PAGE_SIZE,
+        });
+        if (cancelled || reqId !== reqIdRef.current) return;
+
+        const countVal = data.count ?? data.total ?? 0;
+        const size = data.page_size ?? PAGE_SIZE;
+        const pages =
+          data.total_pages ?? Math.max(1, Math.ceil(countVal / size) || 1);
+        setPartes(data.partes || data.results || []);
+        setCount(countVal);
+        setTotalPages(pages);
+        if (data.page && data.page !== page) setPage(data.page);
+        if (data.jurisdiccion?.nombre) setZona(data.jurisdiccion.nombre);
+      } catch (err) {
+        if (!cancelled && reqId === reqIdRef.current) setError(err.message);
+      } finally {
+        if (!cancelled && reqId === reqIdRef.current) setLoadingPartes(false);
+      }
+    }
+
+    loadPartes();
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, qDebounced, prioridad, estado, page]);
 
   async function openCaso(id) {
     try {
       setDetalle(await directorApi.casoCritico(id));
     } catch (err) {
       setError(err.message);
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    };
+  }, [pdfUrl]);
+
+  async function verPdf(row) {
+    const id = row.parte_id;
+    if (!id) return;
+    const win = window.open("about:blank", "_blank");
+    setPdfBusyId(id);
+    setError("");
+    try {
+      const blob = await directorApi.fetchPartePdf(id);
+      const url = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
+      if (win) {
+        win.location.href = url;
+      } else {
+        if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+        setPdfTitle(row.numero_caso || row.titulo || `Parte #${id}`);
+        setPdfUrl(url);
+        return;
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 120000);
+    } catch (err) {
+      if (win && !win.closed) win.close();
+      setError(err.message);
+    } finally {
+      setPdfBusyId(null);
+    }
+  }
+
+  async function descargarPdf(row) {
+    const id = row.parte_id;
+    if (!id) return;
+    setPdfBusyId(id);
+    setError("");
+    try {
+      const blob = await directorApi.fetchPartePdf(id, { download: true });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${row.numero_caso || `parte-${id}`}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setPdfBusyId(null);
+    }
+  }
+
+  function closePdf() {
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    setPdfUrl(null);
+    setPdfTitle("");
+  }
+
+  async function refreshAll() {
+    setError("");
+    setLoadingPartes(true);
+    try {
+      await loadCasos();
+      const data = await directorApi.partesAuditoria({
+        q: qDebounced,
+        prioridad,
+        estado,
+        page,
+        page_size: PAGE_SIZE,
+      });
+      const countVal = data.count ?? data.total ?? 0;
+      const size = data.page_size ?? PAGE_SIZE;
+      setPartes(data.partes || data.results || []);
+      setCount(countVal);
+      setTotalPages(data.total_pages ?? Math.max(1, Math.ceil(countVal / size) || 1));
+      if (data.jurisdiccion?.nombre) setZona(data.jurisdiccion.nombre);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoadingPartes(false);
     }
   }
 
@@ -70,7 +233,7 @@ export default function SupervisionPage() {
             Lectura de partes policiales e investigaciones graves. Sin edición: solo supervisión.
           </p>
         </div>
-        <button type="button" className="btn-ghost" onClick={load}>
+        <button type="button" className="btn-ghost" onClick={refreshAll}>
           <MaterialIcon name="refresh" />
           Actualizar
         </button>
@@ -98,29 +261,64 @@ export default function SupervisionPage() {
         <p className="mod-muted">Cargando supervisión…</p>
       ) : tab === "partes" ? (
         <section className="panel-card">
-          <div className="dir-filters" style={{ padding: 0, border: 0, boxShadow: "none" }}>
-            <label className="dir-grow">
+          <div
+            className="filters-bar"
+            style={{
+              padding: 0,
+              border: 0,
+              boxShadow: "none",
+              background: "transparent",
+              gridTemplateColumns: "minmax(0, 1.5fr) repeat(2, minmax(140px, 0.7fr))",
+            }}
+          >
+            <label>
               Buscar
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Número, delito, agente…"
+                placeholder="Número, delito, agente, sector…"
               />
             </label>
-            <button
-              type="button"
-              className="btn-accent"
-              onClick={async () => {
-                try {
-                  await loadPartes(q);
-                } catch (err) {
-                  setError(err.message);
-                }
-              }}
-            >
-              Filtrar
-            </button>
+            <label>
+              Prioridad
+              <select
+                value={prioridad}
+                onChange={(e) => {
+                  setPrioridad(e.target.value);
+                  setPage(1);
+                }}
+              >
+                {PRIORIDADES.map((opt) => (
+                  <option key={opt.value || "all"} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Estado
+              <select
+                value={estado}
+                onChange={(e) => {
+                  setEstado(e.target.value);
+                  setPage(1);
+                }}
+              >
+                {ESTADOS.map((opt) => (
+                  <option key={opt.value || "all"} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
+
+          {loadingPartes && (
+            <p className="mod-muted" style={{ marginTop: "0.75rem" }}>
+              Actualizando…
+            </p>
+          )}
+
           <table className="data-table">
             <thead>
               <tr>
@@ -131,11 +329,12 @@ export default function SupervisionPage() {
                 <th>Agente</th>
                 <th>Fecha</th>
                 <th>Estado</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {partes.map((p) => (
-                <tr key={p.parte_id}>
+                <tr key={`${p.parte_id}-${p.numero_caso}`}>
                   <td>
                     <strong>{p.numero_caso || `#${p.parte_id}`}</strong>
                     <div className="mod-muted">{p.titulo}</div>
@@ -146,17 +345,50 @@ export default function SupervisionPage() {
                   <td>{p.agente}</td>
                   <td>{formatWhen(p.fecha_hora)}</td>
                   <td>{p.estado_revision}</td>
+                  <td>
+                    <div className="row-actions">
+                      <button
+                        type="button"
+                        className="btn-icon-action"
+                        title="Ver PDF en el navegador"
+                        disabled={pdfBusyId === p.parte_id}
+                        onClick={() => verPdf(p)}
+                      >
+                        <MaterialIcon name="visibility" />
+                        Ver
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-icon-action"
+                        title="Descargar PDF"
+                        disabled={pdfBusyId === p.parte_id}
+                        onClick={() => descargarPdf(p)}
+                      >
+                        <MaterialIcon name="download" />
+                        Descargar
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
               {!partes.length && (
                 <tr>
-                  <td colSpan={7} className="mod-muted">
-                    Sin partes en ClickHouse para su zona.
+                  <td colSpan={8} className="mod-muted">
+                    Sin partes en ClickHouse para su zona con esos criterios.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+
+          <PaginationBar
+            page={page}
+            totalPages={totalPages}
+            count={count}
+            pageSize={PAGE_SIZE}
+            disabled={loadingPartes}
+            onPageChange={setPage}
+          />
         </section>
       ) : (
         <div className="dir-split">
@@ -238,6 +470,49 @@ export default function SupervisionPage() {
               </div>
             )}
           </aside>
+        </div>
+      )}
+
+      {pdfUrl && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 18, 32, 0.55)",
+            zIndex: 80,
+            display: "grid",
+            placeItems: "center",
+            padding: "1.25rem",
+          }}
+          onClick={closePdf}
+        >
+          <div
+            className="panel-card"
+            style={{
+              width: "min(960px, 100%)",
+              height: "min(88vh, 900px)",
+              display: "grid",
+              gridTemplateRows: "auto 1fr",
+              gap: "0.65rem",
+              margin: 0,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <strong>Vista previa PDF · {pdfTitle}</strong>
+              <button type="button" className="btn-ghost" onClick={closePdf}>
+                <MaterialIcon name="close" />
+                Cerrar
+              </button>
+            </div>
+            <iframe
+              title="Vista previa PDF del parte"
+              src={pdfUrl}
+              style={{ width: "100%", height: "100%", border: "none", borderRadius: 10 }}
+            />
+          </div>
         </div>
       )}
     </div>

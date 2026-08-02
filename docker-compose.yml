@@ -96,6 +96,7 @@ services:
       - "${DJANGO_PORT:-8001}:8000"
     volumes:
       - ./backend:/app
+      - ./demo_data:/demo_data:ro
     depends_on:
       db:
         condition: service_healthy

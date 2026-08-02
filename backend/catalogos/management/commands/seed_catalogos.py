@@ -8,7 +8,9 @@ DEFAULT_DELITOS = [
     ("EXTORSION", "Extorsión", "", "1210", "Robbery / Extortion"),
     ("EXTORSION_DIGITAL", "Extorsión digital", "Actualización código penal", "1211", "Cybercrime / Extortion"),
     ("HOMICIDIO", "Homicidio", "", "0110", "Homicide"),
+    ("ACCIDENTE_TRANSITO", "Accidente de tránsito", "Infracción / hechos de tránsito", "3700", "Traffic accident"),
     ("TRAFICO_DROGAS", "Tráfico de drogas", "", "1811", "Narcotics"),
+    ("CRIMEN_ORGANIZADO", "Crimen organizado", "Asociación ilícita / narcotráfico", "1812", "Organized crime"),
 ]
 
 DEFAULT_CATALOGOS = [

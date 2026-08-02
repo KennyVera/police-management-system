@@ -72,8 +72,7 @@ export default function AlertasPage() {
     setError("");
     try {
       if (selected.parte?.id) {
-        const list = await agenteApi.listPartes();
-        const found = list.find((p) => p.id === selected.parte.id);
+        const found = await agenteApi.getParte(selected.parte.id);
         setParteInitial(found || null);
       } else {
         setParteInitial(null);

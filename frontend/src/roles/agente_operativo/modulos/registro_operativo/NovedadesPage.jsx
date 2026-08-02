@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
-import { agenteApi } from "../../api";
+import PaginationBar from "../../../../shared/components/PaginationBar";
+import { agenteApi, unwrapPage } from "../../api";
 import NovedadesLista from "./componentes/NovedadesLista";
 import NovedadFormulario from "./componentes/NovedadFormulario";
 import "../../../../shared/styles/ModuloPage.css";
+
+const PAGE_SIZE = 10;
 
 export default function NovedadesPage() {
   const [items, setItems] = useState([]);
@@ -13,16 +16,29 @@ export default function NovedadesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [q, setQ] = useState("");
+  const [tipo, setTipo] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [count, setCount] = useState(0);
 
-  async function load(search = q) {
+  async function load({ search = q, tipoFilter = tipo, pageNum = page } = {}) {
     setLoading(true);
     setError("");
     try {
-      const [list, m] = await Promise.all([
-        agenteApi.listNovedades(search ? { q: search } : {}),
+      const [raw, m] = await Promise.all([
+        agenteApi.listNovedades({
+          q: search,
+          tipo: tipoFilter,
+          page: pageNum,
+          page_size: PAGE_SIZE,
+        }),
         agenteApi.meta(),
       ]);
-      setItems(list);
+      const pageData = unwrapPage(raw);
+      setItems(pageData.results);
+      setCount(pageData.count);
+      setTotalPages(pageData.total_pages);
+      setPage(pageData.page);
       setMeta(m);
     } catch (err) {
       setError(err.message);
@@ -32,9 +48,22 @@ export default function NovedadesPage() {
   }
 
   useEffect(() => {
-    load();
+    load({ pageNum: 1 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function applyFilters(e) {
+    e?.preventDefault?.();
+    setPage(1);
+    load({ pageNum: 1 });
+  }
+
+  function clearFilters() {
+    setQ("");
+    setTipo("");
+    setPage(1);
+    load({ search: "", tipoFilter: "", pageNum: 1 });
+  }
 
   return (
     <div className="mod-page">
@@ -60,31 +89,62 @@ export default function NovedadesPage() {
         </button>
       </header>
 
-      <div className="panel-card" style={{ display: "flex", gap: "0.5rem" }}>
-        <input
-          style={{ flex: 1, border: "1px solid #e5e9f2", borderRadius: 10, padding: "0.6rem 0.7rem" }}
-          placeholder="Buscar por lugar o descripción..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && load(q)}
-        />
-        <button type="button" className="btn-ghost" onClick={() => load(q)}>
-          <MaterialIcon name="search" />
+      <form className="panel-card filters-bar" onSubmit={applyFilters}>
+        <label>
           Buscar
-        </button>
-      </div>
+          <input
+            placeholder="Lugar o descripción..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </label>
+        <label>
+          Tipo
+          <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
+            <option value="">Todos</option>
+            {(meta.tipos_novedad || []).map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div />
+        <div className="filters-actions">
+          <button type="submit" className="btn-ghost">
+            <MaterialIcon name="search" />
+            Buscar
+          </button>
+          <button type="button" className="btn-ghost" onClick={clearFilters}>
+            Limpiar
+          </button>
+        </div>
+      </form>
 
       {error && <p className="mod-error">{error}</p>}
       {loading ? (
         <p className="mod-muted">Cargando...</p>
       ) : (
-        <NovedadesLista
-          items={items}
-          onEdit={(row) => {
-            setEditing(row);
-            setShowForm(true);
-          }}
-        />
+        <>
+          <NovedadesLista
+            items={items}
+            onEdit={(row) => {
+              setEditing(row);
+              setShowForm(true);
+            }}
+          />
+          <PaginationBar
+            page={page}
+            totalPages={totalPages}
+            count={count}
+            pageSize={PAGE_SIZE}
+            disabled={loading}
+            onPageChange={(n) => {
+              setPage(n);
+              load({ pageNum: n });
+            }}
+          />
+        </>
       )}
 
       {showForm && (

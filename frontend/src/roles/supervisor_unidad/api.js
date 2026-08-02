@@ -1,4 +1,7 @@
 import { API_URL, apiFetch, getToken } from "../../auth/api";
+import { cleanParams, unwrapPage } from "../../shared/utils/pagination";
+
+export { unwrapPage };
 
 const LOG = "/api/roles/supervisor_unidad/logistica_turnos";
 const CQ = "/api/roles/supervisor_unidad/control_calidad";
@@ -95,8 +98,14 @@ export const supervisorApi = {
   monitoreoUnidades: () => apiFetch(`${MON}/unidades/`),
   monitoreoStats: () => apiFetch(`${MON}/estadisticas/`),
 
-  listPendientes: () => apiFetch(`${CQ}/pendientes/`),
-  listHistorial: () => apiFetch(`${CQ}/historial/`),
+  listPendientes: (params = {}) => {
+    const q = new URLSearchParams(cleanParams(params)).toString();
+    return apiFetch(`${CQ}/pendientes/${q ? `?${q}` : ""}`);
+  },
+  listHistorial: (params = {}) => {
+    const q = new URLSearchParams(cleanParams(params)).toString();
+    return apiFetch(`${CQ}/historial/${q ? `?${q}` : ""}`);
+  },
   getParte: (id) => apiFetch(`${CQ}/${id}/`),
   rechazar: (id, motivo) =>
     apiFetch(`${CQ}/${id}/rechazar/`, {
