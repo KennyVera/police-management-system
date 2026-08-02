@@ -530,16 +530,70 @@ export default function ParteFormulario({
 
           {!locked && (
             <label className="full stack-form" style={{ marginTop: "0.75rem" }}>
-              Archivos iniciales
+              Archivos iniciales (puedes agregar varios)
               <input
                 type="file"
                 multiple
                 accept="image/*,video/*,.pdf,audio/*"
-                onChange={(e) => setFiles(Array.from(e.target.files || []))}
+                onChange={(e) => {
+                  const picked = Array.from(e.target.files || []);
+                  if (!picked.length) return;
+                  setFiles((prev) => {
+                    const keys = new Set(prev.map((f) => `${f.name}-${f.size}-${f.lastModified}`));
+                    const extra = picked.filter(
+                      (f) => !keys.has(`${f.name}-${f.size}-${f.lastModified}`)
+                    );
+                    return [...prev, ...extra];
+                  });
+                  e.target.value = "";
+                }}
               />
               <span className="mod-muted" style={{ fontSize: "0.8rem", fontWeight: 500 }}>
-                Opcional: fotos, documentos o audio del reporte inicial (MinIO).
+                Opcional: selecciona varias fotos/documentos a la vez (Ctrl/Cmd) o vuelve a
+                “Elegir archivos” para sumar más evidencias. Se guardan en MinIO.
               </span>
+              {files.length > 0 && (
+                <ul
+                  style={{
+                    margin: "0.45rem 0 0",
+                    padding: "0.55rem 0.7rem",
+                    listStyle: "none",
+                    background: "#f8fafc",
+                    border: "1px solid #e8ecf3",
+                    borderRadius: 10,
+                    display: "grid",
+                    gap: "0.35rem",
+                  }}
+                >
+                  {files.map((f, idx) => (
+                    <li
+                      key={`${f.name}-${f.size}-${f.lastModified}-${idx}`}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: "0.5rem",
+                        alignItems: "center",
+                        fontSize: "0.85rem",
+                      }}
+                    >
+                      <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {f.name}
+                        <span className="mod-muted"> · {(f.size / 1024).toFixed(1)} KB</span>
+                      </span>
+                      <button
+                        type="button"
+                        className="btn-ghost"
+                        style={{ padding: "0.2rem 0.45rem", flexShrink: 0 }}
+                        onClick={() =>
+                          setFiles((prev) => prev.filter((_, i) => i !== idx))
+                        }
+                      >
+                        Quitar
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </label>
           )}
         </fieldset>

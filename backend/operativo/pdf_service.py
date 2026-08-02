@@ -181,22 +181,35 @@ def build_pdf_bytes(parte) -> bytes:
     if parte.bloqueado:
         y = kv("Estado documental", "BLOQUEADO (inmutable)", y)
 
-    # Evidencias
+    # Evidencias iniciales del parte (imágenes embebidas + referencias)
     evidencias = list(parte.multimedia.all().order_by("creado_en"))
-    if evidencias:
-        footer()
-        c.showPage()
-        header_band("ANEXO DE EVIDENCIAS MULTIMEDIA")
-        y = height - 3.2 * cm
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(left, y, f"Evidencias adjuntas ({len(evidencias)})")
-        y -= 0.7 * cm
+    footer()
+    c.showPage()
+    header_band("ANEXO — EVIDENCIAS INICIALES DEL PARTE")
+    y = height - 3.2 * cm
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(left, y, f"Evidencias iniciales ({len(evidencias)})")
+    y -= 0.55 * cm
+    c.setFont("Helvetica", 9)
+    c.setFillColorRGB(0.4, 0.43, 0.5)
+    c.drawString(
+        left,
+        y,
+        "Fotografías, videos y archivos adjuntos al parte en el momento del registro.",
+    )
+    c.setFillColorRGB(0.15, 0.18, 0.28)
+    y -= 0.7 * cm
 
+    if not evidencias:
+        c.setFont("Helvetica-Oblique", 9)
+        c.drawString(left, y, "Sin evidencias iniciales registradas para este parte.")
+        y -= 0.55 * cm
+    else:
         for idx, ev in enumerate(evidencias, start=1):
             if y < 6 * cm:
                 footer()
                 c.showPage()
-                header_band("ANEXO DE EVIDENCIAS MULTIMEDIA")
+                header_band("ANEXO — EVIDENCIAS INICIALES DEL PARTE")
                 y = height - 3.2 * cm
 
             c.setFont("Helvetica-Bold", 10)
@@ -223,7 +236,6 @@ def build_pdf_bytes(parte) -> bytes:
 
                     raw = download_object(ev.object_key, ev.bucket or None)
                     img_buf = BytesIO(raw)
-                    # Normalizar a PNG/JPEG si hace falta (p. ej. webp).
                     try:
                         from PIL import Image
 
@@ -258,7 +270,8 @@ def build_pdf_bytes(parte) -> bytes:
                 c.drawString(
                     left,
                     y,
-                    "Archivo no visualizable en PDF (se conserva referencia en sistema).",
+                    "Archivo no visualizable en PDF (video/audio/documento; "
+                    "referencia conservada en el sistema).",
                 )
                 y -= 0.55 * cm
 

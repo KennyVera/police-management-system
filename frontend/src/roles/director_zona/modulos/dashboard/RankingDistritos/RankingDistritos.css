@@ -1,0 +1,148 @@
+.dz-ranking {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 0.9rem;
+}
+
+.dz-ranking .dz-card {
+  background: #fff;
+  border: 1px solid #e8ecf3;
+  border-radius: 14px;
+  padding: 1rem 1.05rem;
+  box-shadow: 0 8px 22px rgba(28, 39, 68, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 340px;
+}
+
+.dz-ranking .dz-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.dz-ranking .dz-card-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.dz-ranking .dz-chip {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #7c5cbf;
+  background: #efe9fb;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+}
+
+.dz-scatter-svg {
+  width: 100%;
+  height: auto;
+}
+
+.dz-axis {
+  font-size: 10px;
+  fill: #9ca3af;
+}
+
+.dz-scatter-label {
+  font-size: 10px;
+  fill: #4b5563;
+  font-weight: 600;
+}
+
+.dz-cuad-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.dz-cuad-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.dz-cuad-legend .c {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.dz-cuad-legend .c.rojo { background: #ef4444; }
+.dz-cuad-legend .c.verde { background: #22c55e; }
+.dz-cuad-legend .c.amarillo { background: #f59e0b; }
+
+.dz-board {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.dz-board-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 96px 28px;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid #eef2f7;
+  background: #fafafa;
+}
+
+.dz-board-row.tone-rojo {
+  border-color: #fecaca;
+  background: #fff8f8;
+}
+.dz-board-row.tone-verde {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.dz-pos {
+  font-weight: 800;
+  color: #7c5cbf;
+  font-size: 0.85rem;
+}
+
+.dz-board-main strong {
+  display: block;
+  font-size: 0.86rem;
+}
+
+.dz-board-main small {
+  color: #6b7280;
+  font-size: 0.74rem;
+}
+
+.dz-spark {
+  width: 88px;
+  height: 28px;
+}
+
+.dz-trend-mini {
+  display: grid;
+  place-items: center;
+  color: #6b7280;
+}
+
+.dz-trend-mini .material-symbols-outlined {
+  font-size: 1.15rem;
+}
+
+.dz-empty-inline {
+  color: #6b7280;
+  font-size: 0.86rem;
+  margin: 0.5rem 0;
+}
+
+@media (max-width: 1100px) {
+  .dz-ranking {
+    grid-template-columns: 1fr;
+  }
+}

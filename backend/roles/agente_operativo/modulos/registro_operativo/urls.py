@@ -11,6 +11,7 @@ urlpatterns = [
         views.parte_enviar_revision,
         name="agente-parte-enviar-revision",
     ),
+    path("partes/<int:pk>/pdf/", views.parte_pdf, name="agente-parte-pdf"),
     path("novedades/", views.novedades_collection, name="agente-novedades"),
     path("novedades/<int:pk>/", views.novedad_detail, name="agente-novedad-detail"),
     path("multimedia/", views.multimedia_collection, name="agente-multimedia"),

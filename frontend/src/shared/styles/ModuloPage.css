@@ -227,6 +227,23 @@
   color: #5b6478;
 }
 
+.row-actions .btn-icon-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #2f4d8a;
+  border-color: #c9d6ea;
+}
+
+.row-actions .btn-icon-action .material-symbols-outlined {
+  font-size: 1.05rem;
+}
+
+.row-actions .btn-icon-action:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;

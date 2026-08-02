@@ -1,4 +1,6 @@
 from django.db.models import Q
+from django.http import HttpResponse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -8,13 +10,13 @@ from accounts.permissions import AgenteOnly
 from catalogos.models import TipoDelito
 from operativo.minio_service import upload_evidencia
 from operativo.models import AlertaDespacho, MultimediaEvidencia, NovedadIncidente, ParteAprehension
+from operativo.pdf_service import build_pdf_bytes
 from operativo.serializers import (
     MultimediaEvidenciaSerializer,
     NovedadIncidenteSerializer,
     ParteAprehensionSerializer,
     TipoDelitoMiniSerializer,
 )
-from django.utils import timezone
 
 
 @api_view(["GET"])
@@ -135,6 +137,49 @@ def parte_detail(request, pk):
     serializer.is_valid(raise_exception=True)
     obj = serializer.save()
     return Response(ParteAprehensionSerializer(obj).data)
+
+
+@api_view(["GET"])
+@permission_classes([AgenteOnly])
+def parte_pdf(request, pk):
+    """Ver o descargar el PDF del parte (solo los del propio agente)."""
+    try:
+        obj = (
+            ParteAprehension.objects.select_related(
+                "tipo_delito", "creado_por", "alerta", "revisado_por"
+            )
+            .prefetch_related("multimedia")
+            .get(pk=pk, creado_por=request.user)
+        )
+    except ParteAprehension.DoesNotExist:
+        return Response({"detail": "Parte no encontrado."}, status=404)
+
+    if obj.estado_revision != ParteAprehension.EstadoRevision.APROBADO and not obj.pdf_object_key:
+        return Response(
+            {"detail": "El PDF está disponible cuando el parte es aprobado."},
+            status=400,
+        )
+
+    try:
+        # Siempre se regenera para incluir evidencias iniciales embebidas.
+        pdf_bytes = build_pdf_bytes(obj)
+    except Exception as exc:  # noqa: BLE001
+        return Response(
+            {"detail": f"No se pudo obtener el PDF: {exc}"},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    filename = f"{obj.numero_caso or f'parte-{obj.id}'}.pdf"
+    download = str(request.query_params.get("download", "")).lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    disposition = "attachment" if download else "inline"
+    response["Content-Disposition"] = f'{disposition}; filename="{filename}"'
+    response["Content-Length"] = str(len(pdf_bytes))
+    return response
 
 
 @api_view(["POST"])

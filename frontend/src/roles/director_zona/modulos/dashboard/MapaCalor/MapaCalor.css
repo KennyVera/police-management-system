@@ -1,0 +1,174 @@
+.dz-mapa {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.dz-mapa .dz-card {
+  background: #fff;
+  border: 1px solid #e8ecf3;
+  border-radius: 14px;
+  padding: 1rem 1.05rem;
+  box-shadow: 0 8px 22px rgba(28, 39, 68, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.dz-mapa .dz-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.dz-mapa .dz-card-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.dz-mapa .dz-card-head small {
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.dz-map-wrap {
+  height: 420px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e8ecf3;
+}
+
+.dz-map {
+  width: 100%;
+  height: 100%;
+}
+
+.dz-map-error {
+  margin: 0;
+  color: #b91c1c;
+  font-weight: 600;
+  font-size: 0.86rem;
+}
+
+.dz-heat-legend {
+  display: flex;
+  gap: 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.dz-heat-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.dz-heat-legend .h {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.dz-heat-legend .h.green { background: #22c55e; }
+.dz-heat-legend .h.orange { background: #f59e0b; }
+.dz-heat-legend .h.red { background: #b91c1c; }
+
+.dz-clear-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.dz-radar-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.dz-radar-svg {
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+  display: block;
+}
+
+.dz-radar-hit {
+  cursor: pointer;
+}
+
+.dz-radar-label {
+  font-size: 11px;
+  fill: #6b7280;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dz-radar-label.active {
+  fill: #ef4444;
+}
+
+.dz-picos h4 {
+  margin: 0.35rem 0 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.dz-picos {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.dz-pico {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border: 1px solid #e8ecf3;
+  background: #fafafa;
+  border-radius: 10px;
+  padding: 0.5rem 0.7rem;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.dz-pico strong {
+  font-size: 0.82rem;
+}
+
+.dz-pico span {
+  font-size: 0.78rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.dz-pico.active {
+  border-color: #7c5cbf;
+  background: #efe9fb;
+}
+
+.dz-empty-inline {
+  color: #6b7280;
+  font-size: 0.86rem;
+  margin: 0.35rem 0;
+}
+
+@media (max-width: 1100px) {
+  .dz-mapa {
+    grid-template-columns: 1fr;
+  }
+  .dz-map-wrap {
+    height: 340px;
+  }
+}

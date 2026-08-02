@@ -38,6 +38,7 @@ async function downloadBlob(path, filenameFallback) {
 export const directorApi = {
   /* —— Inteligencia táctica (ClickHouse) —— */
   estadisticas: () => apiFetch(`${TACTICO}/estadisticas/`),
+  panel: (params = {}) => apiFetch(`${TACTICO}/panel/${qs(params)}`),
   mapaCalor: (params = {}) => apiFetch(`${TACTICO}/mapa-calor/${qs(params)}`),
   rankingDistritos: (params = {}) => apiFetch(`${TACTICO}/ranking-distritos/${qs(params)}`),
   delitosDesglose: (params = {}) => apiFetch(`${TACTICO}/delitos-desglose/${qs(params)}`),

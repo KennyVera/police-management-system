@@ -19,6 +19,19 @@ export const agenteApi = {
   enviarParteRevision: (id) =>
     apiFetch(`${RO}/partes/${id}/enviar-revision/`, { method: "POST", body: "{}" }),
 
+  fetchPartePdf: async (id, { download = false } = {}) => {
+    const headers = {};
+    const token = getToken();
+    if (token) headers.Authorization = `Token ${token}`;
+    const q = download ? "?download=1" : "";
+    const response = await fetch(`${API_URL}${RO}/partes/${id}/pdf/${q}`, { headers });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.detail || "No se pudo obtener el PDF");
+    }
+    return response.blob();
+  },
+
   listNovedades: (params = {}) => {
     const q = new URLSearchParams(params).toString();
     return apiFetch(`${RO}/novedades/${q ? `?${q}` : ""}`);

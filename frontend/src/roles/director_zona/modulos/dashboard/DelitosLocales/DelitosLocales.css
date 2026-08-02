@@ -1,0 +1,252 @@
+.dz-delitos {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.dz-delitos-top,
+.dz-delitos-bot {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 0.9rem;
+}
+
+.dz-card {
+  background: #fff;
+  border: 1px solid #e8ecf3;
+  border-radius: 14px;
+  padding: 1rem 1.05rem;
+  box-shadow: 0 8px 22px rgba(28, 39, 68, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 280px;
+}
+
+.dz-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.dz-card-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.dz-chip {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #7c5cbf;
+  background: #efe9fb;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+}
+
+.dz-chart-svg {
+  width: 100%;
+  height: auto;
+}
+
+.dz-axis {
+  font-size: 10px;
+  fill: #9ca3af;
+}
+
+.dz-donut-wrap {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 0.85rem;
+  align-items: center;
+  flex: 1;
+}
+
+.dz-donut {
+  width: 124px;
+  height: 124px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+
+.dz-donut-hole {
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.dz-donut-hole span {
+  font-size: 0.68rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.dz-donut-hole strong {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.dz-donut-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.dz-donut-legend li {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.dz-donut-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.dz-donut-legend strong {
+  display: block;
+  font-size: 0.8rem;
+}
+
+.dz-donut-legend strong em {
+  font-style: normal;
+  color: #6b7280;
+}
+
+.dz-donut-legend small {
+  color: #6b7280;
+  font-size: 0.72rem;
+}
+
+.dz-hbars {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.dz-hbar-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 36px;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.dz-hbar-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dz-hbar-track {
+  height: 14px;
+  border-radius: 6px;
+  background: #f3f4f6;
+  overflow: hidden;
+}
+
+.dz-hbar-fill {
+  height: 100%;
+  border-radius: 6px;
+}
+
+.dz-hbar-val {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.dz-nivel-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.dz-nivel-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.dz-nivel-legend .n {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dz-nivel-legend .n.critico { background: #ef4444; }
+.dz-nivel-legend .n.alto { background: #f59e0b; }
+.dz-nivel-legend .n.medio { background: #eab308; }
+.dz-nivel-legend .n.bajo { background: #22c55e; }
+
+.dz-exec {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+  flex: 1;
+}
+
+.dz-exec li {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+}
+
+.dz-exec li .material-symbols-outlined {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.dz-exec .tone-warn { background: #fff7ed; color: #9a3412; }
+.dz-exec .tone-danger { background: #fef2f2; color: #991b1b; }
+.dz-exec .tone-ok { background: #ecfdf3; color: #166534; }
+.dz-exec .tone-info { background: #f5f3ff; color: #5b3d9a; }
+
+.dz-exec-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #7c5cbf;
+  font-weight: 700;
+  font-size: 0.84rem;
+  text-decoration: none;
+  margin-top: auto;
+}
+
+.dz-empty-inline {
+  color: #6b7280;
+  font-size: 0.86rem;
+  margin: 0.5rem 0;
+}
+
+@media (max-width: 1100px) {
+  .dz-delitos-top,
+  .dz-delitos-bot {
+    grid-template-columns: 1fr;
+  }
+  .dz-donut-wrap {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+}

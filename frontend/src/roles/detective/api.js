@@ -27,7 +27,10 @@ async function uploadForm(path, formData) {
 }
 
 export const detectiveApi = {
-  dashboard: () => apiFetch(`${DASH}/`),
+  dashboard: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return apiFetch(`${DASH}/${q ? `?${q}` : ""}`);
+  },
 
   casosMeta: () => apiFetch(`${CASOS}/meta/`),
   listExpedientes: (params = {}) => {

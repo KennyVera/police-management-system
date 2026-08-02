@@ -1,4 +1,5 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
 import { detectiveApi } from "../../api";
 import "../../../../shared/styles/ModuloPage.css";
@@ -33,6 +34,8 @@ function formatAsignacion(iso) {
 }
 
 export default function CasosPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const mesaOpenedRef = useRef(null);
   const [meta, setMeta] = useState({
     estados: [],
     prioridades: [],
@@ -91,6 +94,41 @@ export default function CasosPage() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Abrir Mesa de Trabajo desde el Dashboard (?mesa=<id>)
+  useEffect(() => {
+    const mesaId = searchParams.get("mesa");
+    if (!mesaId || loading) return;
+    if (mesaOpenedRef.current === mesaId) return;
+
+    let cancelled = false;
+    (async () => {
+      setBusy(true);
+      setError("");
+      try {
+        const exp = await detectiveApi.getExpediente(mesaId);
+        if (cancelled) return;
+        mesaOpenedRef.current = mesaId;
+        setHighlightId(exp.id);
+        setSelected(exp);
+        setOk(`Mesa de trabajo abierta: ${exp.numero_expediente || exp.titulo}`);
+        const next = new URLSearchParams(searchParams);
+        next.delete("mesa");
+        setSearchParams(next, { replace: true });
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message || "No se pudo abrir la mesa de trabajo.");
+        }
+      } finally {
+        if (!cancelled) setBusy(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, loading]);
 
   const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
   const pageItems = useMemo(() => {
@@ -163,7 +201,7 @@ export default function CasosPage() {
           onClick={() => openExpediente(highlighted || pageItems[0])}
         >
           <MaterialIcon name="folder_open" />
-          Abrir Expediente
+          Abrir Mesa de Trabajo
         </button>
       </header>
 
@@ -394,7 +432,7 @@ export default function CasosPage() {
                                   openExpediente(c);
                                 }}
                               >
-                                Abrir expediente
+                                Abrir Mesa de Trabajo
                               </button>
                             </div>
                           )}

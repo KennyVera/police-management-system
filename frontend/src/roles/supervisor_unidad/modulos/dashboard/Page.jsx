@@ -1,105 +1,494 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
 import { useAuth } from "../../../../auth/AuthContext";
 import { supervisorApi } from "../../api";
 import "../../../../shared/styles/ModuloPage.css";
-import "../../../agente_operativo/modulos/dashboard/Dashboard.css";
+import "./Dashboard.css";
+
+const EMPTY = {
+  kpis: {
+    fuerza_efectiva: { porcentaje: 0, activos: 0, total: 0, delta_ayer_pct: null },
+    control_calidad: { pendientes: 0, revisados_hoy: 0, procesados_pct: 0 },
+    flota: { porcentaje: 0, operativos: 0, total: 0, en_mantenimiento: 0 },
+    alertas_criticas: { total: 0 },
+  },
+  calidad_partes: {
+    total: 0,
+    aprobados: 0,
+    pendientes: 0,
+    devueltos: 0,
+    aprobados_pct: 0,
+    pendientes_pct: 0,
+    devueltos_pct: 0,
+    calidad_ok: true,
+  },
+  partes_revision: [],
+  actividad_escuadras: [],
+  distribucion_sectores: [],
+  turno: { inicio: "07:00", fin: "19:00" },
+};
+
+const DIAS = [
+  "Domingo",
+  "Lunes",
+  "Martes",
+  "Miércoles",
+  "Jueves",
+  "Viernes",
+  "Sábado",
+];
+const MESES = [
+  "enero",
+  "febrero",
+  "marzo",
+  "abril",
+  "mayo",
+  "junio",
+  "julio",
+  "agosto",
+  "septiembre",
+  "octubre",
+  "noviembre",
+  "diciembre",
+];
+
+function fechaEsp(iso) {
+  const d = iso ? new Date(`${iso}T12:00:00`) : new Date();
+  return `${DIAS[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`;
+}
+
+/** Conic-gradient donut from percentages (0–100). Empty → soft gray ring. */
+function donutStyle(calidad) {
+  const a = Number(calidad.aprobados_pct) || 0;
+  const p = Number(calidad.pendientes_pct) || 0;
+  const d = Number(calidad.devueltos_pct) || 0;
+  const sum = a + p + d;
+  if (!sum || !calidad.total) {
+    return { background: "conic-gradient(#e5e7eb 0deg 360deg)" };
+  }
+  const aEnd = (a / 100) * 360;
+  const pEnd = aEnd + (p / 100) * 360;
+  return {
+    background: `conic-gradient(
+      #22c55e 0deg ${aEnd}deg,
+      #f59e0b ${aEnd}deg ${pEnd}deg,
+      #ef4444 ${pEnd}deg 360deg
+    )`,
+  };
+}
+
+function ProgressBar({ value, tone }) {
+  const v = Math.max(0, Math.min(100, Number(value) || 0));
+  return (
+    <div className={`sup-progress tone-${tone}`}>
+      <span style={{ width: `${v}%` }} />
+    </div>
+  );
+}
+
+function SectorMap({ sectores }) {
+  const palette = ["#22c55e", "#3b82f6", "#f59e0b", "#8b5cf6", "#14b8a6"];
+  const items = sectores?.length
+    ? sectores
+    : [
+        { sector: "Sector Norte", patrullas: 0 },
+        { sector: "Sector Centro", patrullas: 0 },
+        { sector: "Sector Sur", patrullas: 0 },
+      ];
+
+  return (
+    <div className="sup-map">
+      <svg viewBox="0 0 420 240" className="sup-map-svg" aria-hidden="true">
+        <defs>
+          <pattern id="gridDots" width="14" height="14" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="1" fill="#dbe3f0" />
+          </pattern>
+        </defs>
+        <rect width="420" height="240" fill="#f3f6fb" rx="12" />
+        <rect width="420" height="240" fill="url(#gridDots)" opacity="0.7" />
+        {/* stylized zones */}
+        <path
+          d="M40 40 L210 28 L200 130 L55 145 Z"
+          fill={palette[0]}
+          fillOpacity={items[0]?.patrullas ? 0.35 : 0.12}
+          stroke={palette[0]}
+          strokeWidth="2"
+        />
+        <path
+          d="M210 28 L380 50 L365 150 L200 130 Z"
+          fill={palette[1]}
+          fillOpacity={items[1]?.patrullas ? 0.35 : 0.12}
+          stroke={palette[1]}
+          strokeWidth="2"
+        />
+        <path
+          d="M55 145 L200 130 L365 150 L340 210 L70 215 Z"
+          fill={palette[2]}
+          fillOpacity={items[2]?.patrullas ? 0.35 : 0.12}
+          stroke={palette[2]}
+          strokeWidth="2"
+        />
+        {items.slice(0, 3).map((s, i) => {
+          const centers = [
+            [120, 85],
+            [290, 90],
+            [210, 175],
+          ];
+          const [cx, cy] = centers[i];
+          return (
+            <g key={s.sector}>
+              <rect
+                x={cx - 54}
+                y={cy - 22}
+                width="108"
+                height="44"
+                rx="8"
+                fill="#fff"
+                fillOpacity="0.92"
+                stroke="#e5e7eb"
+              />
+              <text x={cx} y={cy - 4} textAnchor="middle" className="sup-map-label">
+                {s.sector}
+              </text>
+              <text x={cx} y={cy + 14} textAnchor="middle" className="sup-map-value">
+                {s.patrullas} patrullas
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <div className="sup-map-legend">
+        <span>
+          <i className="dot green" /> Patrulla activa
+        </span>
+        <span>
+          <i className="dot yellow" /> Patrulla en mantenimiento
+        </span>
+        <span>
+          <i className="dot red" /> Patrulla fuera de servicio
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export default function Page() {
   const { user } = useAuth();
   const name = user?.first_name || "Supervisor";
-  const [stats, setStats] = useState({
-    partes_pendientes: 0,
-    escuadras_hoy: 0,
-    asignaciones_hoy: 0,
-    horarios_pendientes: 0,
-  });
+  const [data, setData] = useState(EMPTY);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let alive = true;
     supervisorApi
       .dashboard()
-      .then((d) => setStats({ ...stats, ...(d.stats || {}) }))
-      .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+      .then((d) => {
+        if (!alive) return;
+        setData({
+          ...EMPTY,
+          ...d,
+          kpis: { ...EMPTY.kpis, ...(d.kpis || {}) },
+          calidad_partes: { ...EMPTY.calidad_partes, ...(d.calidad_partes || {}) },
+          turno: { ...EMPTY.turno, ...(d.turno || {}) },
+          partes_revision: d.partes_revision || [],
+          actividad_escuadras: d.actividad_escuadras || [],
+          distribucion_sectores: d.distribucion_sectores || [],
+        });
+      })
+      .catch(() => {
+        if (alive) setData(EMPTY);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  const kpis = [
-    {
-      label: "Partes pendientes",
-      value: String(stats.partes_pendientes || 0),
-      hint: "Control de calidad",
-      icon: "inbox",
-      tone: "purple",
-    },
-    {
-      label: "Escuadras hoy",
-      value: String(stats.escuadras_hoy || 0),
-      hint: "Grupos de patrulla",
-      icon: "groups",
-      tone: "blue",
-    },
-    {
-      label: "Asignaciones",
-      value: String(stats.asignaciones_hoy || 0),
-      hint: "Vehículo / sector del día",
-      icon: "local_shipping",
-      tone: "green",
-    },
-    {
-      label: "Horarios pendientes",
-      value: String(stats.horarios_pendientes || 0),
-      hint: "Cambios y permisos",
-      icon: "event_available",
-      tone: "violet",
-    },
-  ];
+  const k = data.kpis;
+  const calidad = data.calidad_partes;
+  const fechaLabel = useMemo(
+    () => fechaEsp(data.fecha_iso),
+    [data.fecha_iso]
+  );
+
+  const bars = data.actividad_escuadras;
+  const maxBar = Math.max(1, ...bars.map((b) => Number(b.total) || 0));
+  const topEscuadra = bars.reduce(
+    (best, cur) => ((cur.total || 0) > (best?.total || 0) ? cur : best),
+    null
+  );
 
   return (
-    <div className="admin-dash agente-dash">
-      <div className="dash-top">
-        <article className="welcome-card">
-          <div className="welcome-copy">
-            <h2>Hola, {name}</h2>
-            <p>
-              Organiza la logística diaria de tu unidad y revisa los partes de tus agentes
-              antes de que salgan a Fiscalía.
-            </p>
-            <span className="status-pill">
-              <span className="pulse" />
-              Supervisión de unidad
-            </span>
-          </div>
-          <div className="welcome-art">
-            <div className="shield-glow">
-              <MaterialIcon name="supervisor_account" />
-            </div>
-          </div>
-        </article>
-        <article className="platform-card">
-          <h3>Tu día</h3>
-          <p>Dos frentes: logística de turnos y control de calidad de partes.</p>
-          <ul>
-            <li>Escuadras, vehículos y sectores</li>
-            <li>Horarios, formación y permisos</li>
-            <li>Aprobar o devolver partes con comentario</li>
-          </ul>
-        </article>
-      </div>
+    <div className={`sup-dash${loading ? " is-loading" : ""}`}>
+      <header className="sup-hero">
+        <div>
+          <h2>
+            Hola, {name} <span aria-hidden="true">👋</span>
+          </h2>
+          <p>Aquí tienes el resumen operativo de tu unidad al día de hoy.</p>
+        </div>
+        <div className="sup-meta">
+          <span className="sup-chip muted">
+            <MaterialIcon name="calendar_today" />
+            {fechaLabel}
+          </span>
+          <span className="sup-chip accent">
+            Turno: {data.turno?.inicio || "07:00"} – {data.turno?.fin || "19:00"}
+          </span>
+        </div>
+      </header>
 
-      <div className="kpi-grid">
-        {kpis.map((k) => (
-          <article key={k.label} className={`kpi-card tone-${k.tone}`}>
-            <div className="kpi-icon">
-              <MaterialIcon name={k.icon} />
+      <section className="sup-kpi-row">
+        <article className="sup-kpi tone-green">
+          <div className="sup-kpi-head">
+            <div className="sup-kpi-icon">
+              <MaterialIcon name="groups" />
             </div>
             <div>
-              <p className="kpi-label">{k.label}</p>
-              <p className="kpi-value">{k.value}</p>
-              <p className="kpi-hint">{k.hint}</p>
+              <p className="sup-kpi-label">Fuerza Efectiva</p>
+              <p className="sup-kpi-main">{k.fuerza_efectiva.porcentaje}%</p>
+              <p className="sup-kpi-sub">
+                {k.fuerza_efectiva.activos} / {k.fuerza_efectiva.total} agentes activos
+              </p>
             </div>
-          </article>
-        ))}
-      </div>
+          </div>
+          <ProgressBar value={k.fuerza_efectiva.porcentaje} tone="green" />
+          <p className="sup-kpi-foot muted">
+            {k.fuerza_efectiva.delta_ayer_pct != null ? (
+              <>
+                <MaterialIcon name="trending_up" />
+                {k.fuerza_efectiva.delta_ayer_pct > 0 ? "+" : ""}
+                {k.fuerza_efectiva.delta_ayer_pct}% respecto a ayer
+              </>
+            ) : (
+              <>Sin comparación con ayer aún</>
+            )}
+          </p>
+        </article>
+
+        <article className="sup-kpi tone-blue">
+          <div className="sup-kpi-head">
+            <div className="sup-kpi-icon">
+              <MaterialIcon name="assignment" />
+            </div>
+            <div>
+              <p className="sup-kpi-label">Control de Calidad</p>
+              <p className="sup-kpi-main">
+                {k.control_calidad.pendientes}{" "}
+                <span className="sup-kpi-unit">Pendientes</span>
+              </p>
+              <p className="sup-kpi-sub">
+                {k.control_calidad.revisados_hoy} revisados hoy
+              </p>
+            </div>
+          </div>
+          <ProgressBar value={k.control_calidad.procesados_pct} tone="blue" />
+          <p className="sup-kpi-foot ok">
+            <MaterialIcon name="check_circle" />
+            {k.control_calidad.procesados_pct}% de partes procesados
+          </p>
+        </article>
+
+        <article className="sup-kpi tone-teal">
+          <div className="sup-kpi-head">
+            <div className="sup-kpi-icon">
+              <MaterialIcon name="local_taxi" />
+            </div>
+            <div>
+              <p className="sup-kpi-label">Operatividad de Flota</p>
+              <p className="sup-kpi-main">{k.flota.porcentaje}%</p>
+              <p className="sup-kpi-sub">
+                {k.flota.operativos} / {k.flota.total} patrulleros operativos
+              </p>
+            </div>
+          </div>
+          <ProgressBar value={k.flota.porcentaje} tone="teal" />
+          <p className="sup-kpi-foot warn">
+            <MaterialIcon name="build" />
+            {k.flota.en_mantenimiento} en mantenimiento
+          </p>
+        </article>
+
+        <article className="sup-kpi tone-red">
+          <div className="sup-kpi-head">
+            <div className="sup-kpi-icon">
+              <MaterialIcon name="warning" />
+            </div>
+            <div>
+              <p className="sup-kpi-label">Alertas Críticas</p>
+              <p className="sup-kpi-main">{k.alertas_criticas.total}</p>
+              <p className="sup-kpi-sub">novedades requieren atención</p>
+            </div>
+          </div>
+          <div className="sup-kpi-accent-line" />
+          <Link
+            to="/app/supervisor_unidad/despacho_operativo/auxilios"
+            className="sup-kpi-link danger"
+          >
+            Ver alertas <MaterialIcon name="arrow_forward" />
+          </Link>
+        </article>
+      </section>
+
+      <section className="sup-mid-row">
+        <article className="sup-card">
+          <h3>Control de Calidad de Partes (Hoy)</h3>
+          <div className="sup-calidad">
+            <div className="sup-donut-wrap">
+              <div className="sup-donut" style={donutStyle(calidad)}>
+                <div className="sup-donut-hole">
+                  <span>Total</span>
+                  <strong>{calidad.total}</strong>
+                  <em>partes</em>
+                </div>
+              </div>
+            </div>
+            <ul className="sup-legend">
+              <li>
+                <span className="lg-dot green" />
+                <div>
+                  <strong>
+                    Aprobados <em>{calidad.aprobados_pct}%</em>{" "}
+                    <small>({calidad.aprobados})</small>
+                  </strong>
+                  <p>Partes correctos y aprobados</p>
+                </div>
+              </li>
+              <li>
+                <span className="lg-dot yellow" />
+                <div>
+                  <strong>
+                    Pendientes <em>{calidad.pendientes_pct}%</em>{" "}
+                    <small>({calidad.pendientes})</small>
+                  </strong>
+                  <p>En revisión por el supervisor</p>
+                </div>
+              </li>
+              <li>
+                <span className="lg-dot red" />
+                <div>
+                  <strong>
+                    Devueltos <em>{calidad.devueltos_pct}%</em>{" "}
+                    <small>({calidad.devueltos})</small>
+                  </strong>
+                  <p>Partes con errores a corregir</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div className={`sup-banner ${calidad.calidad_ok ? "ok" : "warn"}`}>
+            <MaterialIcon name={calidad.calidad_ok ? "check_circle" : "error"} />
+            {calidad.total === 0
+              ? "Aún no hay partes registrados hoy. Los indicadores se actualizarán solos."
+              : calidad.calidad_ok
+                ? "La calidad de los partes está dentro del rango aceptable."
+                : "Hay demasiados partes devueltos. Revisa observaciones con tu unidad."}
+          </div>
+        </article>
+
+        <article className="sup-card">
+          <h3>Últimos Partes para Revisión</h3>
+          <div className="sup-table-wrap">
+            <table className="sup-table">
+              <thead>
+                <tr>
+                  <th>Hora</th>
+                  <th>Agente</th>
+                  <th>Tipo de Delito</th>
+                  <th>Sector</th>
+                  <th>Estado</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.partes_revision.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="sup-empty">
+                      No hay partes pendientes de revisión.
+                    </td>
+                  </tr>
+                ) : (
+                  data.partes_revision.map((row) => (
+                    <tr key={row.id}>
+                      <td>{row.hora}</td>
+                      <td>{row.agente}</td>
+                      <td>{row.tipo_delito}</td>
+                      <td>{row.sector}</td>
+                      <td>
+                        <span className="badge-pendiente">{row.estado}</span>
+                      </td>
+                      <td>
+                        <Link
+                          to="/app/supervisor_unidad/control_calidad/pendientes"
+                          className="btn-revisar"
+                        >
+                          Revisar
+                        </Link>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          <Link
+            to="/app/supervisor_unidad/control_calidad/pendientes"
+            className="sup-footer-link"
+          >
+            Ver todos los partes pendientes
+          </Link>
+        </article>
+      </section>
+
+      <section className="sup-bot-row">
+        <article className="sup-card">
+          <h3>Actividad por Escuadra (Hoy)</h3>
+          <div className="sup-bars">
+            {bars.length === 0 ? (
+              <p className="sup-empty">Sin escuadras registradas para hoy.</p>
+            ) : (
+              bars.map((b) => (
+                <div key={b.nombre} className="sup-bar-row">
+                  <span className="sup-bar-label">{b.nombre}</span>
+                  <div className="sup-bar-track">
+                    <div
+                      className="sup-bar-fill"
+                      style={{
+                        width: `${Math.max(
+                          b.total ? 8 : 0,
+                          (Number(b.total) / maxBar) * 100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                  <span className="sup-bar-val">{b.total}</span>
+                </div>
+              ))
+            )}
+            {bars.length > 0 && (
+              <div className="sup-bars-axis">
+                <span>0</span>
+                <span>Número de asignaciones</span>
+                <span>{maxBar}</span>
+              </div>
+            )}
+          </div>
+          <div className="sup-banner accent">
+            <MaterialIcon name="description" />
+            {topEscuadra && topEscuadra.total > 0
+              ? `La ${topEscuadra.nombre} lidera en actividad del día.`
+              : "Cuando registres escuadras y asignaciones, verás el ranking aquí."}
+          </div>
+        </article>
+
+        <article className="sup-card">
+          <h3>Distribución Operativa por Sector</h3>
+          <SectorMap sectores={data.distribucion_sectores} />
+        </article>
+      </section>
     </div>
   );
 }

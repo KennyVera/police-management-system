@@ -1,0 +1,290 @@
+.dz-dash {
+  --dz-purple: #7c5cbf;
+  --dz-navy: #2f4d8a;
+  --dz-green: #22c55e;
+  --dz-red: #ef4444;
+  --dz-orange: #f59e0b;
+  --dz-blue: #3b82f6;
+  --dz-muted: #6b7280;
+  --dz-border: #e8ecf3;
+  display: grid;
+  gap: 1rem;
+  color: #1f2937;
+}
+
+.dz-dash.is-loading {
+  opacity: 0.72;
+}
+
+.dz-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.85rem;
+  align-items: flex-end;
+}
+
+.dz-kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dz-purple);
+}
+
+.dz-head h2 {
+  margin: 0.2rem 0 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.dz-sub {
+  margin: 0.25rem 0 0;
+  color: var(--dz-muted);
+  font-size: 0.88rem;
+}
+
+.dz-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--dz-border);
+  background: #fff;
+  border-radius: 10px;
+  padding: 0.5rem 0.85rem;
+  font-weight: 700;
+  font-size: 0.84rem;
+  cursor: pointer;
+  color: #374151;
+}
+
+.dz-refresh small {
+  font-weight: 600;
+  color: var(--dz-muted);
+}
+
+.dz-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto auto;
+  gap: 0.65rem;
+  align-items: end;
+  padding: 0.95rem 1rem;
+  background: #fff;
+  border: 1px solid var(--dz-border);
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgba(28, 39, 68, 0.04);
+}
+
+.dz-filters label {
+  display: grid;
+  gap: 0.28rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--dz-muted);
+}
+
+.dz-filters input,
+.dz-filters select {
+  border: 1px solid var(--dz-border);
+  border-radius: 10px;
+  padding: 0.5rem 0.65rem;
+  font: inherit;
+  background: #fff;
+  color: #111827;
+}
+
+.dz-btn-primary,
+.dz-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  border-radius: 10px;
+  padding: 0.55rem 0.9rem;
+  font-weight: 700;
+  font-size: 0.84rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.dz-btn-primary {
+  background: var(--dz-purple);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(124, 92, 191, 0.28);
+}
+
+.dz-btn-ghost {
+  background: #fff;
+  border-color: var(--dz-border);
+  color: #4b5563;
+}
+
+.dz-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.dz-tabs button {
+  border: 1px solid var(--dz-border);
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.48rem 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+.dz-tabs button.active {
+  background: var(--dz-purple);
+  border-color: var(--dz-purple);
+  color: #fff;
+}
+
+.dz-tabs .material-symbols-outlined {
+  font-size: 1.05rem;
+}
+
+.dz-error {
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+/* KPI row */
+.dz-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.dz-kpi {
+  background: #fff;
+  border: 1px solid var(--dz-border);
+  border-radius: 14px;
+  padding: 0.9rem 0.95rem;
+  display: flex;
+  gap: 0.7rem;
+  min-height: 118px;
+  box-shadow: 0 8px 22px rgba(28, 39, 68, 0.04);
+}
+
+.dz-kpi-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.dz-kpi-icon .material-symbols-outlined {
+  font-size: 1.25rem;
+}
+
+.dz-kpi.tone-purple .dz-kpi-icon {
+  background: #efe9fb;
+  color: var(--dz-purple);
+}
+.dz-kpi.tone-green .dz-kpi-icon {
+  background: #e8f9ef;
+  color: #16a34a;
+}
+.dz-kpi.tone-orange .dz-kpi-icon {
+  background: #fff7ed;
+  color: #c2410c;
+}
+.dz-kpi.tone-red .dz-kpi-icon {
+  background: #fdeceb;
+  color: #dc2626;
+}
+.dz-kpi.tone-blue .dz-kpi-icon {
+  background: #e8f1fe;
+  color: #2563eb;
+}
+
+.dz-kpi-label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--dz-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dz-kpi-main {
+  margin: 0.2rem 0 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.dz-kpi-main span {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin-top: 0.1rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.dz-trend {
+  margin: 0.4rem 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.dz-trend.up {
+  color: #16a34a;
+}
+.dz-trend.down {
+  color: #dc2626;
+}
+.dz-trend.flat {
+  color: var(--dz-muted);
+  font-weight: 600;
+}
+
+.dz-kpi-link {
+  margin-top: 0.35rem;
+  border: none;
+  background: transparent;
+  color: #dc2626;
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+@media (max-width: 1200px) {
+  .dz-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dz-kpi-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .dz-filters,
+  .dz-kpi-row {
+    grid-template-columns: 1fr;
+  }
+}

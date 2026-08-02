@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from tactico.permissions import EsJefeDeZona
 from tactico.services.clickhouse_client import ClickHouseReadOnlyError, execute_readonly
 from tactico.services.geo_scope import ZoneScopeError, resolve_zone_scope
+from tactico.services import panel_queries as panel
 
 FACT = "police_analytics.fact_partes_policiales"
 
@@ -121,43 +122,38 @@ def mapa_calor(request):
         )
 
     tipo = (request.query_params.get("tipo_delito") or "").strip()
+    distrito = (request.query_params.get("distrito") or "").strip()
     try:
         limit = min(max(int(request.query_params.get("limit", 2000)), 1), 10000)
     except ValueError:
         return Response({"detail": "limit inválido."}, status=status.HTTP_400_BAD_REQUEST)
 
-    params = {
-        **scope.geo_params,
-        "fecha_desde": datetime.combine(fecha_desde, datetime.min.time()),
-        "fecha_hasta": datetime.combine(fecha_hasta, datetime.max.time().replace(microsecond=0)),
-        "limit": limit,
-    }
-
-    tipo_clause = ""
-    if tipo:
-        tipo_clause = "AND tipo_delito = {tipo_delito:String}"
-        params["tipo_delito"] = tipo
-
-    sql = f"""
-    SELECT
-        latitud,
-        longitud,
-        tipo_delito,
-        toUInt32(count()) AS peso
-    FROM {FACT}
-    WHERE 1 = 1
-      {scope.geo_sql}
-      AND fecha_hora >= {{fecha_desde:DateTime}}
-      AND fecha_hora <= {{fecha_hasta:DateTime}}
-      AND isFinite(latitud) AND isFinite(longitud)
-      AND (latitud != 0 OR longitud != 0)
-      {tipo_clause}
-    GROUP BY latitud, longitud, tipo_delito
-    ORDER BY peso DESC
-    LIMIT {{limit:UInt32}}
-    """
+    dia_semana = None
+    hora = None
+    raw_dow = request.query_params.get("dia_semana")
+    raw_hora = request.query_params.get("hora")
     try:
-        rows = execute_readonly(sql, params)
+        if raw_dow not in (None, ""):
+            dia_semana = int(raw_dow)
+        if raw_hora not in (None, ""):
+            hora = int(raw_hora)
+    except ValueError:
+        return Response(
+            {"detail": "dia_semana/hora inválidos."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        puntos = panel.mapa_puntos(
+            scope,
+            fecha_desde,
+            fecha_hasta,
+            distrito=distrito,
+            tipo_delito=tipo,
+            dia_semana=dia_semana,
+            hora=hora,
+            limit=limit,
+        )
     except ClickHouseReadOnlyError as exc:
         return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as exc:  # noqa: BLE001
@@ -166,15 +162,6 @@ def mapa_calor(request):
             status=status.HTTP_502_BAD_GATEWAY,
         )
 
-    puntos = [
-        {
-            "latitud": float(r["latitud"]),
-            "longitud": float(r["longitud"]),
-            "peso": int(r["peso"] or 0),
-            "tipo_delito": r.get("tipo_delito") or "",
-        }
-        for r in rows
-    ]
     return Response(
         {
             "jurisdiccion": {
@@ -186,6 +173,9 @@ def mapa_calor(request):
                 "fecha_desde": fecha_desde.isoformat(),
                 "fecha_hasta": fecha_hasta.isoformat(),
                 "tipo_delito": tipo or None,
+                "distrito": distrito or None,
+                "dia_semana": dia_semana,
+                "hora": hora,
             },
             "total_puntos": len(puntos),
             "puntos": puntos,
@@ -195,11 +185,50 @@ def mapa_calor(request):
 
 @api_view(["GET"])
 @permission_classes([EsJefeDeZona])
+def panel_dashboard(request):
+    """
+    Panel completo del Jefe de Zona: KPIs, evolución, tipología, ranking, radar.
+    Query: fecha_desde, fecha_hasta, distrito, tipo_delito.
+    """
+    scope, err = _scope_or_error(request)
+    if err:
+        return err
+
+    try:
+        fecha_hasta = _parse_date(request.query_params.get("fecha_hasta"), "fecha_hasta")
+        fecha_desde = _parse_date(request.query_params.get("fecha_desde"), "fecha_desde")
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    distrito = (request.query_params.get("distrito") or "").strip()
+    tipo = (request.query_params.get("tipo_delito") or "").strip()
+
+    try:
+        data = panel.build_panel(
+            request.user,
+            scope,
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+            distrito=distrito,
+            tipo_delito=tipo,
+        )
+    except ClickHouseReadOnlyError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as exc:  # noqa: BLE001
+        return Response(
+            {"detail": f"Error armando panel táctico: {exc}"},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
+    return Response(data)
+
+
+@api_view(["GET"])
+@permission_classes([EsJefeDeZona])
 def ranking_distritos(request):
     """
     Ranking de partes policiales agrupados por sub-jurisdicción (sector_zona).
 
-    Query params opcionales: fecha_desde, fecha_hasta, limit (default 20).
+    Query params opcionales: fecha_desde, fecha_hasta, distrito, tipo_delito, limit.
     """
     scope, err = _scope_or_error(request)
     if err:
@@ -212,32 +241,19 @@ def ranking_distritos(request):
     except ValueError as exc:
         return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
-    params = {**scope.geo_params, "limit": limit}
-    date_clause = ""
-    if fecha_desde:
-        date_clause += " AND fecha_hora >= {fecha_desde:DateTime}"
-        params["fecha_desde"] = datetime.combine(fecha_desde, datetime.min.time())
-    if fecha_hasta:
-        date_clause += " AND fecha_hora <= {fecha_hasta:DateTime}"
-        params["fecha_hasta"] = datetime.combine(
-            fecha_hasta, datetime.max.time().replace(microsecond=0)
-        )
+    distrito = (request.query_params.get("distrito") or "").strip()
+    tipo = (request.query_params.get("tipo_delito") or "").strip()
+    desde, hasta = panel.parse_range(fecha_desde, fecha_hasta)
 
-    sql = (
-        "SELECT sector_zona AS distrito, "
-        "toUInt32(count()) AS total_partes, "
-        "uniqExact(tipo_delito) AS tipos_delito, "
-        "toUInt32(countIf(upper(prioridad) IN ('ALTA','CRITICA','ALTO','CRITICO'))) AS partes_criticos, "
-        "uniqExact(agente) AS agentes_reportantes "
-        f"FROM {FACT} WHERE 1 = 1 "
-        + scope.geo_sql
-        + date_clause
-        + " AND sector_zona != ''"
-        + " GROUP BY sector_zona ORDER BY total_partes DESC"
-        + " LIMIT {limit:UInt32}"
-    )
     try:
-        rows = execute_readonly(sql, params)
+        eficiencia = panel.ranking_eficiencia(
+            scope,
+            desde,
+            hasta,
+            distrito=distrito,
+            tipo_delito=tipo,
+            limit=limit,
+        )
     except ClickHouseReadOnlyError as exc:
         return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as exc:  # noqa: BLE001
@@ -249,13 +265,18 @@ def ranking_distritos(request):
     ranking = [
         {
             "posicion": idx,
-            "distrito": r.get("distrito") or "",
-            "total_partes": int(r.get("total_partes") or 0),
-            "tipos_delito": int(r.get("tipos_delito") or 0),
-            "partes_criticos": int(r.get("partes_criticos") or 0),
-            "agentes_reportantes": int(r.get("agentes_reportantes") or 0),
+            "distrito": r["distrito"],
+            "total_partes": r["delitos"],
+            "arrestos": r["arrestos"],
+            "partes_criticos": 0,
+            "tipos_delito": len(r.get("top_tipos") or []),
+            "agentes_reportantes": None,
+            "nivel": r["nivel"],
+            "cuadrante": r["cuadrante"],
+            "sparkline": r["sparkline"],
+            "tendencia": r["tendencia"],
         }
-        for idx, r in enumerate(rows, start=1)
+        for idx, r in enumerate(eficiencia, start=1)
     ]
     return Response(
         {
@@ -265,10 +286,13 @@ def ranking_distritos(request):
                 "codigo": scope.jurisdiccion_codigo,
             },
             "filtros": {
-                "fecha_desde": fecha_desde.isoformat() if fecha_desde else None,
-                "fecha_hasta": fecha_hasta.isoformat() if fecha_hasta else None,
+                "fecha_desde": desde.isoformat(),
+                "fecha_hasta": hasta.isoformat(),
+                "distrito": distrito or None,
+                "tipo_delito": tipo or None,
             },
             "ranking": ranking,
+            "ranking_eficiencia": eficiencia,
         }
     )
 
@@ -291,39 +315,34 @@ def delitos_desglose(request):
     except ValueError as exc:
         return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
-    params = {
-        **scope.geo_params,
-        "fecha_desde": datetime.combine(fecha_desde, datetime.min.time()),
-        "fecha_hasta": datetime.combine(fecha_hasta, datetime.max.time().replace(microsecond=0)),
-    }
+    distrito = (request.query_params.get("distrito") or "").strip()
+    tipo = (request.query_params.get("tipo_delito") or "").strip()
 
-    sql_tipo = (
-        "SELECT tipo_delito, toUInt32(count()) AS total "
-        f"FROM {FACT} WHERE 1 = 1 "
-        + scope.geo_sql
-        + " AND fecha_hora >= {fecha_desde:DateTime}"
-        + " AND fecha_hora <= {fecha_hasta:DateTime}"
-        + " GROUP BY tipo_delito ORDER BY total DESC LIMIT 30"
-    )
-    sql_sector = (
-        "SELECT sector_zona AS distrito, tipo_delito, toUInt32(count()) AS total "
-        f"FROM {FACT} WHERE 1 = 1 "
-        + scope.geo_sql
-        + " AND fecha_hora >= {fecha_desde:DateTime}"
-        + " AND fecha_hora <= {fecha_hasta:DateTime}"
-        + " AND sector_zona != ''"
-        + " GROUP BY sector_zona, tipo_delito"
-        + " ORDER BY total DESC LIMIT 100"
-    )
     try:
-        por_tipo = execute_readonly(sql_tipo, params)
-        por_distrito = execute_readonly(sql_sector, params)
+        por_tipo = panel.tipologia(
+            scope, fecha_desde, fecha_hasta, distrito=distrito, tipo_delito=tipo, limit=30
+        )
+        por_distrito_raw = panel.ranking_distritos_barras(
+            scope, fecha_desde, fecha_hasta, distrito=distrito, tipo_delito=tipo, limit=50
+        )
     except ClickHouseReadOnlyError as exc:
         return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as exc:  # noqa: BLE001
         return Response(
             {"detail": f"Error consultando ClickHouse: {exc}"},
             status=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    por_distrito = []
+    for row in por_distrito_raw:
+        tops = row.get("top_tipos") or ["—"]
+        por_distrito.append(
+            {
+                "distrito": row["distrito"],
+                "tipo_delito": tops[0] if tops else "—",
+                "total": row["total"],
+                "nivel": row["nivel"],
+            }
         )
 
     return Response(
@@ -336,19 +355,11 @@ def delitos_desglose(request):
             "filtros": {
                 "fecha_desde": fecha_desde.isoformat(),
                 "fecha_hasta": fecha_hasta.isoformat(),
+                "distrito": distrito or None,
+                "tipo_delito": tipo or None,
             },
-            "por_tipo": [
-                {"tipo_delito": r.get("tipo_delito") or "Sin clasificar", "total": int(r.get("total") or 0)}
-                for r in por_tipo
-            ],
-            "por_distrito": [
-                {
-                    "distrito": r.get("distrito") or "",
-                    "tipo_delito": r.get("tipo_delito") or "Sin clasificar",
-                    "total": int(r.get("total") or 0),
-                }
-                for r in por_distrito
-            ],
+            "por_tipo": por_tipo,
+            "por_distrito": por_distrito,
         }
     )
 
