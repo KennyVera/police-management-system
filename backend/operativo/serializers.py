@@ -35,6 +35,7 @@ class ParteAprehensionSerializer(serializers.ModelSerializer):
     puede_editar = serializers.SerializerMethodField()
     puede_enviar = serializers.SerializerMethodField()
     pdf_url = serializers.SerializerMethodField()
+    evidencias = serializers.SerializerMethodField()
 
     class Meta:
         model = ParteAprehension
@@ -80,6 +81,7 @@ class ParteAprehensionSerializer(serializers.ModelSerializer):
             "aprobado_en",
             "bloqueado",
             "pdf_url",
+            "evidencias",
             "agente",
             "oficial_registra",
             "revisado_por_nombre",
@@ -112,6 +114,7 @@ class ParteAprehensionSerializer(serializers.ModelSerializer):
             "aprobado_en",
             "bloqueado",
             "pdf_url",
+            "evidencias",
         ]
 
     def get_agente(self, obj):
@@ -133,6 +136,10 @@ class ParteAprehensionSerializer(serializers.ModelSerializer):
         from operativo.minio_service import get_presigned_url
 
         return get_presigned_url(obj.pdf_object_key, obj.pdf_bucket or None)
+
+    def get_evidencias(self, obj):
+        qs = obj.multimedia.all()
+        return MultimediaEvidenciaSerializer(qs, many=True).data
 
     def get_puede_editar(self, obj):
         if obj.bloqueado or obj.estado_revision == ParteAprehension.EstadoRevision.APROBADO:

@@ -1,3 +1,4 @@
+from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -6,7 +7,8 @@ from rest_framework.response import Response
 from accounts.permissions import SupervisorOnly
 from operativo.models import Notificacion, ParteAprehension
 from operativo.notifications import notify_user
-from operativo.pdf_service import generar_pdf_parte
+from operativo.pdf_service import build_pdf_bytes, generar_pdf_parte
+from operativo.parquet_service import generar_parquet_parte
 from operativo.serializers import ParteAprehensionSerializer
 
 
@@ -18,6 +20,7 @@ def partes_pendientes(request):
             estado_revision=ParteAprehension.EstadoRevision.EN_REVISION
         )
         .select_related("tipo_delito", "creado_por", "alerta")
+        .prefetch_related("multimedia")
         .order_by("enviado_revision_en")
     )
     return Response(ParteAprehensionSerializer(qs, many=True).data)
@@ -34,6 +37,7 @@ def partes_historial(request):
             ]
         )
         .select_related("tipo_delito", "creado_por", "alerta", "revisado_por")
+        .prefetch_related("multimedia")
         .order_by("-actualizado_en")[:100]
     )
     return Response(ParteAprehensionSerializer(qs, many=True).data)
@@ -43,12 +47,50 @@ def partes_historial(request):
 @permission_classes([SupervisorOnly])
 def parte_detalle(request, pk):
     try:
-        obj = ParteAprehension.objects.select_related(
-            "tipo_delito", "creado_por", "alerta"
-        ).get(pk=pk)
+        obj = (
+            ParteAprehension.objects.select_related("tipo_delito", "creado_por", "alerta")
+            .prefetch_related("multimedia")
+            .get(pk=pk)
+        )
     except ParteAprehension.DoesNotExist:
         return Response({"detail": "Parte no encontrado."}, status=404)
     return Response(ParteAprehensionSerializer(obj).data)
+
+
+@api_view(["GET"])
+@permission_classes([SupervisorOnly])
+def parte_pdf(request, pk):
+    """Vista previa o descarga del PDF (incluye evidencias). Genera al vuelo."""
+    try:
+        obj = (
+            ParteAprehension.objects.select_related(
+                "tipo_delito", "creado_por", "alerta", "revisado_por"
+            )
+            .prefetch_related("multimedia")
+            .get(pk=pk)
+        )
+    except ParteAprehension.DoesNotExist:
+        return Response({"detail": "Parte no encontrado."}, status=404)
+
+    try:
+        pdf_bytes = build_pdf_bytes(obj)
+    except Exception as exc:  # noqa: BLE001
+        return Response(
+            {"detail": f"No se pudo generar el PDF: {exc}"},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    filename = f"{obj.numero_caso or f'parte-{obj.id}'}.pdf"
+    download = str(request.query_params.get("download", "")).lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    disposition = "attachment" if download else "inline"
+    response["Content-Disposition"] = f'{disposition}; filename="{filename}"'
+    response["Content-Length"] = str(len(pdf_bytes))
+    return response
 
 
 @api_view(["POST"])
@@ -102,9 +144,11 @@ def rechazar_parte(request, pk):
 @permission_classes([SupervisorOnly])
 def aprobar_parte(request, pk):
     try:
-        obj = ParteAprehension.objects.select_related(
-            "tipo_delito", "creado_por"
-        ).get(pk=pk)
+        obj = (
+            ParteAprehension.objects.select_related("tipo_delito", "creado_por", "alerta")
+            .prefetch_related("multimedia")
+            .get(pk=pk)
+        )
     except ParteAprehension.DoesNotExist:
         return Response({"detail": "Parte no encontrado."}, status=404)
 
@@ -139,6 +183,20 @@ def aprobar_parte(request, pk):
         return Response(
             {
                 "detail": f"Parte aprobado pero no se pudo generar el PDF: {exc}",
+                "parte": ParteAprehensionSerializer(obj).data,
+            },
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    try:
+        generar_parquet_parte(obj)
+    except Exception as exc:  # noqa: BLE001
+        return Response(
+            {
+                "detail": (
+                    f"Parte aprobado y PDF OK, pero no se pudo subir el parquet "
+                    f"al Data Lake: {exc}"
+                ),
                 "parte": ParteAprehensionSerializer(obj).data,
             },
             status=status.HTTP_502_BAD_GATEWAY,

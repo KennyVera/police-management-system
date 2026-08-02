@@ -2,14 +2,29 @@ import { useEffect, useState } from "react";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
 import { supervisorApi } from "../../api";
 import AuxilioFormulario from "./componentes/AuxilioFormulario";
+import AuxilioMapaSelector from "./componentes/AuxilioMapaSelector";
 import AuxiliosLista from "./componentes/AuxiliosLista";
 import AsignarAuxilioModal from "./componentes/AsignarAuxilioModal";
 import "../../../../shared/styles/ModuloPage.css";
+import "./componentes/AuxilioRegistro.css";
+
+const FORM_DEFAULT = {
+  titulo: "",
+  descripcion: "",
+  direccion: "",
+  referencia: "",
+  origen: "ECU-911",
+  prioridad: "ALTA",
+  latitud: "-0.1807",
+  longitud: "-78.4678",
+};
 
 export default function AuxiliosPage() {
   const [pendientes, setPendientes] = useState([]);
   const [activas, setActivas] = useState([]);
   const [meta, setMeta] = useState({ unidades_turno: [], prioridades: [], origenes: [] });
+  const [form, setForm] = useState(FORM_DEFAULT);
+  const [saving, setSaving] = useState(false);
   const [asignar, setAsignar] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -37,6 +52,26 @@ export default function AuxiliosPage() {
   useEffect(() => {
     load();
   }, []);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    try {
+      await supervisorApi.createAlerta({
+        ...form,
+        latitud: form.latitud ? Number(form.latitud) : null,
+        longitud: form.longitud ? Number(form.longitud) : null,
+      });
+      setForm(FORM_DEFAULT);
+      setOk("Alerta registrada en bandeja pendiente.");
+      load();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="mod-page">
@@ -69,14 +104,28 @@ export default function AuxiliosPage() {
         </p>
       )}
 
-      <AuxilioFormulario
-        meta={meta}
-        onCreated={() => {
-          setOk("Alerta registrada en bandeja pendiente.");
-          load();
-        }}
-        onError={setError}
-      />
+      <section className="panel-card auxilio-registro">
+        <AuxilioFormulario
+          meta={meta}
+          form={form}
+          setForm={setForm}
+          saving={saving}
+          onSubmit={handleSubmit}
+        />
+        <AuxilioMapaSelector
+          latitud={form.latitud}
+          longitud={form.longitud}
+          onLocationSelect={({ latitud, longitud, direccion, referencia }) => {
+            setForm((prev) => ({
+              ...prev,
+              latitud,
+              longitud,
+              direccion: direccion || prev.direccion,
+              referencia: referencia || "",
+            }));
+          }}
+        />
+      </section>
 
       {loading ? (
         <p className="mod-muted">Cargando despacho...</p>

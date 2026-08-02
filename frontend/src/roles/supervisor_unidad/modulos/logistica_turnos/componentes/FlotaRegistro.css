@@ -27,20 +27,43 @@
   margin: 0;
 }
 
+.flota-registro-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .flota-catalogo {
   padding: 1.15rem 1.2rem 1.25rem;
   min-height: 100%;
   background: linear-gradient(180deg, rgba(247, 248, 252, 0.9), rgba(255, 255, 255, 0.4));
 }
 
-.flota-catalogo-head {
+.flota-catalogo-head-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
   margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.flota-catalogo-head {
+  margin: 0;
 }
 
 .flota-catalogo-head h3 {
   margin: 0;
   font-size: 1.05rem;
   color: #2b3550;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.flota-catalogo-head h3 .material-symbols-outlined {
+  color: #7c5cbf;
+  font-size: 1.15rem;
 }
 
 .flota-catalogo-head p {
@@ -49,24 +72,37 @@
   font-size: 0.86rem;
 }
 
+.flota-nuevo-tipo {
+  color: #7c5cbf !important;
+  border-color: #c9b8ea !important;
+  font-weight: 700;
+  padding: 0.45rem 0.7rem !important;
+  font-size: 0.82rem;
+}
+
 .flota-catalogo-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.65rem;
 }
 
+.flota-catalogo-empty {
+  grid-column: 1 / -1;
+  margin: 0.35rem 0;
+}
+
 .flota-unit {
-  appearance: none;
   border: 1px solid #e5e9f2;
   background: rgba(255, 255, 255, 0.92);
   border-radius: 14px;
-  padding: 0.45rem 0.4rem 0.55rem;
+  padding: 0.45rem 0.4rem 0.5rem;
   display: grid;
   gap: 0.3rem;
   cursor: pointer;
   text-align: center;
   overflow: visible;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  outline: none;
 }
 
 .flota-unit:hover {
@@ -86,11 +122,11 @@
   aspect-ratio: 12 / 7;
   width: 100%;
   height: auto;
-  min-height: 120px;
+  min-height: 96px;
   border-radius: 10px;
   background: linear-gradient(180deg, #e9edf5 0%, #f5f7fb 100%);
   overflow: hidden;
-  padding: 0.65rem 0.5rem;
+  padding: 0.5rem 0.4rem;
   box-sizing: border-box;
 }
 
@@ -102,8 +138,13 @@
   max-height: 100%;
   object-fit: contain;
   object-position: center center;
-  transform: none;
   filter: drop-shadow(0 6px 10px rgba(28, 39, 68, 0.14));
+}
+
+.flota-unit-placeholder {
+  color: #9aa3b5;
+  font-size: 0.72rem;
+  font-weight: 600;
 }
 
 .flota-unit-meta {
@@ -121,6 +162,68 @@
   color: #8a93a8;
   font-size: 0.7rem;
   line-height: 1.2;
+}
+
+.flota-unit-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.35rem;
+  padding-top: 0.1rem;
+}
+
+.flota-action {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border: 0;
+  border-radius: 8px;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.flota-action .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+.flota-action.edit {
+  background: #f1ebff;
+  color: #7c5cbf;
+}
+
+.flota-action.delete {
+  background: #fef3f2;
+  color: #dc2626;
+}
+
+.flota-action:hover {
+  filter: brightness(0.97);
+}
+
+.flota-tipo-modal {
+  width: min(440px, 100%);
+}
+
+.flota-tipo-preview {
+  display: grid;
+  place-items: center;
+  min-height: 140px;
+  border-radius: 12px;
+  background: #f5f7fb;
+  border: 1px solid #e8ecf3;
+  overflow: hidden;
+  padding: 0.75rem;
+}
+
+.flota-tipo-preview img {
+  max-width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+}
+
+.flota-confirm-card {
+  width: min(420px, 100%);
 }
 
 @media (max-width: 980px) {

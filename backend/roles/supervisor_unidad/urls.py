@@ -11,6 +11,10 @@ urlpatterns = [
         include("roles.supervisor_unidad.modulos.despacho_operativo.urls"),
     ),
     path(
+        "monitoreo_tactico/",
+        include("roles.supervisor_unidad.modulos.monitoreo_tactico.urls"),
+    ),
+    path(
         "control_calidad/",
         include("roles.supervisor_unidad.modulos.revision_partes.urls"),
     ),

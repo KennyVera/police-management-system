@@ -1,8 +1,21 @@
-import { apiFetch } from "../../auth/api";
+import { API_URL, apiFetch, getToken } from "../../auth/api";
 
 const LOG = "/api/roles/supervisor_unidad/logistica_turnos";
 const CQ = "/api/roles/supervisor_unidad/control_calidad";
 const DES = "/api/roles/supervisor_unidad/despacho_operativo";
+const MON = "/api/roles/supervisor_unidad/monitoreo_tactico";
+
+async function fetchPdfBlob(path) {
+  const headers = {};
+  const token = getToken();
+  if (token) headers.Authorization = `Token ${token}`;
+  const response = await fetch(`${API_URL}${path}`, { headers });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.detail || "No se pudo obtener el PDF");
+  }
+  return response.blob();
+}
 
 export const supervisorApi = {
   dashboard: () => apiFetch("/api/roles/supervisor_unidad/dashboard/"),
@@ -14,6 +27,8 @@ export const supervisorApi = {
   },
   createEscuadra: (body) =>
     apiFetch(`${LOG}/escuadras/`, { method: "POST", body: JSON.stringify(body) }),
+  updateEscuadra: (id, body) =>
+    apiFetch(`${LOG}/escuadras/${id}/`, { method: "PATCH", body: JSON.stringify(body) }),
   inactivarEscuadra: (id) =>
     apiFetch(`${LOG}/escuadras/${id}/inactivar/`, { method: "POST", body: "{}" }),
   asignarVehiculoEscuadra: (id, body) =>
@@ -77,6 +92,9 @@ export const supervisorApi = {
       body: JSON.stringify(body),
     }),
 
+  monitoreoUnidades: () => apiFetch(`${MON}/unidades/`),
+  monitoreoStats: () => apiFetch(`${MON}/estadisticas/`),
+
   listPendientes: () => apiFetch(`${CQ}/pendientes/`),
   listHistorial: () => apiFetch(`${CQ}/historial/`),
   getParte: (id) => apiFetch(`${CQ}/${id}/`),
@@ -86,4 +104,6 @@ export const supervisorApi = {
       body: JSON.stringify({ motivo }),
     }),
   aprobar: (id) => apiFetch(`${CQ}/${id}/aprobar/`, { method: "POST", body: "{}" }),
+  fetchPartePdf: (id, { download = false } = {}) =>
+    fetchPdfBlob(`${CQ}/${id}/pdf/${download ? "?download=1" : ""}`),
 };

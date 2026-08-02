@@ -34,10 +34,11 @@ def upload_evidencia(
     filename: str,
     content_type: str,
     folder: str = "captura-rapida",
+    bucket: str | None = None,
 ) -> dict:
     """Sube archivo a MinIO y devuelve metadatos de almacenamiento."""
     client = get_minio_client()
-    bucket = ensure_bucket(client)
+    bucket = ensure_bucket(client, bucket)
     safe_name = filename.replace(" ", "_")
     object_key = f"{folder}/{uuid.uuid4().hex}_{safe_name}"
     client.put_object(
@@ -85,3 +86,14 @@ def get_presigned_url(object_key: str, bucket: str | None = None, expires_hours:
             )
         )
     return url
+
+
+def download_object(object_key: str, bucket: str | None = None) -> bytes:
+    client = get_minio_client()
+    bucket = bucket or settings.MINIO_BUCKET_EVIDENCIAS
+    response = client.get_object(bucket, object_key)
+    try:
+        return response.read()
+    finally:
+        response.close()
+        response.release_conn()

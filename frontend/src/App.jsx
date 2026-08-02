@@ -32,6 +32,8 @@ import SupervisorSectores from "./roles/supervisor_unidad/modulos/logistica_turn
 import SupervisorHorarios from "./roles/supervisor_unidad/modulos/logistica_turnos/HorariosPage";
 import SupervisorAuxilios from "./roles/supervisor_unidad/modulos/despacho_operativo/AuxiliosPage";
 import SupervisorOrdenes from "./roles/supervisor_unidad/modulos/despacho_operativo/OrdenesPage";
+import SupervisorRastreoGps from "./roles/supervisor_unidad/modulos/monitoreo_tactico/RastreoGpsPage";
+import SupervisorEstadisticas from "./roles/supervisor_unidad/modulos/monitoreo_tactico/EstadisticasPage";
 import SupervisorPendientes from "./roles/supervisor_unidad/modulos/control_calidad/PendientesPage";
 import SupervisorHistorial from "./roles/supervisor_unidad/modulos/control_calidad/HistorialPage";
 
@@ -163,6 +165,8 @@ export default function App() {
         <Route path="logistica_turnos/horarios" element={<SupervisorHorarios />} />
         <Route path="despacho_operativo/auxilios" element={<SupervisorAuxilios />} />
         <Route path="despacho_operativo/ordenes" element={<SupervisorOrdenes />} />
+        <Route path="monitoreo_tactico/rastreo_gps" element={<SupervisorRastreoGps />} />
+        <Route path="monitoreo_tactico/estadisticas" element={<SupervisorEstadisticas />} />
         <Route path="control_calidad/pendientes" element={<SupervisorPendientes />} />
         <Route path="control_calidad/historial" element={<SupervisorHistorial />} />
       </Route>

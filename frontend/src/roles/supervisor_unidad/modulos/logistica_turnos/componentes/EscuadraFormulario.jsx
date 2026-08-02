@@ -1,13 +1,20 @@
 import { useMemo, useState } from "react";
 import { supervisorApi } from "../../../api";
 
-export default function EscuadraFormulario({ agentes, fechaDefault, onClose, onSaved }) {
+export default function EscuadraFormulario({
+  agentes,
+  fechaDefault,
+  escuadra = null,
+  onClose,
+  onSaved,
+}) {
+  const editing = Boolean(escuadra);
   const [form, setForm] = useState({
-    nombre: "",
-    fecha: fechaDefault,
-    agente_lider: "",
-    companeros: [],
-    observaciones: "",
+    nombre: escuadra?.nombre || "",
+    fecha: escuadra?.fecha || fechaDefault,
+    agente_lider: escuadra?.agente_lider ? String(escuadra.agente_lider) : "",
+    companeros: (escuadra?.companeros || []).map(String),
+    observaciones: escuadra?.observaciones || "",
   });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -37,13 +44,18 @@ export default function EscuadraFormulario({ agentes, fechaDefault, onClose, onS
     try {
       const lider = Number(form.agente_lider);
       const companeros = form.companeros.map(Number).filter((id) => id !== lider);
-      await supervisorApi.createEscuadra({
+      const body = {
         nombre: form.nombre,
         fecha: form.fecha,
         agente_lider: lider,
         companeros,
         observaciones: form.observaciones,
-      });
+      };
+      if (editing) {
+        await supervisorApi.updateEscuadra(escuadra.id, body);
+      } else {
+        await supervisorApi.createEscuadra(body);
+      }
       onSaved();
     } catch (err) {
       setError(err.message);
@@ -55,7 +67,7 @@ export default function EscuadraFormulario({ agentes, fechaDefault, onClose, onS
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <form className="modal-card" onClick={(e) => e.stopPropagation()} onSubmit={submit}>
-        <h3>Nueva escuadra</h3>
+        <h3>{editing ? "Editar escuadra" : "Nueva escuadra"}</h3>
         {error && <p className="mod-error">{error}</p>}
         <div className="form-grid">
           <label className="full">
@@ -167,7 +179,7 @@ export default function EscuadraFormulario({ agentes, fechaDefault, onClose, onS
             Cancelar
           </button>
           <button type="submit" className="btn-accent" disabled={saving}>
-            {saving ? "Guardando..." : "Crear escuadra"}
+            {saving ? "Guardando..." : editing ? "Guardar cambios" : "Crear escuadra"}
           </button>
         </div>
       </form>

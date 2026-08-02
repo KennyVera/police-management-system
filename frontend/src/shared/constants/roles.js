@@ -176,6 +176,25 @@ export const ROLES = {
         ],
       },
       {
+        slug: "monitoreo_tactico",
+        label: "Monitoreo Táctico",
+        icon: "radar",
+        children: [
+          {
+            slug: "rastreo_gps",
+            label: "Rastreo GPS",
+            icon: "my_location",
+            path: "monitoreo_tactico/rastreo_gps",
+          },
+          {
+            slug: "estadisticas",
+            label: "Estadísticas de Unidad",
+            icon: "analytics",
+            path: "monitoreo_tactico/estadisticas",
+          },
+        ],
+      },
+      {
         slug: "control_calidad",
         label: "Control de Calidad",
         icon: "fact_check",

@@ -1,15 +1,41 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { supervisorApi } from "../../../api";
 
-export default function AsignarVehiculoModal({ escuadra, vehiculos, onClose, onSaved }) {
-  const [vehiculo, setVehiculo] = useState(escuadra.vehiculo ? String(escuadra.vehiculo) : "");
+export default function AsignarVehiculoModal({
+  escuadra = null,
+  escuadras = [],
+  vehiculos,
+  onClose,
+  onSaved,
+}) {
+  const opciones = useMemo(
+    () => (escuadra ? [escuadra] : escuadras),
+    [escuadra, escuadras]
+  );
+  const [escuadraId, setEscuadraId] = useState(
+    escuadra ? String(escuadra.id) : opciones[0] ? String(opciones[0].id) : ""
+  );
+  const seleccionada = opciones.find((e) => String(e.id) === String(escuadraId)) || null;
+  const [vehiculo, setVehiculo] = useState(
+    seleccionada?.vehiculo ? String(seleccionada.vehiculo) : ""
+  );
   const [turnoInicio, setTurnoInicio] = useState("07:00");
   const [turnoFin, setTurnoFin] = useState("19:00");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
+  function onChangeEscuadra(id) {
+    setEscuadraId(id);
+    const next = opciones.find((e) => String(e.id) === String(id));
+    setVehiculo(next?.vehiculo ? String(next.vehiculo) : "");
+  }
+
   async function submit(e) {
     e.preventDefault();
+    if (!seleccionada) {
+      setError("Selecciona una escuadra.");
+      return;
+    }
     if (!vehiculo) {
       setError("Selecciona un vehículo.");
       return;
@@ -17,7 +43,7 @@ export default function AsignarVehiculoModal({ escuadra, vehiculos, onClose, onS
     setSaving(true);
     setError("");
     try {
-      await supervisorApi.asignarVehiculoEscuadra(escuadra.id, {
+      await supervisorApi.asignarVehiculoEscuadra(seleccionada.id, {
         vehiculo: Number(vehiculo),
         turno_inicio: turnoInicio,
         turno_fin: turnoFin,
@@ -34,12 +60,26 @@ export default function AsignarVehiculoModal({ escuadra, vehiculos, onClose, onS
     <div className="modal-backdrop" onClick={onClose}>
       <form className="modal-card" onClick={(e) => e.stopPropagation()} onSubmit={submit}>
         <h3>Asignar vehículo</h3>
-        <p className="mod-muted" style={{ marginTop: 0 }}>
-          Escuadra <strong>{escuadra.nombre}</strong> · Líder{" "}
-          {escuadra.agente_lider_info?.nombre || "—"}
-        </p>
         {error && <p className="mod-error">{error}</p>}
         <div className="form-grid">
+          <label className="full">
+            Escuadra
+            <select
+              required
+              value={escuadraId}
+              onChange={(e) => onChangeEscuadra(e.target.value)}
+              disabled={Boolean(escuadra)}
+            >
+              <option value="">Seleccione escuadra...</option>
+              {opciones.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nombre}
+                  {e.agente_lider_info?.nombre ? ` · ${e.agente_lider_info.nombre}` : ""}
+                  {!e.vehiculo ? " · Sin vehículo" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="full">
             Vehículo
             <select
@@ -72,7 +112,7 @@ export default function AsignarVehiculoModal({ escuadra, vehiculos, onClose, onS
           <button type="button" className="btn-ghost" onClick={onClose}>
             Cancelar
           </button>
-          <button type="submit" className="btn-accent" disabled={saving}>
+          <button type="submit" className="btn-accent" disabled={saving || !opciones.length}>
             {saving ? "Guardando..." : "Asignar vehículo"}
           </button>
         </div>

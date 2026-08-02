@@ -7,10 +7,14 @@ export default function ParteRevisionPanel({
   busy,
   onRechazar,
   onAprobar,
+  onVerPdf,
+  onDescargarPdf,
 }) {
   if (!parte) {
     return <p className="mod-muted">Selecciona un parte para revisar.</p>;
   }
+
+  const evidenciasCount = (parte.evidencias || []).length;
 
   return (
     <>
@@ -47,7 +51,7 @@ export default function ParteRevisionPanel({
           background: "#f7f8fc",
           borderRadius: 12,
           padding: "0.85rem 1rem",
-          maxHeight: 220,
+          maxHeight: 180,
           overflow: "auto",
         }}
       >
@@ -56,12 +60,27 @@ export default function ParteRevisionPanel({
         </p>
       </div>
 
-      {(parte.hay_heridos || parte.hay_armas) && (
+      {(parte.hay_heridos === "SI" || parte.hay_armas === "SI") && (
         <p className="mod-muted" style={{ margin: 0 }}>
-          {parte.hay_heridos ? "Hay heridos. " : ""}
-          {parte.hay_armas ? "Hay armas involucradas." : ""}
+          {parte.hay_heridos === "SI" ? "Hay heridos. " : ""}
+          {parte.hay_armas === "SI" ? "Hay armas involucradas." : ""}
         </p>
       )}
+
+      <p className="mod-kicker" style={{ margin: 0 }}>
+        Evidencias del agente ({evidenciasCount})
+      </p>
+
+      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+        <button type="button" className="btn-ghost" disabled={busy} onClick={onVerPdf}>
+          <MaterialIcon name="picture_as_pdf" />
+          Ver PDF
+        </button>
+        <button type="button" className="btn-ghost" disabled={busy} onClick={onDescargarPdf}>
+          <MaterialIcon name="download" />
+          Descargar PDF
+        </button>
+      </div>
 
       <label className="stack-form">
         Comentario de corrección (si rechaza)

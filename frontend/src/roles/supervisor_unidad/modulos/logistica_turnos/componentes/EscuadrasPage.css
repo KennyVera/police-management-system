@@ -1,0 +1,126 @@
+.escuadras-header-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.escuadras-confirm-card {
+  width: min(420px, 100%);
+}
+
+.escuadras-filters {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.escuadras-filters-head {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  color: #1a2338;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.escuadras-filters-head .material-symbols-outlined {
+  color: #7c5cbf;
+  font-size: 1.15rem;
+}
+
+.escuadras-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.escuadras-filters-grid label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+.escuadras-filters-grid input,
+.escuadras-filters-grid select {
+  border: 1px solid #e5e9f2;
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  font: inherit;
+  background: #fff;
+  color: #1a2338;
+  min-width: 0;
+}
+
+.escuadras-filters-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.escuadras-table-wrap {
+  overflow-x: auto;
+}
+
+.escuadras-sin-asignar {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.badge-estado.PENDIENTE {
+  background: #fff7ed;
+  color: #c2410c;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.badge-estado.ASIGNADA {
+  background: #eaf8ef;
+  color: #1f7a45;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.badge-estado .material-symbols-outlined {
+  font-size: 0.95rem;
+}
+
+.escuadras-icon-btn {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid #e5e9f2;
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.escuadras-icon-btn.edit {
+  color: #6366f1;
+}
+
+.escuadras-icon-btn.delete {
+  color: #dc2626;
+}
+
+.escuadras-icon-btn:hover {
+  background: #f8fafc;
+}
+
+@media (max-width: 1100px) {
+  .escuadras-filters-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .escuadras-filters-grid {
+    grid-template-columns: 1fr;
+  }
+}

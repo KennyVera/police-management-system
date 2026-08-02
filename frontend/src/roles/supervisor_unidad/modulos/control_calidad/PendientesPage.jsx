@@ -13,6 +13,7 @@ export default function PendientesPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
+  const [pdfUrl, setPdfUrl] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -20,7 +21,10 @@ export default function PendientesPage() {
     try {
       const list = await supervisorApi.listPendientes();
       setItems(list);
-      if (selected && !list.some((p) => p.id === selected.id)) setSelected(null);
+      if (selected) {
+        const refreshed = list.find((p) => p.id === selected.id);
+        setSelected(refreshed || null);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -32,6 +36,12 @@ export default function PendientesPage() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    };
+  }, [pdfUrl]);
 
   async function handleRechazar() {
     if (!selected) return;
@@ -47,7 +57,6 @@ export default function PendientesPage() {
       setOk("Parte rechazado. El agente lo recibe en su buzón con tu comentario.");
       setSelected(null);
       setMotivo("");
-      await load();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -75,6 +84,48 @@ export default function PendientesPage() {
     }
   }
 
+  async function handleVerPdf() {
+    if (!selected) return;
+    setBusy(true);
+    setError("");
+    try {
+      const blob = await supervisorApi.fetchPartePdf(selected.id);
+      const url = URL.createObjectURL(blob);
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+      setPdfUrl(url);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDescargarPdf() {
+    if (!selected) return;
+    setBusy(true);
+    setError("");
+    try {
+      const blob = await supervisorApi.fetchPartePdf(selected.id, { download: true });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${selected.numero_caso || `parte-${selected.id}`}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function closePdf() {
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    setPdfUrl(null);
+  }
+
   return (
     <div className="mod-page">
       <header className="mod-header">
@@ -82,8 +133,8 @@ export default function PendientesPage() {
           <p className="mod-kicker">Control de Calidad</p>
           <h2>Bandeja de Partes Pendientes</h2>
           <p className="mod-desc">
-            Revisa reportes de agentes. Aprueba (bloquea + PDF) o rechaza con comentario de
-            corrección. Nada mal redactado debe salir a Fiscalía.
+            Revisa reportes de agentes. Puedes ver o descargar el PDF con evidencias antes de
+            aprobar (bloquea + PDF definitivo) o rechazar con comentario.
           </p>
         </div>
         <button type="button" className="btn-ghost" onClick={load}>
@@ -126,8 +177,53 @@ export default function PendientesPage() {
               busy={busy}
               onRechazar={handleRechazar}
               onAprobar={handleAprobar}
+              onVerPdf={handleVerPdf}
+              onDescargarPdf={handleDescargarPdf}
             />
           </aside>
+        </div>
+      )}
+
+      {pdfUrl && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 18, 32, 0.55)",
+            zIndex: 80,
+            display: "grid",
+            placeItems: "center",
+            padding: "1.25rem",
+          }}
+          onClick={closePdf}
+        >
+          <div
+            className="panel-card"
+            style={{
+              width: "min(960px, 100%)",
+              height: "min(88vh, 900px)",
+              display: "grid",
+              gridTemplateRows: "auto 1fr",
+              gap: "0.65rem",
+              margin: 0,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <strong>Vista previa PDF · {selected?.titulo || selected?.numero_caso || `Parte #${selected?.id}`}</strong>
+              <button type="button" className="btn-ghost" onClick={closePdf}>
+                <MaterialIcon name="close" />
+                Cerrar
+              </button>
+            </div>
+            <iframe
+              title="Vista previa PDF del parte"
+              src={pdfUrl}
+              style={{ width: "100%", height: "100%", border: "none", borderRadius: 10 }}
+            />
+          </div>
         </div>
       )}
     </div>
