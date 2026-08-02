@@ -446,6 +446,8 @@ class Notificacion(models.Model):
     class Tipo(models.TextChoices):
         PARTE_RECHAZADO = "PARTE_RECHAZADO", "Parte rechazado"
         PARTE_APROBADO = "PARTE_APROBADO", "Parte aprobado"
+        EXPEDIENTE_ASIGNADO = "EXPEDIENTE_ASIGNADO", "Expediente asignado"
+        DISPOSICION_ZONA = "DISPOSICION_ZONA", "Disposición de zona"
         ALERTA = "ALERTA", "Alerta"
         SISTEMA = "SISTEMA", "Sistema"
 
@@ -582,3 +584,463 @@ class GestionHorario(models.Model):
 
     def __str__(self) -> str:
         return f"{self.get_tipo_display()} — {self.agente} ({self.fecha})"
+
+
+class ExpedienteCaso(models.Model):
+    """Carpeta digital de investigación asignada a un detective."""
+
+    class Estado(models.TextChoices):
+        INDAGACION_PREVIA = "INDAGACION_PREVIA", "En Indagación Previa"
+        INSTRUCCION_FISCAL = "INSTRUCCION_FISCAL", "En Instrucción Fiscal"
+        CERRADO = "CERRADO", "Cerrado / Enviado a Fiscalía"
+        SUSPENDIDO = "SUSPENDIDO", "Suspendido"
+
+    class Prioridad(models.TextChoices):
+        BAJA = "BAJA", "Baja"
+        MEDIA = "MEDIA", "Media"
+        ALTA = "ALTA", "Alta"
+        CRITICA = "CRITICA", "Crítica"
+
+    class OrigenDocumento(models.TextChoices):
+        PARTE_APREHENSION = "PARTE_APREHENSION", "Parte de aprehensión"
+        DENUNCIA_CIUDADANA = "DENUNCIA_CIUDADANA", "Denuncia ciudadana (Fiscalía)"
+        OTRO = "OTRO", "Otro"
+
+    numero_expediente = models.CharField(max_length=40, unique=True, null=True, blank=True)
+    codigo_caso = models.CharField(
+        max_length=40,
+        blank=True,
+        help_text="Código de caso remitido por Fiscalía (ej. CAS-2026-0001).",
+    )
+    titulo = models.CharField(max_length=200)
+    descripcion = models.TextField(blank=True)
+    estado = models.CharField(
+        max_length=30, choices=Estado.choices, default=Estado.INDAGACION_PREVIA
+    )
+    prioridad = models.CharField(
+        max_length=20, choices=Prioridad.choices, default=Prioridad.MEDIA
+    )
+    detective_asignado = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="expedientes_asignados"
+    )
+    jefe_asignador = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="expedientes_asignados_por",
+    )
+    tipo_delito = models.ForeignKey(
+        "catalogos.TipoDelito",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="expedientes",
+    )
+    origen_documento = models.CharField(
+        max_length=30,
+        choices=OrigenDocumento.choices,
+        default=OrigenDocumento.DENUNCIA_CIUDADANA,
+    )
+    parte_origen = models.ForeignKey(
+        "ParteAprehension",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="expedientes",
+    )
+    documento_base = models.TextField(
+        blank=True,
+        help_text="Texto del parte aprobado o denuncia ciudadana que abre el caso.",
+    )
+    unidad = models.CharField(
+        max_length=120,
+        blank=True,
+        default="Policía Judicial",
+        help_text="Unidad / dependencia que remite o investiga el caso.",
+    )
+    fecha_hechos = models.DateField(null=True, blank=True)
+    lugar = models.CharField(max_length=255, blank=True)
+    observaciones = models.TextField(blank=True)
+    bloqueado = models.BooleanField(default=False)
+    cerrado_en = models.DateTimeField(null=True, blank=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-actualizado_en"]
+        verbose_name = "Expediente / caso"
+        verbose_name_plural = "Expedientes / casos"
+
+    def __str__(self) -> str:
+        return self.numero_expediente or f"Expediente {self.id}"
+
+    def ensure_numero(self):
+        if self.numero_expediente:
+            return
+        year = timezone.localdate().year
+        seq = ExpedienteCaso.objects.filter(
+            numero_expediente__startswith=f"EXP-{year}-"
+        ).count() + 1
+        self.numero_expediente = f"EXP-{year}-{seq:04d}"
+
+    def ensure_codigo_caso(self):
+        if self.codigo_caso:
+            return
+        year = timezone.localdate().year
+        seq = ExpedienteCaso.objects.filter(
+            codigo_caso__startswith=f"CAS-{year}-"
+        ).count() + 1
+        self.codigo_caso = f"CAS-{year}-{seq:04d}"
+
+
+class InvolucradoExpediente(models.Model):
+    class Tipo(models.TextChoices):
+        SOSPECHOSO = "SOSPECHOSO", "Sospechoso"
+        VICTIMA = "VICTIMA", "Víctima"
+        DENUNCIANTE = "DENUNCIANTE", "Denunciante"
+        TESTIGO = "TESTIGO", "Testigo"
+
+    class Genero(models.TextChoices):
+        NO_ESPECIFICADO = "NO_ESPECIFICADO", "No especificado"
+        MASCULINO = "MASCULINO", "Masculino"
+        FEMENINO = "FEMENINO", "Femenino"
+        OTRO = "OTRO", "Otro"
+
+    class EstadoCivil(models.TextChoices):
+        NO_REGISTRADO = "NO_REGISTRADO", "No registrado"
+        SOLTERO = "SOLTERO", "Soltero/a"
+        CASADO = "CASADO", "Casado/a"
+        DIVORCIADO = "DIVORCIADO", "Divorciado/a"
+        VIUDO = "VIUDO", "Viudo/a"
+        UNION = "UNION", "Unión de hecho"
+
+    expediente = models.ForeignKey(
+        ExpedienteCaso, on_delete=models.CASCADE, related_name="involucrados"
+    )
+    tipo = models.CharField(max_length=20, choices=Tipo.choices)
+    nombres = models.CharField(max_length=150)
+    apellidos = models.CharField(max_length=150, blank=True)
+    cedula = models.CharField(max_length=20, blank=True)
+    fecha_nacimiento = models.DateField(null=True, blank=True)
+    alias = models.CharField(max_length=120, blank=True)
+    genero = models.CharField(
+        max_length=20, choices=Genero.choices, default=Genero.NO_ESPECIFICADO
+    )
+    nacionalidad = models.CharField(max_length=80, blank=True)
+    telefono = models.CharField(max_length=40, blank=True)
+    direccion = models.CharField(max_length=255, blank=True)
+    ocupacion = models.CharField(max_length=120, blank=True)
+    estado_civil = models.CharField(
+        max_length=20, choices=EstadoCivil.choices, default=EstadoCivil.NO_REGISTRADO
+    )
+    observaciones = models.TextField(blank=True)
+    # Foto de perfil (MinIO)
+    foto_nombre = models.CharField(max_length=255, blank=True)
+    foto_content_type = models.CharField(max_length=120, blank=True)
+    foto_bucket = models.CharField(max_length=120, blank=True)
+    foto_object_key = models.CharField(max_length=512, blank=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["tipo", "apellidos", "nombres"]
+        verbose_name = "Involucrado de expediente"
+        verbose_name_plural = "Involucrados de expediente"
+
+    def __str__(self) -> str:
+        return f"{self.get_tipo_display()}: {self.nombres} {self.apellidos}".strip()
+
+
+class EvidenciaCaso(models.Model):
+    class Tipo(models.TextChoices):
+        DIGITAL = "DIGITAL", "Evidencia digital"
+        FISICA = "FISICA", "Evidencia física"
+
+    class CategoriaFisica(models.TextChoices):
+        ARMA = "ARMA", "Arma"
+        DROGA = "DROGA", "Droga"
+        VEHICULO = "VEHICULO", "Vehículo"
+        CELULAR = "CELULAR", "Celular"
+        DOCUMENTO = "DOCUMENTO", "Documento"
+        OTRO = "OTRO", "Otro"
+
+    class EstadoCustodia(models.TextChoices):
+        EN_CUSTODIA = "EN_CUSTODIA", "En custodia"
+        LABORATORIO = "LABORATORIO", "En laboratorio"
+        FISCALIA = "FISCALIA", "Remitida a Fiscalía"
+        ARCHIVO = "ARCHIVO", "Archivada"
+        BAJA = "BAJA", "Dada de baja"
+
+    expediente = models.ForeignKey(
+        ExpedienteCaso, on_delete=models.CASCADE, related_name="evidencias"
+    )
+    tipo = models.CharField(max_length=20, choices=Tipo.choices)
+    codigo = models.CharField(max_length=40, blank=True)
+    descripcion = models.TextField()
+    # Digital (MinIO)
+    nombre_archivo = models.CharField(max_length=255, blank=True)
+    content_type = models.CharField(max_length=120, blank=True)
+    tamanio_bytes = models.PositiveIntegerField(default=0)
+    bucket = models.CharField(max_length=120, blank=True)
+    object_key = models.CharField(max_length=512, blank=True)
+    sha256 = models.CharField(max_length=64, blank=True)
+    estado_custodia = models.CharField(
+        max_length=20,
+        choices=EstadoCustodia.choices,
+        default=EstadoCustodia.EN_CUSTODIA,
+    )
+    # Física
+    categoria_fisica = models.CharField(
+        max_length=20, choices=CategoriaFisica.choices, blank=True
+    )
+    numero_serie = models.CharField(max_length=120, blank=True)
+    peso = models.CharField(max_length=60, blank=True)
+    caracteristicas = models.TextField(blank=True)
+    custodio_actual = models.CharField(max_length=200, blank=True)
+    ubicacion_actual = models.CharField(max_length=200, blank=True)
+    registrado_por = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="evidencias_registradas"
+    )
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-creado_en"]
+        verbose_name = "Evidencia de caso"
+        verbose_name_plural = "Evidencias de caso"
+
+    def __str__(self) -> str:
+        return self.codigo or f"Evidencia {self.id}"
+
+    def ensure_codigo(self):
+        if self.codigo:
+            return
+        pref = "DIG" if self.tipo == self.Tipo.DIGITAL else "FIS"
+        self.codigo = f"{pref}-{self.expediente_id or 0}-{timezone.now().strftime('%y%m%d%H%M%S')}"
+
+
+class MovimientoCustodia(models.Model):
+    evidencia = models.ForeignKey(
+        EvidenciaCaso, on_delete=models.CASCADE, related_name="movimientos"
+    )
+    entregado_por = models.CharField(max_length=200)
+    recibido_por = models.CharField(max_length=200)
+    destino = models.CharField(max_length=200)
+    motivo = models.CharField(max_length=255)
+    observaciones = models.TextField(blank=True)
+    registrado_por = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="movimientos_custodia"
+    )
+    fecha_hora = models.DateTimeField(default=timezone.now)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-fecha_hora", "-id"]
+        verbose_name = "Movimiento de custodia"
+        verbose_name_plural = "Movimientos de custodia"
+
+    def __str__(self) -> str:
+        return f"{self.evidencia_id} → {self.destino} ({self.fecha_hora})"
+
+
+class BitacoraInvestigacion(models.Model):
+    """Acciones diarias del detective sobre un expediente."""
+
+    class TipoAccion(models.TextChoices):
+        VIGILANCIA = "VIGILANCIA", "Vigilancia"
+        ENTREVISTA = "ENTREVISTA", "Entrevista a testigo"
+        DILIGENCIA = "DILIGENCIA", "Diligencia de campo"
+        ANALISIS = "ANALISIS", "Análisis documental"
+        OTRO = "OTRO", "Otro"
+
+    expediente = models.ForeignKey(
+        ExpedienteCaso, on_delete=models.CASCADE, related_name="bitacora"
+    )
+    tipo = models.CharField(max_length=20, choices=TipoAccion.choices, default=TipoAccion.DILIGENCIA)
+    fecha_hora = models.DateTimeField(default=timezone.now)
+    lugar = models.CharField(max_length=255, blank=True)
+    relato = models.TextField()
+    registrado_por = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="bitacoras_investigacion"
+    )
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-fecha_hora", "-id"]
+        verbose_name = "Entrada de bitácora"
+        verbose_name_plural = "Bitácora de investigación"
+
+    def __str__(self) -> str:
+        return f"{self.get_tipo_display()} · {self.expediente_id}"
+
+
+class BienInvestigado(models.Model):
+    """Vehículos o inmuebles vinculados a la investigación."""
+
+    class TipoBien(models.TextChoices):
+        VEHICULO = "VEHICULO", "Vehículo"
+        INMUEBLE = "INMUEBLE", "Inmueble"
+        OTRO = "OTRO", "Otro"
+
+    expediente = models.ForeignKey(
+        ExpedienteCaso, on_delete=models.CASCADE, related_name="bienes"
+    )
+    tipo = models.CharField(max_length=20, choices=TipoBien.choices)
+    identificador = models.CharField(
+        max_length=120, help_text="Placa, matrícula, dirección catastral, etc."
+    )
+    descripcion = models.TextField(blank=True)
+    registrado_por = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="bienes_investigados"
+    )
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-creado_en"]
+        verbose_name = "Bien investigado"
+        verbose_name_plural = "Bienes investigados"
+
+    def __str__(self) -> str:
+        return f"{self.get_tipo_display()}: {self.identificador}"
+
+
+class SolicitudFiscal(models.Model):
+    """Solicitudes estandarizadas a juez/fiscal."""
+
+    class TipoSolicitud(models.TextChoices):
+        ALLANAMIENTO = "ALLANAMIENTO", "Orden de allanamiento"
+        INTERCEPTACION = "INTERCEPTACION", "Interceptación de llamadas"
+        SIGILO_BANCARIO = "SIGILO_BANCARIO", "Levantamiento de sigilo bancario"
+        OTRO = "OTRO", "Otra solicitud"
+
+    class Estado(models.TextChoices):
+        BORRADOR = "BORRADOR", "Borrador"
+        ENVIADA = "ENVIADA", "Enviada a Fiscalía"
+        RESPONDIDA = "RESPONDIDA", "Respondida"
+
+    expediente = models.ForeignKey(
+        ExpedienteCaso, on_delete=models.CASCADE, related_name="solicitudes_fiscal"
+    )
+    tipo = models.CharField(max_length=30, choices=TipoSolicitud.choices)
+    numero = models.CharField(max_length=40, blank=True)
+    fundamento = models.TextField()
+    pedimento = models.TextField(
+        help_text="Texto formal de lo que se solicita al juez/fiscal."
+    )
+    estado = models.CharField(max_length=20, choices=Estado.choices, default=Estado.BORRADOR)
+    creado_por = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="solicitudes_fiscal"
+    )
+    enviado_en = models.DateTimeField(null=True, blank=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-creado_en"]
+        verbose_name = "Solicitud a Fiscalía"
+        verbose_name_plural = "Solicitudes a Fiscalía"
+
+    def __str__(self) -> str:
+        return self.numero or f"Solicitud {self.id}"
+
+    def ensure_numero(self):
+        if self.numero:
+            return
+        self.numero = f"SF-{timezone.now().strftime('%Y%m%d')}-{self.expediente_id or 0}-{self.id or 0}"
+
+
+class InformeInvestigativo(models.Model):
+    """Informe final que cierra el expediente y se envía a Fiscalía."""
+
+    expediente = models.OneToOneField(
+        ExpedienteCaso, on_delete=models.CASCADE, related_name="informe_final"
+    )
+    titulo = models.CharField(max_length=200, default="Informe Investigativo Final")
+    contenido = models.TextField()
+    conclusiones = models.TextField(blank=True)
+    elaborado_por = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="informes_investigativos"
+    )
+    paquete_bucket = models.CharField(max_length=120, blank=True)
+    paquete_object_key = models.CharField(max_length=512, blank=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Informe investigativo"
+        verbose_name_plural = "Informes investigativos"
+
+    def __str__(self) -> str:
+        return f"Informe {self.expediente_id}"
+
+
+class EvaluacionSupervisor(models.Model):
+    """Calificación / anotación del Jefe de Zona sobre un Supervisor de Unidad."""
+
+    evaluador = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="evaluaciones_emitidas"
+    )
+    supervisor = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="evaluaciones_recibidas"
+    )
+    calificacion = models.PositiveSmallIntegerField(
+        help_text="Escala 1–5",
+    )
+    anotacion = models.TextField(blank=True)
+    periodo = models.CharField(
+        max_length=40,
+        blank=True,
+        help_text="Etiqueta de periodo, ej. 2026-08 o Trimestre 3.",
+    )
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-creado_en"]
+        verbose_name = "Evaluación de supervisor"
+        verbose_name_plural = "Evaluaciones de supervisores"
+
+    def __str__(self) -> str:
+        return f"{self.supervisor_id} → {self.calificacion}/5"
+
+
+class DisposicionZona(models.Model):
+    """Memorando / instrucción obligatoria del Jefe de Zona hacia su personal."""
+
+    class Tipo(models.TextChoices):
+        MEMORANDO = "MEMORANDO", "Memorando"
+        INSTRUCCION = "INSTRUCCION", "Instrucción operativa"
+        DISPOSICION = "DISPOSICION", "Disposición directa"
+        COMUNICADO = "COMUNICADO", "Comunicado"
+
+    class Prioridad(models.TextChoices):
+        NORMAL = "NORMAL", "Normal"
+        ALTA = "ALTA", "Alta"
+        URGENTE = "URGENTE", "Urgente / prioritaria"
+
+    emisor = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="disposiciones_emitidas"
+    )
+    jurisdiccion = models.ForeignKey(
+        "organizacion.Jurisdiction",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="disposiciones",
+    )
+    tipo = models.CharField(max_length=20, choices=Tipo.choices, default=Tipo.DISPOSICION)
+    prioridad = models.CharField(
+        max_length=20, choices=Prioridad.choices, default=Prioridad.ALTA
+    )
+    titulo = models.CharField(max_length=200)
+    cuerpo = models.TextField()
+    destinatarios_count = models.PositiveIntegerField(default=0)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-creado_en"]
+        verbose_name = "Disposición de zona"
+        verbose_name_plural = "Disposiciones de zona"
+
+    def __str__(self) -> str:
+        return f"{self.get_tipo_display()}: {self.titulo}"

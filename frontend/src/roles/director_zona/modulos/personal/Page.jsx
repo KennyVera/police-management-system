@@ -1,0 +1,287 @@
+import { useEffect, useMemo, useState } from "react";
+import MaterialIcon from "../../../../shared/components/MaterialIcon";
+import { directorApi } from "../../api";
+import "../../../../shared/styles/ModuloPage.css";
+import "../DirectorZona.css";
+
+const ESTADO_TONE = {
+  ACTIVO: "ok",
+  FRANCO: "muted",
+  VACACIONES: "info",
+  CALAMIDAD: "warn",
+  ARRESTO: "danger",
+  PERMISO: "warn",
+};
+
+export default function PersonalPage() {
+  const [tab, setTab] = useState("estado");
+  const [data, setData] = useState(null);
+  const [evals, setEvals] = useState([]);
+  const [supervisores, setSupervisores] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [ok, setOk] = useState("");
+  const [filtro, setFiltro] = useState("TODOS");
+  const [form, setForm] = useState({
+    supervisor_id: "",
+    calificacion: 4,
+    periodo: "",
+    anotacion: "",
+  });
+
+  async function load() {
+    setLoading(true);
+    setError("");
+    try {
+      const [estado, ev, sup] = await Promise.all([
+        directorApi.estadoPersonal(),
+        directorApi.listEvaluaciones(),
+        directorApi.listSupervisores(),
+      ]);
+      setData(estado);
+      setEvals(ev.evaluaciones || []);
+      setSupervisores(sup.supervisores || []);
+      if (!form.supervisor_id && sup.supervisores?.[0]) {
+        setForm((f) => ({ ...f, supervisor_id: String(sup.supervisores[0].id) }));
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const personal = useMemo(() => {
+    const list = data?.personal || [];
+    if (filtro === "TODOS") return list;
+    return list.filter((p) => p.estado === filtro);
+  }, [data, filtro]);
+
+  async function submitEval(e) {
+    e.preventDefault();
+    setError("");
+    setOk("");
+    try {
+      await directorApi.createEvaluacion({
+        supervisor_id: Number(form.supervisor_id),
+        calificacion: Number(form.calificacion),
+        periodo: form.periodo,
+        anotacion: form.anotacion,
+      });
+      setOk("Evaluación registrada.");
+      setForm((f) => ({ ...f, anotacion: "", periodo: "" }));
+      const ev = await directorApi.listEvaluaciones();
+      setEvals(ev.evaluaciones || []);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function removeEval(id) {
+    if (!window.confirm("¿Eliminar esta evaluación?")) return;
+    try {
+      await directorApi.deleteEvaluacion(id);
+      setEvals((prev) => prev.filter((x) => x.id !== id));
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  const resumen = data?.resumen || {};
+
+  return (
+    <div className="mod-page dir-page">
+      <header className="mod-header">
+        <div>
+          <p className="mod-kicker">Gestión de Personal Regional</p>
+          <h2>Disponibilidad — {data?.jurisdiccion?.nombre || "su zona"}</h2>
+          <p className="mod-desc">
+            Novedades del personal a su cargo y evaluación de supervisores de distrito.
+          </p>
+        </div>
+        <button type="button" className="btn-ghost" onClick={load}>
+          <MaterialIcon name="refresh" />
+          Actualizar
+        </button>
+      </header>
+
+      <div className="dir-tabs">
+        {[
+          { id: "estado", label: "Novedades del personal", icon: "badge" },
+          { id: "eval", label: "Evaluación de supervisores", icon: "star" },
+        ].map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            className={tab === t.id ? "active" : ""}
+            onClick={() => setTab(t.id)}
+          >
+            <MaterialIcon name={t.icon} />
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {error && <p className="mod-error">{error}</p>}
+      {ok && <p className="mod-success">{ok}</p>}
+      {loading ? (
+        <p className="mod-muted">Cargando personal…</p>
+      ) : tab === "estado" ? (
+        <>
+          <div className="dir-kpi-grid compact">
+            {[
+              ["Activos hoy", resumen.ACTIVO, "ok"],
+              ["Franco", resumen.FRANCO, "muted"],
+              ["Vacaciones", resumen.VACACIONES, "info"],
+              ["Calamidad", resumen.CALAMIDAD, "warn"],
+              ["Arresto", resumen.ARRESTO, "danger"],
+            ].map(([label, val, tone]) => (
+              <article key={label} className={`panel-card dir-kpi tone-${tone}`}>
+                <span>{label}</span>
+                <strong>{val ?? 0}</strong>
+              </article>
+            ))}
+          </div>
+
+          <div className="dir-filters panel-card">
+            <label>
+              Estado
+              <select value={filtro} onChange={(e) => setFiltro(e.target.value)}>
+                <option value="TODOS">Todos</option>
+                <option value="ACTIVO">Activo</option>
+                <option value="FRANCO">Franco</option>
+                <option value="VACACIONES">Vacaciones</option>
+                <option value="CALAMIDAD">Calamidad</option>
+                <option value="ARRESTO">Arresto</option>
+                <option value="PERMISO">Permiso</option>
+              </select>
+            </label>
+            <p className="mod-muted" style={{ margin: 0, alignSelf: "end" }}>
+              Disponibles para operar hoy: <strong>{data?.disponibles_hoy ?? 0}</strong> /{" "}
+              {data?.total ?? 0}
+            </p>
+          </div>
+
+          <section className="panel-card">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Rol</th>
+                  <th>Unidad</th>
+                  <th>Estado</th>
+                  <th>Detalle</th>
+                </tr>
+              </thead>
+              <tbody>
+                {personal.map((p) => (
+                  <tr key={p.id}>
+                    <td>
+                      <strong>{p.nombre}</strong>
+                      <div className="mod-muted">{p.email}</div>
+                    </td>
+                    <td>{p.rol_label}</td>
+                    <td>{p.unidad || p.jurisdiccion || "—"}</td>
+                    <td>
+                      <span className={`dir-badge tone-${ESTADO_TONE[p.estado] || "muted"}`}>
+                        {p.estado}
+                      </span>
+                    </td>
+                    <td>{p.estado_detalle}</td>
+                  </tr>
+                ))}
+                {!personal.length && (
+                  <tr>
+                    <td colSpan={5} className="mod-muted">
+                      No hay personal asignado a esta jurisdicción. Asigne
+                      `profile.jurisdiccion` a supervisores/agentes.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </section>
+        </>
+      ) : (
+        <div className="dir-split">
+          <form className="panel-card form-grid" onSubmit={submitEval}>
+            <h3 style={{ marginTop: 0, gridColumn: "1 / -1" }}>Nueva evaluación</h3>
+            <label>
+              Supervisor
+              <select
+                required
+                value={form.supervisor_id}
+                onChange={(e) => setForm({ ...form, supervisor_id: e.target.value })}
+              >
+                <option value="">Seleccione…</option>
+                {supervisores.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nombre} {s.unidad ? `· ${s.unidad}` : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Calificación (1–5)
+              <input
+                type="number"
+                min={1}
+                max={5}
+                required
+                value={form.calificacion}
+                onChange={(e) => setForm({ ...form, calificacion: e.target.value })}
+              />
+            </label>
+            <label>
+              Periodo
+              <input
+                value={form.periodo}
+                onChange={(e) => setForm({ ...form, periodo: e.target.value })}
+                placeholder="2026-08 / Trimestre 3"
+              />
+            </label>
+            <label className="full">
+              Anotación de desempeño
+              <textarea
+                rows={4}
+                value={form.anotacion}
+                onChange={(e) => setForm({ ...form, anotacion: e.target.value })}
+                placeholder="Fortalezas, debilidades, acuerdos de mejora…"
+              />
+            </label>
+            <button type="submit" className="btn-accent full">
+              Guardar evaluación
+            </button>
+          </form>
+
+          <section className="panel-card">
+            <h3 style={{ marginTop: 0 }}>Historial de evaluaciones</h3>
+            <div className="dir-eval-list">
+              {evals.map((e) => (
+                <article key={e.id} className="dir-eval-card">
+                  <div className="dir-eval-top">
+                    <strong>{e.supervisor}</strong>
+                    <span className="dir-badge tone-info">{e.calificacion}/5</span>
+                  </div>
+                  <p className="mod-muted">
+                    {e.unidad || "—"} · {e.periodo || "Sin periodo"}
+                  </p>
+                  <p>{e.anotacion || "Sin anotación."}</p>
+                  <button type="button" className="btn-ghost" onClick={() => removeEval(e.id)}>
+                    Eliminar
+                  </button>
+                </article>
+              ))}
+              {!evals.length && <p className="mod-muted">Aún no hay evaluaciones registradas.</p>}
+            </div>
+          </section>
+        </div>
+      )}
+    </div>
+  );
+}

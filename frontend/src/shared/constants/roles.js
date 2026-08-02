@@ -111,9 +111,36 @@ export const ROLES = {
     icon: "map",
     accent: "#2f4d8a",
     modules: [
-      { slug: "dashboard", label: "Dashboard", icon: "dashboard", path: "dashboard" },
-      { slug: "zonas", label: "Zonas", icon: "location_city", path: "zonas" },
-      { slug: "operaciones", label: "Operaciones", icon: "campaign", path: "operaciones" },
+      {
+        slug: "inteligencia_tactica",
+        label: "Inteligencia Táctica",
+        icon: "analytics",
+        path: "inteligencia",
+      },
+      {
+        slug: "supervision_casos",
+        label: "Supervisión de Casos",
+        icon: "folder_shared",
+        path: "supervision",
+      },
+      {
+        slug: "personal_regional",
+        label: "Personal Regional",
+        icon: "groups",
+        path: "personal",
+      },
+      {
+        slug: "reportes_zona",
+        label: "Reportes de Zona",
+        icon: "summarize",
+        path: "reportes",
+      },
+      {
+        slug: "comunicacion_vertical",
+        label: "Comunicación Vertical",
+        icon: "campaign",
+        path: "comunicacion",
+      },
     ],
   },
   supervisor_unidad: {
@@ -224,8 +251,32 @@ export const ROLES = {
     accent: "#5a3d1e",
     modules: [
       { slug: "dashboard", label: "Dashboard", icon: "dashboard", path: "dashboard" },
-      { slug: "casos", label: "Casos", icon: "folder_open", path: "casos" },
-      { slug: "evidencias", label: "Evidencias", icon: "inventory_2", path: "evidencias" },
+      {
+        slug: "expedientes",
+        label: "Gestión de Expedientes",
+        icon: "folder_open",
+        children: [
+          {
+            slug: "casos",
+            label: "Bandeja de Casos",
+            icon: "folder_shared",
+            path: "casos",
+          },
+        ],
+      },
+      {
+        slug: "actividades",
+        label: "Documentación Legal",
+        icon: "gavel",
+        children: [
+          {
+            slug: "actividades_doc",
+            label: "Bitácora y Solicitudes",
+            icon: "menu_book",
+            path: "actividades",
+          },
+        ],
+      },
     ],
   },
   agente_operativo: {

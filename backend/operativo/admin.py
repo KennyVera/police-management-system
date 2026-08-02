@@ -3,13 +3,21 @@ from django.contrib import admin
 from operativo.models import (
     AlertaDespacho,
     AsignacionDiaria,
+    BienInvestigado,
+    BitacoraInvestigacion,
     Escuadra,
+    EvidenciaCaso,
+    ExpedienteCaso,
     GestionHorario,
+    InformeInvestigativo,
+    InvolucradoExpediente,
     MultimediaEvidencia,
+    MovimientoCustodia,
     Notificacion,
     NovedadIncidente,
     OrdenAdicional,
     ParteAprehension,
+    SolicitudFiscal,
     VehiculoFlota,
 )
 
@@ -72,3 +80,57 @@ class EscuadraAdmin(admin.ModelAdmin):
 class GestionHorarioAdmin(admin.ModelAdmin):
     list_display = ("id", "tipo", "agente", "fecha", "estado")
     list_filter = ("tipo", "estado")
+
+
+@admin.register(ExpedienteCaso)
+class ExpedienteCasoAdmin(admin.ModelAdmin):
+    list_display = (
+        "numero_expediente",
+        "titulo",
+        "estado",
+        "prioridad",
+        "bloqueado",
+        "detective_asignado",
+    )
+    list_filter = ("estado", "prioridad", "bloqueado", "origen_documento")
+    search_fields = ("numero_expediente", "titulo")
+
+
+@admin.register(InvolucradoExpediente)
+class InvolucradoExpedienteAdmin(admin.ModelAdmin):
+    list_display = ("id", "expediente", "tipo", "nombres", "apellidos", "cedula")
+    list_filter = ("tipo",)
+
+
+@admin.register(EvidenciaCaso)
+class EvidenciaCasoAdmin(admin.ModelAdmin):
+    list_display = ("codigo", "tipo", "expediente", "custodio_actual", "creado_en")
+    list_filter = ("tipo", "categoria_fisica")
+
+
+@admin.register(MovimientoCustodia)
+class MovimientoCustodiaAdmin(admin.ModelAdmin):
+    list_display = ("id", "evidencia", "destino", "recibido_por", "fecha_hora")
+
+
+@admin.register(BitacoraInvestigacion)
+class BitacoraInvestigacionAdmin(admin.ModelAdmin):
+    list_display = ("id", "expediente", "tipo", "fecha_hora", "registrado_por")
+    list_filter = ("tipo",)
+
+
+@admin.register(BienInvestigado)
+class BienInvestigadoAdmin(admin.ModelAdmin):
+    list_display = ("id", "expediente", "tipo", "identificador")
+    list_filter = ("tipo",)
+
+
+@admin.register(SolicitudFiscal)
+class SolicitudFiscalAdmin(admin.ModelAdmin):
+    list_display = ("numero", "tipo", "estado", "expediente", "creado_en")
+    list_filter = ("tipo", "estado")
+
+
+@admin.register(InformeInvestigativo)
+class InformeInvestigativoAdmin(admin.ModelAdmin):
+    list_display = ("id", "expediente", "titulo", "elaborado_por", "creado_en")

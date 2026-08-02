@@ -1,0 +1,212 @@
+.casos-filters {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.casos-filters-head {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  color: #1a2338;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.casos-filters-head .material-symbols-outlined {
+  color: #7c5cbf;
+  font-size: 1.15rem;
+}
+
+.casos-filters-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 0.9fr 0.9fr;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.casos-filters-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.casos-filters label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+.casos-filters input,
+.casos-filters select {
+  border: 1px solid #e5e9f2;
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  font: inherit;
+  background: #fff;
+  color: #1a2338;
+  min-width: 0;
+}
+
+.casos-filters-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: end;
+}
+
+.casos-table-wrap {
+  overflow-x: auto;
+}
+
+.casos-codigo strong {
+  display: block;
+  color: #1a2338;
+}
+
+.casos-codigo span {
+  color: #8b95a8;
+  font-size: 0.78rem;
+}
+
+.casos-delito strong {
+  display: block;
+}
+
+.casos-delito span {
+  color: #8b95a8;
+  font-size: 0.78rem;
+}
+
+.casos-persona strong {
+  display: block;
+}
+
+.casos-persona span {
+  color: #8b95a8;
+  font-size: 0.78rem;
+}
+
+.badge-prioridad {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.22rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.badge-prioridad.ALTA,
+.badge-prioridad.CRITICA {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.badge-prioridad.CRITICA {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.badge-prioridad.MEDIA {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.badge-prioridad.BAJA {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badge-estado.INDAGACION_PREVIA {
+  background: #dbeafe;
+  color: #1d4ed8;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.badge-estado.INSTRUCCION_FISCAL {
+  background: #fef3c7;
+  color: #b45309;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.badge-estado.CERRADO {
+  background: #eaf8ef;
+  color: #1f7a45;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.badge-estado.SUSPENDIDO {
+  background: #f3f4f6;
+  color: #6b7280;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.badge-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: currentColor;
+  display: inline-block;
+}
+
+.casos-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.85rem;
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.casos-pager {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.casos-pager button {
+  border: 1px solid #e5e9f2;
+  background: #fff;
+  border-radius: 8px;
+  min-width: 2rem;
+  height: 2rem;
+  cursor: pointer;
+  color: #5b6478;
+  font: inherit;
+}
+
+.casos-pager button.active {
+  background: #7c5cbf;
+  border-color: #7c5cbf;
+  color: #fff;
+  font-weight: 700;
+}
+
+.casos-detail-modal {
+  width: min(720px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+}
+
+@media (max-width: 1100px) {
+  .casos-filters-grid,
+  .casos-filters-grid-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .casos-filters-grid,
+  .casos-filters-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}

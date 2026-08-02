@@ -1,0 +1,265 @@
+.ev-layout {
+  display: grid;
+  grid-template-columns: 1.55fr 0.85fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.ev-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.85rem;
+  font-size: 1rem;
+  color: #1a2338;
+}
+
+.ev-section-title .material-symbols-outlined {
+  color: #7c5cbf;
+}
+
+.ev-cards {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.ev-card,
+.ev-upload-card,
+.ev-empty {
+  background: #fff;
+  border: 1px solid #e8ecf3;
+  border-radius: 14px;
+  padding: 1rem 1.05rem;
+  box-shadow: 0 6px 18px rgba(30, 42, 74, 0.04);
+}
+
+.ev-empty {
+  color: #8b95a8;
+}
+
+.ev-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.ev-file-name {
+  display: block;
+  color: #1a2338;
+  font-size: 0.98rem;
+}
+
+.ev-path {
+  margin-top: 0.25rem;
+  color: #8b95a8;
+  font-size: 0.75rem;
+  word-break: break-all;
+}
+
+.ev-badge-ok {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 0.22rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: #eaf8ef;
+  color: #1f7a45;
+  white-space: nowrap;
+}
+
+.ev-hash {
+  margin-top: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  background: #f6f7fb;
+  border-radius: 10px;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.ev-hash span {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #7c5cbf;
+  letter-spacing: 0.04em;
+}
+
+.ev-hash code {
+  font-size: 0.72rem;
+  color: #4b5563;
+  word-break: break-all;
+}
+
+.ev-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.65rem;
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.ev-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.ev-actions a {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.ev-status-row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr auto;
+  gap: 0.55rem;
+  align-items: end;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #eef1f6;
+}
+
+.ev-status-row label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+.ev-status-row select,
+.ev-status-row input {
+  border: 1px solid #e5e9f2;
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
+  font: inherit;
+  background: #fff;
+}
+
+.ev-upload-label {
+  margin: 0 0 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+.ev-drop {
+  border: 1.5px dashed #d5d9e4;
+  border-radius: 12px;
+  padding: 1.1rem;
+  display: grid;
+  gap: 0.65rem;
+  place-items: center;
+  background: #fafbfd;
+  text-align: center;
+}
+
+.ev-hint {
+  margin: 0.75rem 0;
+  color: #8b95a8;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.ev-upload-submit {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 980px) {
+  .ev-layout,
+  .ev-status-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ev-preview-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  background: rgba(16, 24, 40, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.ev-preview-modal {
+  width: min(880px, 100%);
+  max-height: 92vh;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 60px rgba(16, 24, 40, 0.28);
+}
+
+.ev-preview-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid #eef1f6;
+}
+
+.ev-preview-head-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.ev-preview-body {
+  padding: 1rem;
+  overflow: auto;
+  background: #0f172a0a;
+  display: grid;
+  place-items: center;
+  min-height: 280px;
+}
+
+.ev-preview-body img,
+.ev-preview-body video {
+  max-width: 100%;
+  max-height: 70vh;
+  border-radius: 10px;
+  background: #111;
+}
+
+.ev-preview-body iframe {
+  width: 100%;
+  height: 70vh;
+  border: 0;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.ev-audio-box {
+  width: min(480px, 100%);
+  display: grid;
+  gap: 0.75rem;
+  place-items: center;
+  text-align: center;
+  padding: 1.25rem;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e8ecf3;
+}
+
+.ev-audio-box .material-symbols-outlined {
+  font-size: 2.4rem;
+  color: #7c5cbf;
+}
+
+.ev-audio-box audio {
+  width: 100%;
+}
+
+.ev-audio-box p {
+  margin: 0;
+  color: #6b7280;
+}

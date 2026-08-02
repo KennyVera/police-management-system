@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "organizacion",
     "catalogos",
     "operativo",
+    "tactico",
 ]
 
 MIDDLEWARE = [

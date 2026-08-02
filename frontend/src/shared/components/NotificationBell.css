@@ -90,6 +90,15 @@
   color: #1f7a45;
 }
 
+.notif-type.DISPOSICION_ZONA {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.notif-item.unread .notif-type.DISPOSICION_ZONA {
+  box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.2);
+}
+
 .notif-body {
   display: grid;
   gap: 0.15rem;

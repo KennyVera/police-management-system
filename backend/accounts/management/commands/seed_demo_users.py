@@ -2,6 +2,48 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 
 from accounts.models import SystemRole, UserProfile
+from organizacion.models import Jurisdiction, JurisdictionType
+
+
+def ensure_zona_norte_scope():
+    """Árbol mínimo alineado con sector_zona del fact en ClickHouse (Sector 12)."""
+    zona, _ = Jurisdiction.objects.get_or_create(
+        codigo="ZN-NORTE",
+        defaults={
+            "tipo": JurisdictionType.ZONA,
+            "nombre": "Zona Norte",
+            "activo": True,
+        },
+    )
+    if zona.nombre != "Zona Norte":
+        zona.nombre = "Zona Norte"
+        zona.tipo = JurisdictionType.ZONA
+        zona.activo = True
+        zona.save(update_fields=["nombre", "tipo", "activo", "actualizado_en"])
+
+    sector, _ = Jurisdiction.objects.get_or_create(
+        codigo="SEC-12",
+        defaults={
+            "tipo": JurisdictionType.DISTRITO,
+            "nombre": "Sector 12",
+            "parent": zona,
+            "activo": True,
+        },
+    )
+    changed = False
+    if sector.parent_id != zona.id:
+        sector.parent = zona
+        changed = True
+    if sector.nombre != "Sector 12":
+        sector.nombre = "Sector 12"
+        changed = True
+    if not sector.activo:
+        sector.activo = True
+        changed = True
+    if changed:
+        sector.save()
+    return zona
+
 
 DEMO_USERS = [
     {
@@ -72,6 +114,7 @@ class Command(BaseCommand):
     help = "Crea usuarios demo (uno por rol de acceso)"
 
     def handle(self, *args, **options):
+        zona_norte = ensure_zona_norte_scope()
         for item in DEMO_USERS:
             user, created = User.objects.get_or_create(
                 username=item["username"],
@@ -88,14 +131,27 @@ class Command(BaseCommand):
             user.set_password(item["password"])
             user.save()
 
+            defaults = {
+                "role": item["role"],
+                "rango_tipico": item.get("rango_tipico", ""),
+                "unidad": item.get("unidad", ""),
+                "zona": item.get("zona", ""),
+            }
+            if item["role"] == SystemRole.DIRECTOR_ZONA:
+                defaults["jurisdiccion"] = zona_norte
+            if item["role"] == SystemRole.SUPERVISOR_UNIDAD:
+                defaults["jurisdiccion"] = zona_norte
+                defaults["zona"] = "Zona Norte"
+            if item["role"] == SystemRole.AGENTE_OPERATIVO:
+                defaults["jurisdiccion"] = zona_norte
+                defaults["zona"] = "Sector 12"
+            if item["role"] == SystemRole.DETECTIVE:
+                defaults["jurisdiccion"] = zona_norte
+                defaults["zona"] = "Zona Norte"
+
             UserProfile.objects.update_or_create(
                 user=user,
-                defaults={
-                    "role": item["role"],
-                    "rango_tipico": item.get("rango_tipico", ""),
-                    "unidad": item.get("unidad", ""),
-                    "zona": item.get("zona", ""),
-                },
+                defaults=defaults,
             )
             state = "creado" if created else "actualizado"
             self.stdout.write(self.style.SUCCESS(f"{state}: {item['email']} → {item['role']}"))

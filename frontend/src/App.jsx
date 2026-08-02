@@ -20,9 +20,11 @@ import VisorIndicadores from "./roles/visor_ejecutivo/modulos/indicadores/Page";
 import VisorReportes from "./roles/visor_ejecutivo/modulos/reportes_estrategicos/Page";
 
 import DirectorLayout from "./roles/director_zona/Layout";
-import DirectorDashboard from "./roles/director_zona/modulos/dashboard/Page";
-import DirectorZonas from "./roles/director_zona/modulos/zonas/Page";
-import DirectorOperaciones from "./roles/director_zona/modulos/operaciones/Page";
+import DirectorInteligencia from "./roles/director_zona/modulos/inteligencia/Page";
+import DirectorSupervision from "./roles/director_zona/modulos/supervision/Page";
+import DirectorPersonal from "./roles/director_zona/modulos/personal/Page";
+import DirectorReportes from "./roles/director_zona/modulos/reportes/Page";
+import DirectorComunicacion from "./roles/director_zona/modulos/comunicacion/Page";
 
 import SupervisorLayout from "./roles/supervisor_unidad/Layout";
 import SupervisorDashboard from "./roles/supervisor_unidad/modulos/dashboard/Page";
@@ -40,7 +42,7 @@ import SupervisorHistorial from "./roles/supervisor_unidad/modulos/control_calid
 import DetectiveLayout from "./roles/detective/Layout";
 import DetectiveDashboard from "./roles/detective/modulos/dashboard/Page";
 import DetectiveCasos from "./roles/detective/modulos/casos/Page";
-import DetectiveEvidencias from "./roles/detective/modulos/evidencias/Page";
+import DetectiveActividades from "./roles/detective/modulos/actividades/Page";
 
 import AgenteLayout from "./roles/agente_operativo/Layout";
 import AgenteDashboard from "./roles/agente_operativo/modulos/dashboard/Page";
@@ -143,10 +145,15 @@ export default function App() {
           </Protected>
         }
       >
-        <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<DirectorDashboard />} />
-        <Route path="zonas" element={<DirectorZonas />} />
-        <Route path="operaciones" element={<DirectorOperaciones />} />
+        <Route index element={<Navigate to="inteligencia" replace />} />
+        <Route path="inteligencia" element={<DirectorInteligencia />} />
+        <Route path="supervision" element={<DirectorSupervision />} />
+        <Route path="personal" element={<DirectorPersonal />} />
+        <Route path="reportes" element={<DirectorReportes />} />
+        <Route path="comunicacion" element={<DirectorComunicacion />} />
+        <Route path="dashboard" element={<Navigate to="/app/director_zona/inteligencia" replace />} />
+        <Route path="zonas" element={<Navigate to="/app/director_zona/inteligencia" replace />} />
+        <Route path="operaciones" element={<Navigate to="/app/director_zona/inteligencia" replace />} />
       </Route>
 
       <Route
@@ -182,7 +189,7 @@ export default function App() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<DetectiveDashboard />} />
         <Route path="casos" element={<DetectiveCasos />} />
-        <Route path="evidencias" element={<DetectiveEvidencias />} />
+        <Route path="actividades" element={<DetectiveActividades />} />
       </Route>
 
       <Route

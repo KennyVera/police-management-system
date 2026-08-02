@@ -5,13 +5,21 @@ from catalogos.models import TipoDelito
 from operativo.models import (
     AlertaDespacho,
     AsignacionDiaria,
+    BienInvestigado,
+    BitacoraInvestigacion,
     Escuadra,
+    EvidenciaCaso,
+    ExpedienteCaso,
     GestionHorario,
+    InformeInvestigativo,
+    InvolucradoExpediente,
     MultimediaEvidencia,
+    MovimientoCustodia,
     Notificacion,
     NovedadIncidente,
     OrdenAdicional,
     ParteAprehension,
+    SolicitudFiscal,
     VehiculoFlota,
 )
 
@@ -730,3 +738,459 @@ class OrdenAdicionalSerializer(serializers.ModelSerializer):
 
     def get_supervisor_info(self, obj):
         return _user_label(obj.asignada_por)
+
+
+class InvolucradoExpedienteSerializer(serializers.ModelSerializer):
+    tipo_label = serializers.CharField(source="get_tipo_display", read_only=True)
+    genero_label = serializers.CharField(source="get_genero_display", read_only=True)
+    estado_civil_label = serializers.CharField(
+        source="get_estado_civil_display", read_only=True
+    )
+    tiene_foto = serializers.SerializerMethodField()
+    edad = serializers.SerializerMethodField()
+
+    class Meta:
+        model = InvolucradoExpediente
+        fields = [
+            "id",
+            "expediente",
+            "tipo",
+            "tipo_label",
+            "nombres",
+            "apellidos",
+            "cedula",
+            "fecha_nacimiento",
+            "edad",
+            "alias",
+            "genero",
+            "genero_label",
+            "nacionalidad",
+            "telefono",
+            "direccion",
+            "ocupacion",
+            "estado_civil",
+            "estado_civil_label",
+            "observaciones",
+            "foto_nombre",
+            "foto_content_type",
+            "tiene_foto",
+            "creado_en",
+            "actualizado_en",
+        ]
+        read_only_fields = [
+            "id",
+            "tipo_label",
+            "genero_label",
+            "estado_civil_label",
+            "edad",
+            "foto_nombre",
+            "foto_content_type",
+            "tiene_foto",
+            "creado_en",
+            "actualizado_en",
+        ]
+
+    def get_tiene_foto(self, obj):
+        return bool(obj.foto_object_key)
+
+    def get_edad(self, obj):
+        if not obj.fecha_nacimiento:
+            return None
+        from datetime import date
+
+        today = date.today()
+        born = obj.fecha_nacimiento
+        return today.year - born.year - (
+            (today.month, today.day) < (born.month, born.day)
+        )
+
+
+class MovimientoCustodiaSerializer(serializers.ModelSerializer):
+    registrado_por_nombre = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MovimientoCustodia
+        fields = [
+            "id",
+            "evidencia",
+            "entregado_por",
+            "recibido_por",
+            "destino",
+            "motivo",
+            "observaciones",
+            "registrado_por",
+            "registrado_por_nombre",
+            "fecha_hora",
+            "creado_en",
+        ]
+        read_only_fields = [
+            "id",
+            "registrado_por",
+            "registrado_por_nombre",
+            "creado_en",
+        ]
+
+    def get_registrado_por_nombre(self, obj):
+        return _user_label(obj.registrado_por)
+
+
+class EvidenciaCasoSerializer(serializers.ModelSerializer):
+    tipo_label = serializers.CharField(source="get_tipo_display", read_only=True)
+    categoria_fisica_label = serializers.CharField(
+        source="get_categoria_fisica_display", read_only=True
+    )
+    estado_custodia_label = serializers.CharField(
+        source="get_estado_custodia_display", read_only=True
+    )
+    url = serializers.SerializerMethodField()
+    path_uri = serializers.SerializerMethodField()
+    tamanio_mb = serializers.SerializerMethodField()
+    categoria_media = serializers.SerializerMethodField()
+    movimientos = MovimientoCustodiaSerializer(many=True, read_only=True)
+    expediente_numero = serializers.CharField(
+        source="expediente.numero_expediente", read_only=True, default=""
+    )
+
+    class Meta:
+        model = EvidenciaCaso
+        fields = [
+            "id",
+            "expediente",
+            "expediente_numero",
+            "tipo",
+            "tipo_label",
+            "codigo",
+            "descripcion",
+            "nombre_archivo",
+            "content_type",
+            "tamanio_bytes",
+            "tamanio_mb",
+            "bucket",
+            "object_key",
+            "path_uri",
+            "sha256",
+            "estado_custodia",
+            "estado_custodia_label",
+            "categoria_media",
+            "url",
+            "categoria_fisica",
+            "categoria_fisica_label",
+            "numero_serie",
+            "peso",
+            "caracteristicas",
+            "custodio_actual",
+            "ubicacion_actual",
+            "movimientos",
+            "creado_en",
+            "actualizado_en",
+        ]
+        read_only_fields = [
+            "id",
+            "tipo_label",
+            "categoria_fisica_label",
+            "estado_custodia_label",
+            "codigo",
+            "nombre_archivo",
+            "content_type",
+            "tamanio_bytes",
+            "tamanio_mb",
+            "bucket",
+            "object_key",
+            "path_uri",
+            "sha256",
+            "categoria_media",
+            "url",
+            "expediente_numero",
+            "movimientos",
+            "creado_en",
+            "actualizado_en",
+        ]
+
+    def get_url(self, obj):
+        if not obj.object_key:
+            return None
+        from operativo.minio_service import get_presigned_url
+
+        return get_presigned_url(obj.object_key, obj.bucket or None)
+
+    def get_path_uri(self, obj):
+        if not obj.object_key:
+            return ""
+        bucket = obj.bucket or "evidencias"
+        return f"s3://{bucket}/{obj.object_key}"
+
+    def get_tamanio_mb(self, obj):
+        return round((obj.tamanio_bytes or 0) / (1024 * 1024), 3)
+
+    def get_categoria_media(self, obj):
+        ct = (obj.content_type or "").lower()
+        if ct.startswith("image/"):
+            return "Imagen"
+        if ct.startswith("audio/"):
+            return "Audio"
+        if ct.startswith("video/"):
+            return "Video"
+        if "pdf" in ct or "document" in ct or "text" in ct:
+            return "Documento"
+        if obj.tipo == EvidenciaCaso.Tipo.FISICA:
+            return obj.get_categoria_fisica_display() or "Física"
+        return "Multimedia"
+
+
+class BitacoraInvestigacionSerializer(serializers.ModelSerializer):
+    tipo_label = serializers.CharField(source="get_tipo_display", read_only=True)
+    registrado_por_nombre = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BitacoraInvestigacion
+        fields = [
+            "id",
+            "expediente",
+            "tipo",
+            "tipo_label",
+            "fecha_hora",
+            "lugar",
+            "relato",
+            "registrado_por",
+            "registrado_por_nombre",
+            "creado_en",
+        ]
+        read_only_fields = [
+            "id",
+            "tipo_label",
+            "registrado_por",
+            "registrado_por_nombre",
+            "creado_en",
+        ]
+
+    def get_registrado_por_nombre(self, obj):
+        return _user_label(obj.registrado_por)
+
+
+class BienInvestigadoSerializer(serializers.ModelSerializer):
+    tipo_label = serializers.CharField(source="get_tipo_display", read_only=True)
+    registrado_por_nombre = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BienInvestigado
+        fields = [
+            "id",
+            "expediente",
+            "tipo",
+            "tipo_label",
+            "identificador",
+            "descripcion",
+            "registrado_por",
+            "registrado_por_nombre",
+            "creado_en",
+        ]
+        read_only_fields = [
+            "id",
+            "tipo_label",
+            "registrado_por",
+            "registrado_por_nombre",
+            "creado_en",
+        ]
+
+    def get_registrado_por_nombre(self, obj):
+        return _user_label(obj.registrado_por)
+
+
+class SolicitudFiscalSerializer(serializers.ModelSerializer):
+    tipo_label = serializers.CharField(source="get_tipo_display", read_only=True)
+    estado_label = serializers.CharField(source="get_estado_display", read_only=True)
+    creado_por_nombre = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SolicitudFiscal
+        fields = [
+            "id",
+            "expediente",
+            "tipo",
+            "tipo_label",
+            "numero",
+            "fundamento",
+            "pedimento",
+            "estado",
+            "estado_label",
+            "creado_por",
+            "creado_por_nombre",
+            "enviado_en",
+            "creado_en",
+            "actualizado_en",
+        ]
+        read_only_fields = [
+            "id",
+            "tipo_label",
+            "estado_label",
+            "numero",
+            "creado_por",
+            "creado_por_nombre",
+            "enviado_en",
+            "creado_en",
+            "actualizado_en",
+        ]
+
+    def get_creado_por_nombre(self, obj):
+        return _user_label(obj.creado_por)
+
+
+class InformeInvestigativoSerializer(serializers.ModelSerializer):
+    elaborado_por_nombre = serializers.SerializerMethodField()
+    paquete_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = InformeInvestigativo
+        fields = [
+            "id",
+            "expediente",
+            "titulo",
+            "contenido",
+            "conclusiones",
+            "elaborado_por",
+            "elaborado_por_nombre",
+            "paquete_bucket",
+            "paquete_object_key",
+            "paquete_url",
+            "creado_en",
+        ]
+        read_only_fields = [
+            "id",
+            "elaborado_por",
+            "elaborado_por_nombre",
+            "paquete_bucket",
+            "paquete_object_key",
+            "paquete_url",
+            "creado_en",
+        ]
+
+    def get_elaborado_por_nombre(self, obj):
+        return _user_label(obj.elaborado_por)
+
+    def get_paquete_url(self, obj):
+        if not obj.paquete_object_key:
+            return None
+        from operativo.minio_service import get_presigned_url
+
+        return get_presigned_url(obj.paquete_object_key, obj.paquete_bucket or None)
+
+
+class ExpedienteCasoSerializer(serializers.ModelSerializer):
+    estado_label = serializers.CharField(source="get_estado_display", read_only=True)
+    prioridad_label = serializers.CharField(source="get_prioridad_display", read_only=True)
+    origen_documento_label = serializers.CharField(
+        source="get_origen_documento_display", read_only=True
+    )
+    tipo_delito_nombre = serializers.CharField(
+        source="tipo_delito.nombre", read_only=True, default=None
+    )
+    tipo_delito_articulo = serializers.CharField(
+        source="tipo_delito.articulo_penal", read_only=True, default=""
+    )
+    detective_info = serializers.SerializerMethodField()
+    jefe_info = serializers.SerializerMethodField()
+    involucrados = InvolucradoExpedienteSerializer(many=True, read_only=True)
+    victima = serializers.SerializerMethodField()
+    evidencias_count = serializers.SerializerMethodField()
+    bitacora_count = serializers.SerializerMethodField()
+    tiene_informe = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ExpedienteCaso
+        fields = [
+            "id",
+            "numero_expediente",
+            "codigo_caso",
+            "titulo",
+            "descripcion",
+            "estado",
+            "estado_label",
+            "prioridad",
+            "prioridad_label",
+            "detective_asignado",
+            "detective_info",
+            "jefe_asignador",
+            "jefe_info",
+            "tipo_delito",
+            "tipo_delito_nombre",
+            "tipo_delito_articulo",
+            "origen_documento",
+            "origen_documento_label",
+            "parte_origen",
+            "documento_base",
+            "unidad",
+            "fecha_hechos",
+            "lugar",
+            "observaciones",
+            "bloqueado",
+            "cerrado_en",
+            "involucrados",
+            "victima",
+            "evidencias_count",
+            "bitacora_count",
+            "tiene_informe",
+            "creado_en",
+            "actualizado_en",
+        ]
+        read_only_fields = [
+            "id",
+            "numero_expediente",
+            "codigo_caso",
+            "estado_label",
+            "prioridad_label",
+            "origen_documento_label",
+            "detective_info",
+            "jefe_info",
+            "tipo_delito_nombre",
+            "tipo_delito_articulo",
+            "bloqueado",
+            "cerrado_en",
+            "involucrados",
+            "victima",
+            "evidencias_count",
+            "bitacora_count",
+            "tiene_informe",
+            "creado_en",
+            "actualizado_en",
+        ]
+
+    def get_detective_info(self, obj):
+        return _user_label(obj.detective_asignado)
+
+    def get_jefe_info(self, obj):
+        return _user_label(obj.jefe_asignador) if obj.jefe_asignador_id else None
+
+    def get_victima(self, obj):
+        prefs = ("VICTIMA", "DENUNCIANTE", "TESTIGO", "SOSPECHOSO")
+        by_tipo = {i.tipo: i for i in obj.involucrados.all()}
+        inv = None
+        for t in prefs:
+            if t in by_tipo:
+                inv = by_tipo[t]
+                break
+        if not inv:
+            inv = next(iter(obj.involucrados.all()), None)
+        if not inv:
+            return None
+        return {
+            "nombre": f"{inv.nombres} {inv.apellidos}".strip(),
+            "cedula": inv.cedula or "",
+            "tipo": inv.tipo,
+            "tipo_label": inv.get_tipo_display(),
+        }
+
+    def get_evidencias_count(self, obj):
+        return obj.evidencias.count()
+
+    def get_bitacora_count(self, obj):
+        return obj.bitacora.count()
+
+    def get_tiene_informe(self, obj):
+        return hasattr(obj, "informe_final")
+
+    def create(self, validated_data):
+        obj = ExpedienteCaso(**validated_data)
+        obj.ensure_numero()
+        obj.ensure_codigo_caso()
+        obj.save()
+        return obj

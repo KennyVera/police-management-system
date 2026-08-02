@@ -108,7 +108,11 @@ export default function NotificationBell() {
                             ? "cancel"
                             : n.tipo === "PARTE_APROBADO"
                               ? "check_circle"
-                              : "notifications"
+                              : n.tipo === "DISPOSICION_ZONA"
+                                ? "campaign"
+                                : n.tipo === "EXPEDIENTE_ASIGNADO"
+                                  ? "folder_open"
+                                  : "notifications"
                         }
                       />
                     </span>
