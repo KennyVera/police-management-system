@@ -73,7 +73,7 @@ export default function ParteRevisionPanel({
 
       <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
         <button type="button" className="btn-ghost" disabled={busy} onClick={onVerPdf}>
-          <MaterialIcon name="picture_as_pdf" />
+          <MaterialIcon name="visibility" />
           Ver PDF
         </button>
         <button type="button" className="btn-ghost" disabled={busy} onClick={onDescargarPdf}>

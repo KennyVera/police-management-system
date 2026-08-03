@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
+import { localISODate } from "../../../../shared/utils/date";
 import { supervisorApi } from "../../api";
 import EscuadrasLista from "./componentes/EscuadrasLista";
 import EscuadraFormulario from "./componentes/EscuadraFormulario";
@@ -8,7 +9,7 @@ import "./componentes/EscuadrasPage.css";
 import "../../../../shared/styles/ModuloPage.css";
 
 const emptyFilters = () => ({
-  fecha: new Date().toISOString().slice(0, 10),
+  fecha: localISODate(),
   escuadra: "",
   lider: "",
   vehiculo: "",
@@ -220,6 +221,7 @@ export default function EscuadrasPage() {
       ) : (
         <EscuadrasLista
           items={filtered}
+          fecha={applied.fecha}
           onEditar={(e) => {
             setEscuadraEditar(e);
             setShowForm(true);

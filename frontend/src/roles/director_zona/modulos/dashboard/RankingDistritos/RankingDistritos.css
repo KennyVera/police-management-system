@@ -42,17 +42,38 @@
 .dz-scatter-svg {
   width: 100%;
   height: auto;
+  overflow: visible;
 }
 
 .dz-axis {
+  font-size: 11px;
+  font-weight: 700;
+  fill: #475569;
+}
+
+.dz-tick {
   font-size: 10px;
-  fill: #9ca3af;
+  font-weight: 600;
+  fill: #64748b;
 }
 
 .dz-scatter-label {
-  font-size: 10px;
-  fill: #4b5563;
+  font-size: 11px;
+  fill: #1e293b;
+  font-weight: 700;
+}
+
+.dz-scatter-meta {
+  font-size: 9px;
+  fill: #64748b;
   font-weight: 600;
+}
+
+.dz-scatter-idx {
+  font-size: 9px;
+  font-weight: 800;
+  fill: #fff;
+  pointer-events: none;
 }
 
 .dz-cuad-legend {

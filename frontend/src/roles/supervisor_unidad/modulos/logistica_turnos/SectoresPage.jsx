@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
+import { localISODate } from "../../../../shared/utils/date";
 import { supervisorApi } from "../../api";
 import "../../../../shared/styles/ModuloPage.css";
 
 export default function SectoresPage() {
   const [items, setItems] = useState([]);
   const [meta, setMeta] = useState({ agentes: [], zonas: [] });
-  const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
+  const [fecha, setFecha] = useState(localISODate());
   const [form, setForm] = useState({
     agente: "",
     zona: "",

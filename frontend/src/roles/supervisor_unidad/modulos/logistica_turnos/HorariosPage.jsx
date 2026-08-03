@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
+import { localISODate } from "../../../../shared/utils/date";
 import { supervisorApi } from "../../api";
 import "../../../../shared/styles/ModuloPage.css";
 
@@ -8,7 +9,7 @@ export default function HorariosPage() {
   const [meta, setMeta] = useState({ agentes: [], tipos_horario: [] });
   const [form, setForm] = useState({
     agente: "",
-    fecha: new Date().toISOString().slice(0, 10),
+    fecha: localISODate(),
     tipo: "FORMACION",
     detalle: "",
     hora_formacion: "07:00",

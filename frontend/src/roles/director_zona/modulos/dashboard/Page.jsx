@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
 import { directorApi } from "../../api";
 import "../../../../shared/styles/ModuloPage.css";
@@ -11,7 +11,12 @@ function defaultRange() {
   const hasta = new Date();
   const desde = new Date();
   desde.setDate(hasta.getDate() - 30);
-  const iso = (d) => d.toISOString().slice(0, 10);
+  const iso = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
   return { desde: iso(desde), hasta: iso(hasta) };
 }
 
@@ -39,16 +44,37 @@ export default function DirectorDashboard() {
   const [filters, setFilters] = useState(draft);
   const [panel, setPanel] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState("");
+  const [exportError, setExportError] = useState("");
+  const [mapaData, setMapaData] = useState(null);
+  const panelRef = useRef(null);
+  const exportingRef = useRef(false);
+  const onMapaChange = useCallback((data) => setMapaData(data), []);
+
+  useEffect(() => {
+    panelRef.current = panel;
+  }, [panel]);
+
+  useEffect(() => {
+    exportingRef.current = exporting;
+  }, [exporting]);
 
   const load = useCallback(async (active = filters) => {
+    if (exportingRef.current) return;
     setLoading(true);
     setError("");
     try {
       const data = await directorApi.panel(active);
       setPanel(data);
+      setError("");
     } catch (err) {
-      setError(err.message || "No se pudo cargar el panel táctico");
+      const msg = err.message || "No se pudo cargar el panel táctico";
+      if (panelRef.current) {
+        setError(`No se pudo actualizar (se mantienen los datos en pantalla): ${msg}`);
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -60,10 +86,12 @@ export default function DirectorDashboard() {
 
   function aplicar(e) {
     e?.preventDefault?.();
+    if (exporting) return;
     setFilters({ ...draft });
   }
 
   function limpiar() {
+    if (exporting) return;
     const range = defaultRange();
     const next = {
       fecha_desde: range.desde,
@@ -73,6 +101,41 @@ export default function DirectorDashboard() {
     };
     setDraft(next);
     setFilters(next);
+  }
+
+  async function exportarPdf() {
+    if (!panel) {
+      setExportError("Espere a que cargue el dashboard antes de exportar.");
+      return;
+    }
+    if (tab === "mapa" && !mapaData) {
+      setExportError("Espere a que cargue el mapa de calor antes de exportar.");
+      return;
+    }
+    setExporting(true);
+    exportingRef.current = true;
+    setExportError("");
+    try {
+      if (tab === "mapa") {
+        await directorApi.descargarDashboardPdf(filters, panel, {
+          vista: "mapa",
+          mapa: mapaData,
+          radar: panel.radar,
+        });
+      } else if (tab === "ranking") {
+        await directorApi.descargarDashboardPdf(filters, panel, {
+          vista: "ranking",
+          ranking: panel.ranking_eficiencia || [],
+        });
+      } else {
+        await directorApi.descargarDashboardPdf(filters, panel, { vista: "delitos" });
+      }
+    } catch (err) {
+      setExportError(err.message || "No se pudo exportar el PDF del dashboard");
+    } finally {
+      exportingRef.current = false;
+      setExporting(false);
+    }
   }
 
   const zona = panel?.jurisdiccion?.nombre || "su zona";
@@ -89,12 +152,48 @@ export default function DirectorDashboard() {
             Indicadores filtrados exclusivamente a su jurisdicción. ClickHouse responde en milisegundos.
           </p>
         </div>
-        <button type="button" className="dz-refresh" onClick={() => load()} disabled={loading}>
-          <MaterialIcon name="refresh" />
-          Actualizar
-          {panel?.actualizado_en && <small>· Hoy, {panel.actualizado_en}</small>}
-        </button>
+        <div className="dz-head-actions">
+          <button
+            type="button"
+            className="dz-btn-export"
+            onClick={exportarPdf}
+            disabled={
+              loading ||
+              exporting ||
+              !panel ||
+              (tab === "mapa" && !mapaData)
+            }
+            title={
+              tab === "mapa"
+                ? "Exportar Mapa de Calor a PDF"
+                : tab === "ranking"
+                  ? "Exportar Ranking Distritos a PDF"
+                  : "Exportar dashboard (Delitos Locales) a PDF"
+            }
+          >
+            <MaterialIcon name="picture_as_pdf" />
+            {exporting
+              ? "Generando…"
+              : tab === "mapa"
+                ? "Exportar PDF (Mapa)"
+                : tab === "ranking"
+                  ? "Exportar PDF (Ranking)"
+                  : "Exportar PDF"}
+          </button>
+          <button
+            type="button"
+            className="dz-refresh"
+            onClick={() => load()}
+            disabled={loading || exporting}
+          >
+            <MaterialIcon name="refresh" />
+            Actualizar
+            {panel?.actualizado_en && <small>· Hoy, {panel.actualizado_en}</small>}
+          </button>
+        </div>
       </header>
+
+      {exportError && <p className="dz-export-error">{exportError}</p>}
 
       <form className="dz-filters" onSubmit={aplicar}>
         <label>
@@ -260,7 +359,12 @@ export default function DirectorDashboard() {
 
       {tab === "delitos" && <DelitosLocales panel={panel} loading={loading} />}
       {tab === "mapa" && (
-        <MapaCalor filters={filters} radar={panel?.radar} loading={loading} />
+        <MapaCalor
+          filters={filters}
+          radar={panel?.radar}
+          loading={loading}
+          onMapaChange={onMapaChange}
+        />
       )}
       {tab === "ranking" && (
         <RankingDistritos

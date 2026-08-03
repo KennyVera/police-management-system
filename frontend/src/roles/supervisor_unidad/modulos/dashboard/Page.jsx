@@ -422,7 +422,7 @@ export default function Page() {
                       </td>
                       <td>
                         <Link
-                          to="/app/supervisor_unidad/control_calidad/pendientes"
+                          to={`/app/supervisor_unidad/control_calidad/pendientes?parte=${row.id}`}
                           className="btn-revisar"
                         >
                           Revisar

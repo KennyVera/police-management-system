@@ -53,9 +53,14 @@ def meta(request):
 @permission_classes([SupervisorOnly])
 def escuadras_collection(request):
     if request.method == "GET":
-        qs = Escuadra.objects.filter(activo=True).select_related(
-            "agente_lider", "supervisor", "agente_lider__profile", "vehiculo"
-        ).prefetch_related("companeros", "companeros__profile")
+        qs = (
+            Escuadra.objects.filter(activo=True, supervisor=request.user)
+            .select_related(
+                "agente_lider", "supervisor", "agente_lider__profile", "vehiculo"
+            )
+            .prefetch_related("companeros", "companeros__profile")
+            .order_by("nombre")
+        )
         fecha = request.query_params.get("fecha")
         if fecha:
             qs = qs.filter(fecha=fecha)

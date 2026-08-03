@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
 import PaginationBar from "../../../../shared/components/PaginationBar";
 import { supervisorApi, unwrapPage } from "../../api";
@@ -19,6 +20,9 @@ const PRIORIDADES = [
 ];
 
 export default function PendientesPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const focusParteId = Number(searchParams.get("parte") || 0) || null;
+
   const [items, setItems] = useState([]);
   const [selected, setSelected] = useState(null);
   const [motivo, setMotivo] = useState("");
@@ -26,7 +30,6 @@ export default function PendientesPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
-  const [pdfUrl, setPdfUrl] = useState(null);
 
   const [q, setQ] = useState("");
   const [qDebounced, setQDebounced] = useState("");
@@ -38,6 +41,52 @@ export default function PendientesPage() {
   const selectedIdRef = useRef(null);
   const reqIdRef = useRef(0);
   selectedIdRef.current = selected?.id ?? null;
+
+  // Abrir el parte indicado en ?parte=id (botón Revisar del dashboard)
+  useEffect(() => {
+    if (!focusParteId) return undefined;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const detail = await supervisorApi.getParte(focusParteId);
+        if (cancelled) return;
+        if (detail?.estado_revision === "EN_REVISION") {
+          setSelected(detail);
+          setMotivo("");
+          setOk("");
+          setError("");
+          if (detail.numero_caso) {
+            setQ(detail.numero_caso);
+            setQDebounced(detail.numero_caso);
+            setPage(1);
+          }
+        } else {
+          setError("Ese parte ya no está pendiente de revisión.");
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message || "No se pudo abrir el parte desde el dashboard.");
+        }
+      } finally {
+        if (!cancelled) {
+          setSearchParams(
+            (prev) => {
+              if (!prev.get("parte")) return prev;
+              const next = new URLSearchParams(prev);
+              next.delete("parte");
+              return next;
+            },
+            { replace: true }
+          );
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [focusParteId, setSearchParams]);
 
   // Búsqueda automática (sin botón Buscar)
   useEffect(() => {
@@ -82,16 +131,9 @@ export default function PendientesPage() {
           const refreshed = pageData.results.find((p) => p.id === sid);
           if (refreshed) {
             setSelected(refreshed);
-          } else {
-            try {
-              const detail = await supervisorApi.getParte(sid);
-              if (cancelled || reqId !== reqIdRef.current) return;
-              if (detail?.estado_revision === "EN_REVISION") setSelected(detail);
-              else setSelected(null);
-            } catch {
-              if (!cancelled) setSelected(null);
-            }
           }
+          // Si no está en la página actual, NO limpiar la selección
+          // (el panel derecho sigue mostrando el parte abierto).
         }
       } catch (err) {
         if (!cancelled && reqId === reqIdRef.current) setError(err.message);
@@ -106,11 +148,22 @@ export default function PendientesPage() {
     };
   }, [qDebounced, prioridad, page]);
 
-  useEffect(() => {
-    return () => {
-      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-    };
-  }, [pdfUrl]);
+  async function handleSelect(parte) {
+    if (!parte?.id) return;
+    // Abrir de inmediato con los datos de la fila (sin esperar red)
+    setSelected(parte);
+    setMotivo("");
+    setOk("");
+    setError("");
+    try {
+      const detail = await supervisorApi.getParte(parte.id);
+      if (detail?.id === parte.id) {
+        setSelected(detail);
+      }
+    } catch {
+      // Mantener la fila ya abierta aunque falle el detalle enriquecido
+    }
+  }
 
   async function reload() {
     const raw = await supervisorApi.listPendientes({
@@ -170,14 +223,28 @@ export default function PendientesPage() {
 
   async function handleVerPdf() {
     if (!selected) return;
+    // Abrir pestaña de inmediato (gesto del usuario) para evitar bloqueo de popups.
+    const win = window.open("about:blank", "_blank");
     setBusy(true);
     setError("");
     try {
       const blob = await supervisorApi.fetchPartePdf(selected.id);
-      const url = URL.createObjectURL(blob);
-      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-      setPdfUrl(url);
+      const url = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
+      if (win) {
+        win.location.href = url;
+      } else {
+        // Fallback si el navegador bloqueó la pestaña.
+        const a = document.createElement("a");
+        a.href = url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 120000);
     } catch (err) {
+      if (win && !win.closed) win.close();
       setError(err.message);
     } finally {
       setBusy(false);
@@ -203,11 +270,6 @@ export default function PendientesPage() {
     } finally {
       setBusy(false);
     }
-  }
-
-  function closePdf() {
-    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-    setPdfUrl(null);
   }
 
   return (
@@ -295,7 +357,7 @@ export default function PendientesPage() {
               <PartesPendientesLista
                 items={items}
                 selectedId={selected?.id}
-                onSelect={setSelected}
+                onSelect={handleSelect}
               />
             </div>
             <PaginationBar
@@ -312,6 +374,7 @@ export default function PendientesPage() {
             style={{ display: "grid", gap: "0.75rem", alignContent: "start" }}
           >
             <ParteRevisionPanel
+              key={selected?.id || "empty"}
               parte={selected}
               motivo={motivo}
               onMotivoChange={setMotivo}
@@ -322,52 +385,6 @@ export default function PendientesPage() {
               onDescargarPdf={handleDescargarPdf}
             />
           </aside>
-        </div>
-      )}
-
-      {pdfUrl && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(15, 18, 32, 0.55)",
-            zIndex: 80,
-            display: "grid",
-            placeItems: "center",
-            padding: "1.25rem",
-          }}
-          onClick={closePdf}
-        >
-          <div
-            className="panel-card"
-            style={{
-              width: "min(960px, 100%)",
-              height: "min(88vh, 900px)",
-              display: "grid",
-              gridTemplateRows: "auto 1fr",
-              gap: "0.65rem",
-              margin: 0,
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <strong>
-                Vista previa PDF ·{" "}
-                {selected?.titulo || selected?.numero_caso || `Parte #${selected?.id}`}
-              </strong>
-              <button type="button" className="btn-ghost" onClick={closePdf}>
-                <MaterialIcon name="close" />
-                Cerrar
-              </button>
-            </div>
-            <iframe
-              title="Vista previa PDF del parte"
-              src={pdfUrl}
-              style={{ width: "100%", height: "100%", border: "none", borderRadius: 10 }}
-            />
-          </div>
         </div>
       )}
     </div>

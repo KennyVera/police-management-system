@@ -5,11 +5,17 @@ function estadoEscuadra(e) {
   return e.vehiculo ? "ASIGNADA" : "PENDIENTE";
 }
 
-export default function EscuadrasLista({ items, onEditar, onEliminar }) {
+export default function EscuadrasLista({ items, fecha, onEditar, onEliminar }) {
   if (!items.length) {
     return (
       <div className="panel-card">
-        <p className="mod-muted">No hay escuadras con esos criterios.</p>
+        <p className="mod-muted">
+          No hay escuadras activas para la fecha <strong>{fecha || "seleccionada"}</strong>.
+        </p>
+        <p className="mod-muted" style={{ marginTop: "0.35rem" }}>
+          Prueba otra fecha o crea una con <strong>+ Nueva escuadra</strong>. Las escuadras
+          son diarias: solo aparecen el día en que fueron registradas.
+        </p>
       </div>
     );
   }

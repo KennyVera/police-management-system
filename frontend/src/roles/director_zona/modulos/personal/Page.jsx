@@ -30,6 +30,7 @@ export default function PersonalPage() {
   const [evals, setEvals] = useState([]);
   const [supervisores, setSupervisores] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
   const [q, setQ] = useState("");
@@ -46,6 +47,7 @@ export default function PersonalPage() {
   async function load() {
     setLoading(true);
     setError("");
+    setOk("");
     try {
       const [estado, ev, sup] = await Promise.all([
         directorApi.estadoPersonal(),
@@ -137,6 +139,19 @@ export default function PersonalPage() {
     }
   }
 
+  async function exportPdf() {
+    setExporting(true);
+    setError("");
+    try {
+      await directorApi.descargarPersonalPdf();
+      setOk("Informe PDF descargado.");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setExporting(false);
+    }
+  }
+
   const resumen = data?.resumen || {};
 
   return (
@@ -149,10 +164,23 @@ export default function PersonalPage() {
             Novedades del personal a su cargo y evaluación de supervisores de distrito.
           </p>
         </div>
-        <button type="button" className="btn-ghost" onClick={load}>
-          <MaterialIcon name="refresh" />
-          Actualizar
-        </button>
+        <div style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap" }}>
+          {tab === "estado" && (
+            <button
+              type="button"
+              className="btn-accent"
+              onClick={exportPdf}
+              disabled={exporting || loading || !(data?.total > 0)}
+            >
+              <MaterialIcon name="picture_as_pdf" />
+              {exporting ? "Generando…" : "Informe PDF"}
+            </button>
+          )}
+          <button type="button" className="btn-ghost" onClick={load}>
+            <MaterialIcon name="refresh" />
+            Actualizar
+          </button>
+        </div>
       </header>
 
       <div className="dir-tabs">

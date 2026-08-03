@@ -1,14 +1,14 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-const unitIcon = (activo) =>
+const unitIcon = (activo, selected) =>
   L.divIcon({
-    className: "monitoreo-pin",
-    html: `<span class="monitoreo-dot ${activo ? "busy" : "idle"}"></span>`,
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
+    className: `monitoreo-pin${selected ? " is-focused" : ""}`,
+    html: `<span class="monitoreo-dot ${activo ? "busy" : "idle"}${selected ? " focused" : ""}"></span>`,
+    iconSize: [selected ? 24 : 20, selected ? 24 : 20],
+    iconAnchor: [selected ? 12 : 10, selected ? 12 : 10],
   });
 
 const alertIcon = L.divIcon({
@@ -18,24 +18,50 @@ const alertIcon = L.divIcon({
   iconAnchor: [9, 9],
 });
 
-function FitOrFocus({ points, focus }) {
+function direccionUnidad(u) {
+  if (u?.alerta_activa?.direccion) {
+    return u.alerta_activa.direccion;
+  }
+  const parts = [u?.sector_detalle, u?.cuadrante].filter(Boolean);
+  return parts.length ? parts.join(" · ") : "Sin dirección registrada";
+}
+
+function FocusController({ focus, focusToken, markerRefs }) {
   const map = useMap();
   useEffect(() => {
-    if (focus?.latitud != null && focus?.longitud != null) {
-      map.setView([Number(focus.latitud), Number(focus.longitud)], 15, { animate: true });
-      return;
-    }
-    if (!points?.length) return;
+    if (focus?.latitud == null || focus?.longitud == null) return;
+    const lat = Number(focus.latitud);
+    const lng = Number(focus.longitud);
+    if (Number.isNaN(lat) || Number.isNaN(lng)) return;
+
+    map.setView([lat, lng], 16, { animate: true });
+    const timer = setTimeout(() => {
+      const marker = markerRefs.current[focus.id];
+      if (marker) marker.openPopup();
+    }, 280);
+    return () => clearTimeout(timer);
+  }, [map, focus, focusToken, markerRefs]);
+  return null;
+}
+
+function FitBoundsOnce({ points, hasFocus }) {
+  const map = useMap();
+  const done = useRef(false);
+  useEffect(() => {
+    if (hasFocus || done.current || !points?.length) return;
+    done.current = true;
     if (points.length === 1) {
       map.setView(points[0], 14);
       return;
     }
     map.fitBounds(points, { padding: [48, 48] });
-  }, [map, points, focus]);
+  }, [map, points, hasFocus]);
   return null;
 }
 
-export default function MonitoreoMapa({ unidades, focus }) {
+export default function MonitoreoMapa({ unidades, focus, focusToken = 0 }) {
+  const markerRefs = useRef({});
+
   const unitMarkers = useMemo(
     () =>
       (unidades || [])
@@ -44,8 +70,10 @@ export default function MonitoreoMapa({ unidades, focus }) {
           ...u,
           pos: [Number(u.latitud), Number(u.longitud)],
           busy: Boolean(u.alerta_activa),
+          selected: focus?.id === u.id,
+          direccion: direccionUnidad(u),
         })),
-    [unidades]
+    [unidades, focus]
   );
 
   const alertMarkers = useMemo(
@@ -55,6 +83,7 @@ export default function MonitoreoMapa({ unidades, focus }) {
         .map((u) => ({
           id: u.alerta_activa.id,
           titulo: u.alerta_activa.titulo,
+          direccion: u.alerta_activa.direccion,
           pos: [Number(u.alerta_activa.latitud), Number(u.alerta_activa.longitud)],
           agente: u.agente?.nombre,
         })),
@@ -66,7 +95,8 @@ export default function MonitoreoMapa({ unidades, focus }) {
     [unitMarkers, alertMarkers]
   );
 
-  const center = points[0] || [-0.1807, -78.4678];
+  const center = points[0] || [-2.1709, -79.9224];
+  const hasFocus = focus?.latitud != null && focus?.longitud != null;
 
   return (
     <div className="monitoreo-mapa-wrap">
@@ -75,29 +105,55 @@ export default function MonitoreoMapa({ unidades, focus }) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <FitOrFocus points={points} focus={focus} />
+        <FitBoundsOnce points={points} hasFocus={hasFocus} />
+        <FocusController focus={focus} focusToken={focusToken} markerRefs={markerRefs} />
         {unitMarkers.map((u) => (
-          <Marker key={`u-${u.id}`} position={u.pos} icon={unitIcon(u.busy)}>
+          <Marker
+            key={`u-${u.id}`}
+            position={u.pos}
+            icon={unitIcon(u.busy, u.selected)}
+            zIndexOffset={u.selected ? 1000 : 0}
+            ref={(ref) => {
+              if (ref) markerRefs.current[u.id] = ref;
+              else delete markerRefs.current[u.id];
+            }}
+          >
             <Popup>
-              <strong>{u.unidad_label || "Unidad"}</strong>
-              <br />
-              {u.agente?.nombre}
-              {u.companero?.nombre ? ` · ${u.companero.nombre}` : ""}
-              <br />
-              {u.vehiculo_placa} · {u.cuadrante}
-              <br />
-              {u.alerta_activa
-                ? `En auxilio: ${u.alerta_activa.titulo} (${u.alerta_activa.estado_label})`
-                : "En patrullaje"}
+              <div className="monitoreo-popup">
+                <strong>{u.unidad_label || "Unidad"}</strong>
+                <p className="monitoreo-popup-line">
+                  {u.agente?.nombre}
+                  {u.companero?.nombre ? ` · ${u.companero.nombre}` : ""}
+                </p>
+                <p className="monitoreo-popup-line">
+                  {u.vehiculo_placa}
+                  {u.escuadra ? ` · ${u.escuadra}` : ""}
+                </p>
+                <p className="monitoreo-popup-dir">
+                  <span aria-hidden>📍</span> {u.direccion}
+                </p>
+                <p className="monitoreo-popup-meta">
+                  {Number(u.latitud).toFixed(5)}, {Number(u.longitud).toFixed(5)}
+                </p>
+                <p className="monitoreo-popup-status">
+                  {u.alerta_activa
+                    ? `En auxilio: ${u.alerta_activa.titulo} (${u.alerta_activa.estado_label})`
+                    : "En patrullaje"}
+                </p>
+              </div>
             </Popup>
           </Marker>
         ))}
         {alertMarkers.map((a) => (
           <Marker key={`a-${a.id}`} position={a.pos} icon={alertIcon}>
             <Popup>
-              <strong>{a.titulo}</strong>
-              <br />
-              Asignado a {a.agente || "—"}
+              <div className="monitoreo-popup">
+                <strong>{a.titulo}</strong>
+                <p className="monitoreo-popup-dir">
+                  <span aria-hidden>📍</span> {a.direccion || "Sin dirección"}
+                </p>
+                <p className="monitoreo-popup-line">Asignado a {a.agente || "—"}</p>
+              </div>
             </Popup>
           </Marker>
         ))}

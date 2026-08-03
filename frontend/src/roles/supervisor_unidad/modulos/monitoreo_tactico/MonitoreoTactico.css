@@ -65,9 +65,74 @@
   background: #d94848;
 }
 
+.monitoreo-dot.focused {
+  width: 16px;
+  height: 16px;
+  box-shadow: 0 0 0 4px rgba(124, 92, 191, 0.35), 0 2px 10px rgba(28, 39, 68, 0.35);
+}
+
 .monitoreo-pin {
   background: transparent;
   border: 0;
+}
+
+.monitoreo-popup {
+  min-width: 180px;
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.monitoreo-popup strong {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: #1f2a44;
+}
+
+.monitoreo-popup-line {
+  margin: 0.15rem 0;
+  color: #4a5570;
+}
+
+.monitoreo-popup-dir {
+  margin: 0.45rem 0 0.2rem;
+  font-weight: 700;
+  color: #5b3d9a;
+}
+
+.monitoreo-popup-meta {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #8b95a8;
+}
+
+.monitoreo-popup-status {
+  margin: 0.4rem 0 0;
+  font-weight: 600;
+  color: #334155;
+}
+
+.monitoreo-unidad-dir {
+  margin-top: 0.3rem !important;
+  font-size: 0.78rem !important;
+  color: #5b3d9a !important;
+  font-weight: 600;
+}
+
+.monitoreo-sin-gps {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-size: 0.88rem;
+}
+
+.monitoreo-sin-gps .material-symbols-outlined {
+  font-size: 1.2rem;
 }
 
 .monitoreo-side {

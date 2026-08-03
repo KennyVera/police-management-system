@@ -12,14 +12,27 @@ function qs(params = {}) {
   return s ? `?${s}` : "";
 }
 
-async function downloadBlob(path, filenameFallback) {
+async function downloadBlob(path, filenameFallback, { method = "GET", body } = {}) {
   const headers = {};
   const token = getToken();
   if (token) headers.Authorization = `Token ${token}`;
-  const response = await fetch(`${API_URL}${path}`, { headers });
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  const response = await fetch(`${API_URL}${path}`, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
   if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    throw new Error(data.detail || "No se pudo descargar el archivo");
+    const raw = await response.text();
+    let detail = "";
+    try {
+      detail = JSON.parse(raw)?.detail || "";
+    } catch {
+      detail = "";
+    }
+    throw new Error(
+      detail || `No se pudo descargar el archivo (HTTP ${response.status})`
+    );
   }
   const blob = await response.blob();
   const cd = response.headers.get("Content-Disposition") || "";
@@ -64,6 +77,8 @@ export const directorApi = {
 
   /* —— Personal regional —— */
   estadoPersonal: () => apiFetch(`${DIR}/personal/estado/`),
+  descargarPersonalPdf: () =>
+    downloadBlob(`${DIR}/personal/informe-pdf/`, "personal_disponibilidad.pdf"),
   listSupervisores: () => apiFetch(`${DIR}/personal/supervisores/`),
   listEvaluaciones: () => apiFetch(`${DIR}/personal/evaluaciones/`),
   createEvaluacion: (body) =>
@@ -81,6 +96,39 @@ export const directorApi = {
       `${DIR}/reportes/exportar/${qs(params)}`,
       params.formato === "excel" ? "informe_zona.xlsx" : "informe_zona.pdf"
     ),
+  descargarDashboardPdf: (params = {}, panel = null, options = {}) => {
+    const vista = options.vista || "delitos";
+    let body;
+    let filename = "dashboard_tactico.pdf";
+    if (vista === "mapa") {
+      body = {
+        vista: "mapa",
+        filtros: params,
+        mapa: options.mapa || null,
+        radar: options.radar || panel?.radar || null,
+        panel: panel || null,
+      };
+      filename = "mapa_calor.pdf";
+    } else if (vista === "ranking") {
+      body = {
+        vista: "ranking",
+        filtros: params,
+        ranking: options.ranking || panel?.ranking_eficiencia || [],
+        panel: panel || null,
+      };
+      filename = "ranking_distritos.pdf";
+    } else {
+      body = {
+        vista: "delitos",
+        filtros: params,
+        panel,
+      };
+    }
+    return downloadBlob(`${DIR}/reportes/dashboard-pdf/`, filename, {
+      method: "POST",
+      body,
+    });
+  },
 
   /* —— Comunicación vertical —— */
   listDisposiciones: () => apiFetch(`${DIR}/comunicacion/disposiciones/`),

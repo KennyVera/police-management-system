@@ -11,6 +11,7 @@ export default function RastreoGpsPage() {
   const [data, setData] = useState({ unidades: [], con_gps: 0 });
   const [stats, setStats] = useState(null);
   const [selected, setSelected] = useState(null);
+  const [focusToken, setFocusToken] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [tick, setTick] = useState(0);
@@ -46,6 +47,14 @@ export default function RastreoGpsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function handleSelectUnidad(unidad) {
+    setSelected(unidad);
+    setFocusToken((t) => t + 1);
+  }
+
+  const sinGps =
+    selected && (selected.latitud == null || selected.longitud == null);
+
   return (
     <div className="mod-page">
       <header className="mod-header">
@@ -54,7 +63,7 @@ export default function RastreoGpsPage() {
           <h2>Rastreo GPS de Unidades</h2>
           <p className="mod-desc">
             Ubicación en tiempo real de patrulleros y agentes para coordinar cierres y
-            despliegues.
+            despliegues. Haz clic en una unidad para centrarla en el mapa.
           </p>
         </div>
         <div style={{ display: "flex", gap: "0.65rem", alignItems: "center" }}>
@@ -75,17 +84,32 @@ export default function RastreoGpsPage() {
       {loading ? (
         <p className="mod-muted">Cargando monitoreo...</p>
       ) : (
-        <div className="monitoreo-layout">
-          <MonitoreoMapa unidades={data.unidades || []} focus={selected} />
-          <aside className="panel-card monitoreo-side">
-            <h3 style={{ margin: 0 }}>Unidades en turno</h3>
-            <UnidadesLista
+        <>
+          {sinGps && (
+            <p className="monitoreo-sin-gps">
+              <MaterialIcon name="location_off" />
+              <span>
+                <strong>{selected.unidad_label || "Unidad"}</strong> no tiene GPS en este
+                momento. Sector: {selected.sector_detalle || selected.cuadrante || "—"}
+              </span>
+            </p>
+          )}
+          <div className="monitoreo-layout">
+            <MonitoreoMapa
               unidades={data.unidades || []}
-              selectedId={selected?.id}
-              onSelect={setSelected}
+              focus={selected}
+              focusToken={focusToken}
             />
-          </aside>
-        </div>
+            <aside className="panel-card monitoreo-side">
+              <h3 style={{ margin: 0 }}>Unidades en turno</h3>
+              <UnidadesLista
+                unidades={data.unidades || []}
+                selectedId={selected?.id}
+                onSelect={handleSelectUnidad}
+              />
+            </aside>
+          </div>
+        </>
       )}
       <p className="mod-muted" style={{ fontSize: "0.8rem" }}>
         Actualización automática cada 15 s{tick > 0 ? ` · ciclo ${tick}` : ""}.

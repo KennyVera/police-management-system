@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import date
-
 from django.contrib.auth.models import User
+from django.http import HttpResponse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from accounts.models import SystemRole
 from accounts.permissions import EsJefeDeZona
 from operativo.models import AsignacionDiaria, EvaluacionSupervisor, GestionHorario
+from roles.director_zona.reportes_service import build_personal_disponibilidad_pdf
 from roles.director_zona.scope import (
     ZoneScopeError,
     supervisores_in_zone,
@@ -43,12 +44,15 @@ def _user_label(u):
     return name or u.username
 
 
-def _resolve_estado(user, hoy: date, asignados: set[int], gestiones: dict) -> tuple[str, str]:
+def _emisor_label(user):
+    return _user_label(user) or user.email or user.username
+
+
+def _resolve_estado(user, asignados: set[int], gestiones: dict) -> tuple[str, str]:
     gest = gestiones.get(user.id)
     if gest:
         estado = HORARIO_TO_ESTADO.get(gest.tipo, ESTADO_PERMISO)
         detalle = gest.get_tipo_display()
-        # Heurística por texto libre en detalle
         low = (gest.detalle or "").lower()
         if "vacacion" in low:
             estado = ESTADO_VACACIONES
@@ -58,24 +62,20 @@ def _resolve_estado(user, hoy: date, asignados: set[int], gestiones: dict) -> tu
             estado = ESTADO_ARRESTO
         elif "franco" in low:
             estado = ESTADO_FRANCO
+        elif gest.detalle:
+            detalle = gest.detalle
         return estado, detalle
     if user.id in asignados:
         return ESTADO_ACTIVO, "Con asignación de turno hoy"
     return ESTADO_FRANCO, "Sin turno asignado hoy"
 
 
-@api_view(["GET"])
-@permission_classes([EsJefeDeZona])
-def estado_personal(request):
-    """Listado del personal de la zona con estado operativo del día."""
-    try:
-        scope = zone_scope(request.user)
-    except ZoneScopeError as exc:
-        return Response({"detail": str(exc)}, status=status.HTTP_403_FORBIDDEN)
-
-    hoy = date.today()
+def collect_estado_personal(user) -> dict:
+    """Payload de disponibilidad del personal en la zona del jefe."""
+    scope = zone_scope(user)
+    hoy = timezone.localdate()
     personal = (
-        users_in_zone(request.user)
+        users_in_zone(user)
         .filter(
             profile__role__in=[
                 SystemRole.SUPERVISOR_UNIDAD,
@@ -87,7 +87,7 @@ def estado_personal(request):
     )
 
     asignados = set(
-        AsignacionDiaria.objects.filter(fecha=hoy, agente__in=personal).values_list(
+        AsignacionDiaria.objects.filter(fecha=hoy, activo=True, agente__in=personal).values_list(
             "agente_id", flat=True
         )
     )
@@ -110,7 +110,7 @@ def estado_personal(request):
     }
     items = []
     for u in personal:
-        estado, detalle = _resolve_estado(u, hoy, asignados, gestiones)
+        estado, detalle = _resolve_estado(u, asignados, gestiones)
         resumen[estado] = resumen.get(estado, 0) + 1
         items.append(
             {
@@ -127,20 +127,52 @@ def estado_personal(request):
             }
         )
 
-    return Response(
-        {
-            "jurisdiccion": {
-                "id": scope.jurisdiccion_id,
-                "nombre": scope.jurisdiccion_nombre,
-                "codigo": scope.jurisdiccion_codigo,
-            },
-            "fecha": hoy.isoformat(),
-            "resumen": resumen,
-            "disponibles_hoy": resumen.get(ESTADO_ACTIVO, 0),
-            "total": len(items),
-            "personal": items,
-        }
-    )
+    return {
+        "jurisdiccion": {
+            "id": scope.jurisdiccion_id,
+            "nombre": scope.jurisdiccion_nombre,
+            "codigo": scope.jurisdiccion_codigo,
+        },
+        "fecha": hoy.isoformat(),
+        "resumen": resumen,
+        "disponibles_hoy": resumen.get(ESTADO_ACTIVO, 0),
+        "total": len(items),
+        "personal": items,
+    }
+
+
+@api_view(["GET"])
+@permission_classes([EsJefeDeZona])
+def estado_personal(request):
+    """Listado del personal de la zona con estado operativo del día."""
+    try:
+        data = collect_estado_personal(request.user)
+    except ZoneScopeError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_403_FORBIDDEN)
+    return Response(data)
+
+
+@api_view(["GET"])
+@permission_classes([EsJefeDeZona])
+def estado_personal_pdf(request):
+    """PDF del informe de disponibilidad / novedades del personal."""
+    try:
+        data = collect_estado_personal(request.user)
+    except ZoneScopeError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_403_FORBIDDEN)
+
+    emisor = _emisor_label(request.user)
+    payload = build_personal_disponibilidad_pdf(data, emisor=emisor)
+    zona_slug = (
+        (data.get("jurisdiccion") or {}).get("codigo")
+        or (data.get("jurisdiccion") or {}).get("nombre")
+        or "zona"
+    ).replace(" ", "_")
+    filename = f"personal_disponibilidad_{zona_slug}_{data.get('fecha') or 'hoy'}.pdf"
+    response = HttpResponse(payload, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    response["Content-Length"] = str(len(payload))
+    return response
 
 
 @api_view(["GET"])

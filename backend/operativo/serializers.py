@@ -138,16 +138,22 @@ class ParteAprehensionSerializer(serializers.ModelSerializer):
             return None
         return f"{u.first_name} {u.last_name}".strip() or u.username
 
+    def get_evidencias(self, obj):
+        try:
+            qs = obj.multimedia.all()
+            return MultimediaEvidenciaSerializer(qs, many=True).data
+        except Exception:  # noqa: BLE001
+            return []
+
     def get_pdf_url(self, obj):
         if not obj.pdf_object_key:
             return None
-        from operativo.minio_service import get_presigned_url
+        try:
+            from operativo.minio_service import get_presigned_url
 
-        return get_presigned_url(obj.pdf_object_key, obj.pdf_bucket or None)
-
-    def get_evidencias(self, obj):
-        qs = obj.multimedia.all()
-        return MultimediaEvidenciaSerializer(qs, many=True).data
+            return get_presigned_url(obj.pdf_object_key, obj.pdf_bucket or None)
+        except Exception:  # noqa: BLE001
+            return None
 
     def get_puede_editar(self, obj):
         if obj.bloqueado or obj.estado_revision == ParteAprehension.EstadoRevision.APROBADO:
@@ -238,9 +244,12 @@ class MultimediaEvidenciaSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_url(self, obj):
-        from operativo.minio_service import get_presigned_url
+        try:
+            from operativo.minio_service import get_presigned_url
 
-        return get_presigned_url(obj.object_key, obj.bucket)
+            return get_presigned_url(obj.object_key, obj.bucket)
+        except Exception:  # noqa: BLE001
+            return None
 
     def get_agente(self, obj):
         u = obj.subido_por

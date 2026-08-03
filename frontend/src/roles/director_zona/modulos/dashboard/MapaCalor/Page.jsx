@@ -88,7 +88,7 @@ function RadarChart({ dias, selectedDow, onSelect }) {
   );
 }
 
-export default function MapaCalor({ filters, radar, loading }) {
+export default function MapaCalor({ filters, radar, loading, onMapaChange }) {
   const [mapa, setMapa] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -109,10 +109,14 @@ export default function MapaCalor({ filters, radar, loading }) {
     directorApi
       .mapaCalor(params)
       .then((d) => {
-        if (alive) setMapa(d);
+        if (!alive) return;
+        setMapa(d);
+        onMapaChange?.(d);
       })
       .catch((e) => {
-        if (alive) setError(e.message);
+        if (!alive) return;
+        setError(e.message);
+        onMapaChange?.(null);
       })
       .finally(() => {
         if (alive) setBusy(false);
@@ -120,7 +124,7 @@ export default function MapaCalor({ filters, radar, loading }) {
     return () => {
       alive = false;
     };
-  }, [filters, selectedDow, selectedHora]);
+  }, [filters, selectedDow, selectedHora, onMapaChange]);
 
   const puntos = mapa?.puntos || [];
   const maxPeso = useMemo(

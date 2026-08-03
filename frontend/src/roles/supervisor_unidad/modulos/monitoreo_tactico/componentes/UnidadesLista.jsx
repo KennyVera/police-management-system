@@ -8,12 +8,17 @@ export default function UnidadesLista({ unidades, selectedId, onSelect }) {
       {unidades.map((u) => {
         const active = selectedId === u.id;
         const gps = u.latitud != null && u.longitud != null;
+        const direccion =
+          u.alerta_activa?.direccion ||
+          [u.sector_detalle, u.cuadrante].filter(Boolean).join(" · ") ||
+          "Sin dirección";
         return (
           <button
             key={u.id}
             type="button"
             className={`monitoreo-unidad ${active ? "is-active" : ""}`}
             onClick={() => onSelect(u)}
+            title={gps ? "Ver en el mapa" : "Sin GPS"}
           >
             <div className="monitoreo-unidad-top">
               <strong>{u.unidad_label || u.vehiculo_placa || "Unidad"}</strong>
@@ -28,6 +33,7 @@ export default function UnidadesLista({ unidades, selectedId, onSelect }) {
               {u.vehiculo_placa} · {u.cuadrante || "Sin cuadrante"}
               {!gps ? " · Sin GPS" : ""}
             </p>
+            <p className="monitoreo-unidad-dir">📍 {direccion}</p>
             {u.alerta_activa && (
               <p className="monitoreo-alerta-line">{u.alerta_activa.titulo}</p>
             )}
