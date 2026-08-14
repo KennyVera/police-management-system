@@ -77,6 +77,19 @@
   display: grid;
   place-items: center;
   position: relative;
+  overflow: hidden;
+}
+
+.brand-mark.has-logo {
+  background: #fff;
+  border: 1px solid #dbe3f0;
+  padding: 3px;
+}
+
+.brand-mark-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .brand-mark .material-symbols-outlined {

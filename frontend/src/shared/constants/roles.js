@@ -85,6 +85,141 @@ export const ROLES = {
       },
     ],
   },
+  superadmin: {
+    slug: "superadmin",
+    code: "SUPERADMIN_SAAS",
+    title: "SuperAdmin SaaS",
+    subtitle: "Dueño de la plataforma CrimeTrack",
+    icon: "admin_panel_settings",
+    accent: "#6d4aff",
+    modules: [
+      { slug: "dashboard", label: "Overview Tenants", icon: "dashboard", path: "dashboard" },
+      {
+        slug: "planes_suscripciones",
+        label: "Planes y suscripciones",
+        icon: "sell",
+        children: [
+          {
+            slug: "planes",
+            label: "Planes",
+            icon: "workspace_premium",
+            path: "planes_suscripciones/planes",
+          },
+          {
+            slug: "suscripciones",
+            label: "Suscripciones",
+            icon: "receipt_long",
+            path: "planes_suscripciones/suscripciones",
+          },
+        ],
+      },
+      {
+        slug: "usuarios_plataforma",
+        label: "Usuarios de plataforma",
+        icon: "manage_accounts",
+        children: [
+          {
+            slug: "administradores",
+            label: "Admins institucionales",
+            icon: "badge",
+            path: "usuarios_plataforma/administradores",
+          },
+          {
+            slug: "gestion_acceso",
+            label: "Gestión de acceso",
+            icon: "security",
+            path: "usuarios_plataforma/gestion_acceso",
+          },
+        ],
+      },
+      {
+        slug: "facturacion",
+        label: "Facturación",
+        icon: "payments",
+        children: [
+          {
+            slug: "suscripciones_fact",
+            label: "Suscripciones",
+            icon: "subscriptions",
+            path: "facturacion/suscripciones",
+          },
+          {
+            slug: "pagos",
+            label: "Pagos",
+            icon: "credit_card",
+            path: "facturacion/pagos",
+          },
+          {
+            slug: "facturas",
+            label: "Facturas",
+            icon: "description",
+            path: "facturacion/facturas",
+          },
+          {
+            slug: "vencimientos",
+            label: "Vencimientos",
+            icon: "event_busy",
+            path: "facturacion/vencimientos",
+          },
+          {
+            slug: "reportes_financieros",
+            label: "Reportes financieros",
+            icon: "monitoring",
+            path: "facturacion/reportes",
+          },
+          {
+            slug: "auditoria_financiera",
+            label: "Auditoría financiera",
+            icon: "policy",
+            path: "facturacion/auditoria",
+          },
+        ],
+      },
+      {
+        slug: "configuracion_global",
+        label: "Configuración global",
+        icon: "tune",
+        children: [
+          {
+            slug: "identidad",
+            label: "Identidad de la plataforma",
+            icon: "badge",
+            path: "configuracion_global/identidad",
+          },
+          {
+            slug: "apariencia",
+            label: "Apariencia",
+            icon: "palette",
+            path: "configuracion_global/apariencia",
+          },
+          {
+            slug: "regional",
+            label: "Configuración regional",
+            icon: "public",
+            path: "configuracion_global/regional",
+          },
+          {
+            slug: "comunicaciones",
+            label: "Comunicaciones",
+            icon: "mail",
+            path: "configuracion_global/comunicaciones",
+          },
+          {
+            slug: "plataforma",
+            label: "Plataforma",
+            icon: "dns",
+            path: "configuracion_global/plataforma",
+          },
+          {
+            slug: "auditoria_config",
+            label: "Auditoría de configuración",
+            icon: "history",
+            path: "configuracion_global/auditoria",
+          },
+        ],
+      },
+    ],
+  },
   visor_ejecutivo: {
     slug: "visor_ejecutivo",
     code: "VISOR_EJECUTIVO",

@@ -7,4 +7,5 @@ urlpatterns = [
     path("api/auth/", include("accounts.urls")),
     path("api/roles/", include("roles.urls")),
     path("api/tactico/", include("tactico.urls")),
+    path("api/saas/", include("saas_core.urls")),
 ]

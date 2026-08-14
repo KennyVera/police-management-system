@@ -19,14 +19,18 @@ from accounts.serializers import (
 @api_view(["GET", "POST"])
 @permission_classes([AdminOnly])
 def usuarios_collection(request):
+    institucion = getattr(getattr(request.user, "profile", None), "institucion", None)
+
     if request.method == "GET":
         qs = (
             User.objects.select_related(
                 "profile", "profile__departamento", "profile__jurisdiccion"
             )
-            .exclude(profile__role=SystemRole.ADMIN_SISTEMA)
+            .exclude(profile__role__in=[SystemRole.ADMIN_SISTEMA, SystemRole.SUPERADMIN_SAAS])
             .order_by("last_name", "first_name")
         )
+        if institucion:
+            qs = qs.filter(profile__institucion=institucion)
         estado = request.query_params.get("estado")
         if estado:
             qs = qs.filter(profile__estado=estado)
@@ -44,7 +48,9 @@ def usuarios_collection(request):
             )
         return Response(PoliceUserSerializer(qs, many=True).data)
 
-    serializer = PoliceUserCreateSerializer(data=request.data)
+    serializer = PoliceUserCreateSerializer(
+        data=request.data, context={"institucion": institucion}
+    )
     serializer.is_valid(raise_exception=True)
     user = serializer.save()
     return Response(PoliceUserSerializer(user).data, status=status.HTTP_201_CREATED)

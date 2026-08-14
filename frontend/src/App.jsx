@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import LoginPage from "./auth/LoginPage";
 import { useAuth } from "./auth/AuthContext";
+import CommercialSuite from "./saas/CommercialSuite";
 
 import AdministradorLayout from "./roles/administrador/Layout";
 import AdminDashboard from "./roles/administrador/modulos/dashboard/Page";
@@ -13,6 +14,25 @@ import AdminEstructuraPlazas from "./roles/administrador/modulos/estructura_orga
 import AdminCatalogosDelitos from "./roles/administrador/modulos/parametros_catalogos/TiposDelitosPage";
 import AdminCatalogosOperativos from "./roles/administrador/modulos/parametros_catalogos/CatalogosOperativosPage";
 import AdminCatalogosVariables from "./roles/administrador/modulos/parametros_catalogos/VariablesGlobalesPage";
+
+import SuperAdminLayout from "./roles/superadmin/Layout";
+import SuperAdminDashboard from "./roles/superadmin/modulos/dashboard/Page";
+import SuperAdminPlanes from "./roles/superadmin/modulos/planes_suscripciones/PlanesPage";
+import SuperAdminSuscripciones from "./roles/superadmin/modulos/planes_suscripciones/SuscripcionesPage";
+import SuperAdminAdmins from "./roles/superadmin/modulos/usuarios_plataforma/AdministradoresPage";
+import SuperAdminGestionAcceso from "./roles/superadmin/modulos/usuarios_plataforma/GestionAccesoPage";
+import FactSuscripciones from "./roles/superadmin/modulos/facturacion/SuscripcionesPage";
+import FactPagos from "./roles/superadmin/modulos/facturacion/PagosPage";
+import FactFacturas from "./roles/superadmin/modulos/facturacion/FacturasPage";
+import FactVencimientos from "./roles/superadmin/modulos/facturacion/VencimientosPage";
+import FactReportes from "./roles/superadmin/modulos/facturacion/ReportesPage";
+import FactAuditoria from "./roles/superadmin/modulos/facturacion/AuditoriaPage";
+import CfgIdentidad from "./roles/superadmin/modulos/configuracion_global/IdentidadPage";
+import CfgApariencia from "./roles/superadmin/modulos/configuracion_global/AparienciaPage";
+import CfgRegional from "./roles/superadmin/modulos/configuracion_global/RegionalPage";
+import CfgComunicaciones from "./roles/superadmin/modulos/configuracion_global/ComunicacionesPage";
+import CfgPlataforma from "./roles/superadmin/modulos/configuracion_global/PlataformaPage";
+import CfgAuditoria from "./roles/superadmin/modulos/configuracion_global/AuditoriaConfigPage";
 
 import VisorLayout from "./roles/visor_ejecutivo/Layout";
 import VisorDashboard from "./roles/visor_ejecutivo/modulos/dashboard/Page";
@@ -66,8 +86,62 @@ function Protected({ children }) {
 export default function App() {
   return (
     <Routes>
+      <Route path="/" element={<CommercialSuite initialView="landing" />} />
+      <Route path="/onboarding" element={<CommercialSuite initialView="onboarding" />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<Navigate to="/login" replace />} />
+
+      <Route
+        path="/app/superadmin"
+        element={
+          <Protected>
+            <SuperAdminLayout />
+          </Protected>
+        }
+      >
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<SuperAdminDashboard />} />
+        <Route
+          path="planes_suscripciones"
+          element={<Navigate to="planes" replace />}
+        />
+        <Route path="planes_suscripciones/planes" element={<SuperAdminPlanes />} />
+        <Route
+          path="planes_suscripciones/suscripciones"
+          element={<SuperAdminSuscripciones />}
+        />
+        <Route
+          path="usuarios_plataforma"
+          element={<Navigate to="administradores" replace />}
+        />
+        <Route
+          path="usuarios_plataforma/administradores"
+          element={<SuperAdminAdmins />}
+        />
+        <Route
+          path="usuarios_plataforma/gestion_acceso"
+          element={<SuperAdminGestionAcceso />}
+        />
+        <Route path="facturacion" element={<Navigate to="suscripciones" replace />} />
+        <Route path="facturacion/suscripciones" element={<FactSuscripciones />} />
+        <Route path="facturacion/pagos" element={<FactPagos />} />
+        <Route path="facturacion/facturas" element={<FactFacturas />} />
+        <Route path="facturacion/vencimientos" element={<FactVencimientos />} />
+        <Route path="facturacion/reportes" element={<FactReportes />} />
+        <Route path="facturacion/auditoria" element={<FactAuditoria />} />
+        <Route
+          path="configuracion_global"
+          element={<Navigate to="identidad" replace />}
+        />
+        <Route path="configuracion_global/identidad" element={<CfgIdentidad />} />
+        <Route path="configuracion_global/apariencia" element={<CfgApariencia />} />
+        <Route path="configuracion_global/regional" element={<CfgRegional />} />
+        <Route
+          path="configuracion_global/comunicaciones"
+          element={<CfgComunicaciones />}
+        />
+        <Route path="configuracion_global/plataforma" element={<CfgPlataforma />} />
+        <Route path="configuracion_global/auditoria" element={<CfgAuditoria />} />
+      </Route>
 
       <Route
         path="/app/administrador"
@@ -209,7 +283,7 @@ export default function App() {
         <Route path="despacho_tareas/mi_turno" element={<AgenteMiTurno />} />
       </Route>
 
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

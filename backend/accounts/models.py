@@ -4,6 +4,7 @@ from django.utils import timezone
 
 
 class SystemRole(models.TextChoices):
+    SUPERADMIN_SAAS = "SUPERADMIN_SAAS", "SuperAdmin SaaS (Plataforma)"
     ADMIN_SISTEMA = "ADMIN_SISTEMA", "Administrador de Institución"
     VISOR_EJECUTIVO = "VISOR_EJECUTIVO", "Visor Ejecutivo (Alto Mando)"
     DIRECTOR_ZONA = "DIRECTOR_ZONA", "Director / Jefe de Zona"
@@ -22,6 +23,7 @@ ASSIGNABLE_ROLES = {
 
 
 ROLE_ROUTE_MAP = {
+    SystemRole.SUPERADMIN_SAAS: "superadmin",
     SystemRole.ADMIN_SISTEMA: "administrador",
     SystemRole.VISOR_EJECUTIVO: "visor_ejecutivo",
     SystemRole.DIRECTOR_ZONA: "director_zona",
@@ -53,6 +55,11 @@ class UserProfile(models.Model):
         default=AccountStatus.ACTIVO,
     )
     two_factor_enabled = models.BooleanField(default=False)
+    permisos_plataforma = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Permisos de plataforma para Admin institucional (códigos)",
+    )
     departamento = models.ForeignKey(
         "organizacion.Department",
         null=True,
@@ -66,6 +73,15 @@ class UserProfile(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
         related_name="efectivos",
+    )
+    # Multi-tenant: nullable solo para SuperAdmin SaaS global
+    institucion = models.ForeignKey(
+        "saas_core.Institucion",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="usuarios",
+        help_text="Institución (tenant). Obligatorio salvo SuperAdmin SaaS.",
     )
 
     class Meta:
@@ -83,6 +99,57 @@ class UserProfile(models.Model):
         """Nunca borramos: solo inactivamos según estado."""
         self.user.is_active = self.estado == AccountStatus.ACTIVO
         self.user.save(update_fields=["is_active"])
+
+
+# Catálogo de permisos editables por SuperAdmin para Admins institucionales
+PLATFORM_PERMISSION_CATALOG = [
+    {"code": "gestionar_usuarios", "label": "Gestionar usuarios de la institución"},
+    {"code": "gestionar_estructura", "label": "Gestionar estructura organizacional"},
+    {"code": "gestionar_catalogos", "label": "Gestionar parámetros y catálogos"},
+    {"code": "ver_auditoria", "label": "Ver auditoría institucional"},
+    {"code": "exportar_datos", "label": "Exportar datos / reportes"},
+    {"code": "gestionar_facturacion", "label": "Ver plan y facturación"},
+]
+
+DEFAULT_ADMIN_PERMISOS = [p["code"] for p in PLATFORM_PERMISSION_CATALOG]
+
+
+class AccesoEvento(models.Model):
+    """Bitácora de accesos y acciones de plataforma (SuperAdmin / admins)."""
+
+    class Accion(models.TextChoices):
+        LOGIN = "LOGIN", "Inicio de sesión"
+        LOGOUT = "LOGOUT", "Cierre de sesión"
+        EDITAR = "EDITAR", "Editar información"
+        ACTIVAR = "ACTIVAR", "Activar acceso"
+        DESACTIVAR = "DESACTIVAR", "Desactivar acceso"
+        RESTABLECER = "RESTABLECER", "Restablecer acceso"
+        REVOCAR = "REVOCAR", "Revocar acceso"
+        PERMISOS = "PERMISOS", "Cambiar permisos"
+        CERRAR_SESION = "CERRAR_SESION", "Cerrar sesión"
+
+    usuario = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="eventos_acceso"
+    )
+    actor = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="acciones_acceso_realizadas",
+    )
+    accion = models.CharField(max_length=20, choices=Accion.choices)
+    detalle = models.TextField(blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-creado_en"]
+        verbose_name = "Evento de acceso"
+        verbose_name_plural = "Eventos de acceso"
+
+    def __str__(self) -> str:
+        return f"{self.accion} · {self.usuario_id}"
 
 
 class UserSession(models.Model):

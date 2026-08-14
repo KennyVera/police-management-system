@@ -1,0 +1,161 @@
+/* Facturación SuperAdmin — filtros, KPIs y tablas */
+
+.fact-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 0.85rem;
+  align-items: end;
+  padding: 1rem 1.1rem;
+  background: linear-gradient(180deg, #fbfaff 0%, #fff 100%);
+  border: 1px solid #ebe4ff;
+  border-radius: 16px;
+  box-shadow: 0 8px 22px rgba(109, 74, 255, 0.04);
+}
+
+.fact-filters label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8b7ab8;
+}
+
+.fact-filters select,
+.fact-filters input[type="date"],
+.fact-filters input[type="number"] {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1f2937;
+  background: #fff;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.fact-filters select:focus,
+.fact-filters input:focus {
+  outline: 2px solid #c4b5fd;
+  border-color: #7c5cbf;
+}
+
+.fact-filters-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.fact-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.85rem;
+}
+
+.fact-kpis article {
+  background: #fff;
+  border: 1px solid #ebe4ff;
+  border-radius: 16px;
+  padding: 1rem 1.05rem;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+.fact-kpis article::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, #7c5cbf, #a78bfa);
+}
+
+.fact-kpis span {
+  display: block;
+  color: #8b7ab8;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.fact-kpis strong {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+  color: #1f2937;
+}
+
+.fact-kpis small {
+  display: block;
+  margin-top: 0.2rem;
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+.fact-section-title {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 0.95rem;
+  color: #4c1d95;
+}
+
+.fact-panel {
+  background: #fff;
+  border: 1px solid #ebe4ff;
+  border-radius: 16px;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+}
+
+.fact-accion-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: #f1ebff;
+  color: #6d4aff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.fact-detail-grid {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.fact-detail-grid div {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.65rem 0.75rem;
+  background: #fbfaff;
+  border-radius: 10px;
+  border: 1px solid #f0ebff;
+}
+
+.fact-detail-grid span {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #8b7ab8;
+  letter-spacing: 0.04em;
+}
+
+.fact-detail-grid strong {
+  font-size: 0.9rem;
+  color: #1f2937;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+@media (max-width: 720px) {
+  .fact-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+}

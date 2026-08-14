@@ -1,6 +1,8 @@
-# Informes compuestos — Jefe de Zona
+# Informes compuestos — Nivel táctico (Jefe de Zona)
 
 Un **informe compuesto** cruza **varios indicadores y visualizaciones** del mismo periodo/filtros para apoyar una decisión táctica. En el sistema se exportan desde el Dashboard de zona (PDF por pestaña) o desde Reportes de zona (PDF/Excel de rendición).
+
+> Nivel **estratégico** (Alto Mando): ver [04_Informes_Compuestos_Estrategico.md](./04_Informes_Compuestos_Estrategico.md).
 
 | Característica | Descripción |
 |----------------|-------------|

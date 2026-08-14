@@ -50,6 +50,21 @@
   flex-shrink: 0;
 }
 
+.brand-icon.has-logo {
+  background: #fff;
+  border: 1px solid #ebe4ff;
+  box-shadow: 0 4px 12px rgba(91, 61, 154, 0.12);
+  overflow: hidden;
+  padding: 4px;
+}
+
+.brand-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
 .brand-icon .material-symbols-outlined {
   font-size: 24px;
   color: #fff;

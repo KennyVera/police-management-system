@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import loginArt from "../assets/imagenParaelInicioSesion.png";
 import MaterialIcon from "../shared/components/MaterialIcon";
+import { useBranding } from "../shared/branding/BrandingContext";
 import { useAuth } from "./AuthContext";
 import "./LoginPage.css";
 
 export default function LoginPage() {
   const { login, isAuthenticated, user, loading } = useAuth();
+  const { branding, assetUrl } = useBranding();
   const navigate = useNavigate();
   const [tab, setTab] = useState("sesion");
   const [email, setEmail] = useState("");
@@ -15,6 +17,10 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const brandName = branding?.nombre_sistema || "CrimeTrack";
+  const brandCorp = branding?.empresa_nombre || branding?.nombre_comercial || "CrimeTrack Analytics Corp";
+  const loginLogo = assetUrl(branding?.logo_login_url || branding?.logo_url);
 
   if (!loading && isAuthenticated && user) {
     return <Navigate to={`/app/${user.role_slug}/dashboard`} replace />;
@@ -39,12 +45,18 @@ export default function LoginPage() {
       <div className="login-shell">
         <aside className="login-brand">
           <div className="brand-row">
-            <div className="brand-mark" aria-hidden="true">
-              <MaterialIcon name="shield" filled />
-              <MaterialIcon name="bar_chart" className="brand-chart" />
+            <div className={`brand-mark${loginLogo ? " has-logo" : ""}`} aria-hidden="true">
+              {loginLogo ? (
+                <img src={loginLogo} alt="" className="brand-mark-img" />
+              ) : (
+                <>
+                  <MaterialIcon name="shield" filled />
+                  <MaterialIcon name="bar_chart" className="brand-chart" />
+                </>
+              )}
             </div>
             <div>
-              <p className="brand-name">CRIMETRACK ANALYTICS CORP</p>
+              <p className="brand-name">{brandCorp.toUpperCase()}</p>
             </div>
           </div>
 
@@ -57,7 +69,7 @@ export default function LoginPage() {
           <div className="brand-art-wrap">
             <img
               src={loginArt}
-              alt="Ilustración de la plataforma CrimeTrack"
+              alt={`Ilustración de la plataforma ${brandName}`}
               className="brand-art"
             />
           </div>
@@ -87,7 +99,7 @@ export default function LoginPage() {
 
           <header className="login-heading">
             <h2>Bienvenido de nuevo</h2>
-            <p>Inicia sesión para continuar en CrimeTrack.</p>
+            <p>Inicia sesión para continuar en {brandName}.</p>
           </header>
 
           <div className="login-tabs" role="tablist">
@@ -200,18 +212,22 @@ export default function LoginPage() {
 
           <aside className="demo-hint">
             <p>Usuarios demo (un rol cada uno):</p>
+            <code>SuperAdminSaaS@gmail.com / admin123</code>
             <code>admin@sgp.gob / Admin123!</code>
             <code>ejecutivo@sgp.gob / Ejecutivo123!</code>
             <code>director@sgp.gob / Director123!</code>
             <code>supervisor@sgp.gob / Supervisor123!</code>
             <code>detective@sgp.gob / Detective123!</code>
             <code>agente@sgp.gob / Agente123!</code>
+            <p style={{ marginTop: "0.75rem" }}>
+              <a href="/">← Volver a la Landing comercial</a>
+            </p>
           </aside>
         </section>
       </div>
 
       <footer className="login-footer">
-        <span>© 2026 CrimeTrack Analytics Corp. Todos los derechos reservados.</span>
+        <span>© 2026 {brandCorp}. Todos los derechos reservados.</span>
         <nav>
           <a href="#privacidad">Política de Privacidad</a>
           <span>·</span>

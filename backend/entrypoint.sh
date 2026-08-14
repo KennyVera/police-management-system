@@ -23,6 +23,7 @@ python manage.py seed_catalogos
 python manage.py seed_despacho_demo
 python manage.py seed_flota
 python manage.py seed_detective_demo
+python manage.py seed_saas
 
 echo "Starting Django..."
 exec "$@"

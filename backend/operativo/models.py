@@ -37,6 +37,14 @@ class ParteAprehension(models.Model):
     creado_por = models.ForeignKey(
         User, on_delete=models.PROTECT, related_name="partes_aprehension"
     )
+    institucion = models.ForeignKey(
+        "saas_core.Institucion",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="partes",
+        help_text="Aislamiento multi-tenant: hereda la institución del creador.",
+    )
     alerta = models.ForeignKey(
         "AlertaDespacho",
         null=True,
@@ -183,6 +191,10 @@ class ParteAprehension(models.Model):
         if not self.numero_caso:
             self.numero_caso = None
             self.ensure_numero_caso()
+        if not self.institucion_id and self.creado_por_id:
+            profile = getattr(self.creado_por, "profile", None)
+            if profile and profile.institucion_id:
+                self.institucion_id = profile.institucion_id
         super().save(*args, **kwargs)
 
 
@@ -623,6 +635,14 @@ class ExpedienteCaso(models.Model):
     detective_asignado = models.ForeignKey(
         User, on_delete=models.PROTECT, related_name="expedientes_asignados"
     )
+    institucion = models.ForeignKey(
+        "saas_core.Institucion",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="expedientes",
+        help_text="Aislamiento multi-tenant: hereda del detective / creador.",
+    )
     jefe_asignador = models.ForeignKey(
         User,
         null=True,
@@ -693,6 +713,23 @@ class ExpedienteCaso(models.Model):
         ).count() + 1
         self.codigo_caso = f"CAS-{year}-{seq:04d}"
 
+    def save(self, *args, **kwargs):
+        if not self.institucion_id:
+            owner = None
+            if self.detective_asignado_id:
+                owner = self.detective_asignado
+            elif self.jefe_asignador_id:
+                owner = self.jefe_asignador
+            profile = getattr(owner, "profile", None) if owner else None
+            if profile and profile.institucion_id:
+                self.institucion_id = profile.institucion_id
+            elif self.parte_origen_id and self.parte_origen.institucion_id:
+                self.institucion_id = self.parte_origen.institucion_id
+        if not self.numero_expediente:
+            self.ensure_numero()
+        if not self.codigo_caso:
+            self.ensure_codigo_caso()
+        super().save(*args, **kwargs)
 
 class InvolucradoExpediente(models.Model):
     class Tipo(models.TextChoices):

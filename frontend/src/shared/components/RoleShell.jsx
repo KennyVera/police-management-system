@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import MaterialIcon from "./MaterialIcon";
 import NotificationBell from "./NotificationBell";
 import { useAuth } from "../../auth/AuthContext";
+import { useBranding } from "../branding/BrandingContext";
 import "./RoleShell.css";
 
 const COLLAPSE_KEY = "sgp_sidebar_collapsed";
@@ -73,6 +74,7 @@ function NavGroup({ role, mod, sidebarCollapsed }) {
 
 export default function RoleShell({ role }) {
   const { user, logout } = useAuth();
+  const { branding, assetUrl } = useBranding();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -95,19 +97,29 @@ export default function RoleShell({ role }) {
     navigate("/login", { replace: true });
   }
 
+  const brandName = branding?.nombre_sistema || "CrimeTrack";
+  const logoSrc = assetUrl(branding?.logo_url);
+  const accent = branding?.color_principal || role.accent;
+
   return (
     <div
       className={`role-shell${collapsed ? " is-collapsed" : ""}`}
-      style={{ "--role-accent": role.accent }}
+      style={{ "--role-accent": accent }}
     >
       <aside className="role-sidebar">
         <div className="role-brand">
-          <div className="brand-icon" aria-hidden="true">
-            <MaterialIcon name="shield" filled />
-            <MaterialIcon name="schedule" className="brand-icon-clock" />
+          <div className={`brand-icon${logoSrc ? " has-logo" : ""}`} aria-hidden="true">
+            {logoSrc ? (
+              <img src={logoSrc} alt="" className="brand-logo-img" />
+            ) : (
+              <>
+                <MaterialIcon name="shield" filled />
+                <MaterialIcon name="schedule" className="brand-icon-clock" />
+              </>
+            )}
           </div>
           <div className="brand-text">
-            <strong>CrimeTrack</strong>
+            <strong>{brandName}</strong>
             <span>{role.title}</span>
           </div>
           <button

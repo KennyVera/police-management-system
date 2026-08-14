@@ -24,6 +24,10 @@ class UserSerializer(serializers.ModelSerializer):
     rango_policial = serializers.CharField(source="profile.rango_policial")
     estado = serializers.CharField(source="profile.estado")
     two_factor_enabled = serializers.BooleanField(source="profile.two_factor_enabled")
+    institucion_id = serializers.IntegerField(
+        source="profile.institucion_id", allow_null=True, read_only=True
+    )
+    institucion_nombre = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -45,7 +49,13 @@ class UserSerializer(serializers.ModelSerializer):
             "estado",
             "two_factor_enabled",
             "is_active",
+            "institucion_id",
+            "institucion_nombre",
         )
+
+    def get_institucion_nombre(self, obj):
+        inst = getattr(obj.profile, "institucion", None)
+        return inst.nombre_comercial if inst else None
 
 
 class LoginSerializer(serializers.Serializer):
@@ -57,7 +67,9 @@ class LoginSerializer(serializers.Serializer):
         email = attrs["email"].strip().lower()
         password = attrs["password"]
         try:
-            user = User.objects.select_related("profile").get(email__iexact=email)
+            user = User.objects.select_related("profile", "profile__institucion").get(
+                email__iexact=email
+            )
         except User.DoesNotExist as exc:
             raise serializers.ValidationError("Credenciales inválidas.") from exc
 
@@ -70,6 +82,11 @@ class LoginSerializer(serializers.Serializer):
         if user.profile.estado != AccountStatus.ACTIVO:
             raise serializers.ValidationError(
                 f"Cuenta {user.profile.get_estado_display().lower()}."
+            )
+        inst = getattr(user.profile, "institucion", None)
+        if inst and (not inst.esta_activa or inst.estado_pago == "SUSPENDIDO"):
+            raise serializers.ValidationError(
+                "La institución está suspendida o inactiva. Contacte a soporte CrimeTrack."
             )
 
         attrs["user"] = user
@@ -179,6 +196,7 @@ class PoliceUserCreateSerializer(serializers.Serializer):
             estado=AccountStatus.ACTIVO,
             departamento_id=validated_data.get("departamento_id"),
             jurisdiccion_id=validated_data.get("jurisdiccion_id"),
+            institucion=self.context.get("institucion"),
         )
         profile.sync_user_active()
         return user

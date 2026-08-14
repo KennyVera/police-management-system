@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "catalogos",
     "operativo",
     "tactico",
+    "saas_core",
 ]
 
 MIDDLEWARE = [
@@ -116,6 +117,20 @@ CLICKHOUSE_HTTP_PORT = int(os.getenv("CLICKHOUSE_HTTP_PORT", "8123"))
 CLICKHOUSE_USER = os.getenv("CLICKHOUSE_USER", "default")
 CLICKHOUSE_PASSWORD = os.getenv("CLICKHOUSE_PASSWORD", "")
 CLICKHOUSE_DB = os.getenv("CLICKHOUSE_DB", "police_analytics")
+
+# --- Email (Gmail / SMTP) — contraseña de aplicación SOLO en .env ---
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend"
+)
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() in ("1", "true", "yes")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "crimetracksoporte@gmail.com")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = os.getenv(
+    "DEFAULT_FROM_EMAIL",
+    f"CrimeTrack Soporte <{EMAIL_HOST_USER}>",
+)
 
 # --- Redis / Caché ---
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
