@@ -12,7 +12,7 @@ export default function AuxiliosLista({ title, items, empty, onAsignar }) {
               <th>Origen</th>
               <th>Prioridad</th>
               <th>Dirección</th>
-              <th>Agente</th>
+              <th>Escuadra</th>
               <th>Estado</th>
               <th />
             </tr>
@@ -26,7 +26,11 @@ export default function AuxiliosLista({ title, items, empty, onAsignar }) {
                 <td>{a.origen}</td>
                 <td>{a.prioridad_label || a.prioridad}</td>
                 <td>{a.direccion}</td>
-                <td>{a.agente_info?.nombre || "Sin asignar"}</td>
+                <td>
+                  {a.escuadra_info?.nombre ||
+                    a.agente_info?.nombre ||
+                    "Sin asignar"}
+                </td>
                 <td>
                   <span
                     className={`badge-estado ${

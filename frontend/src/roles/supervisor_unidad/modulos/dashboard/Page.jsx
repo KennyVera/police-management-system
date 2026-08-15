@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
 import { useAuth } from "../../../../auth/AuthContext";
+import { useTheme } from "../../../../shared/theme/ThemeContext";
 import { supervisorApi } from "../../api";
 import "../../../../shared/styles/ModuloPage.css";
 import "./Dashboard.css";
@@ -59,13 +60,15 @@ function fechaEsp(iso) {
 }
 
 /** Conic-gradient donut from percentages (0–100). Empty → soft gray ring. */
-function donutStyle(calidad) {
+function donutStyle(calidad, isDark) {
   const a = Number(calidad.aprobados_pct) || 0;
   const p = Number(calidad.pendientes_pct) || 0;
   const d = Number(calidad.devueltos_pct) || 0;
   const sum = a + p + d;
   if (!sum || !calidad.total) {
-    return { background: "conic-gradient(#e5e7eb 0deg 360deg)" };
+    return {
+      background: `conic-gradient(${isDark ? "#3a3a3a" : "#e5e7eb"} 0deg 360deg)`,
+    };
   }
   const aEnd = (a / 100) * 360;
   const pEnd = aEnd + (p / 100) * 360;
@@ -87,7 +90,7 @@ function ProgressBar({ value, tone }) {
   );
 }
 
-function SectorMap({ sectores }) {
+function SectorMap({ sectores, isDark }) {
   const palette = ["#22c55e", "#3b82f6", "#f59e0b", "#8b5cf6", "#14b8a6"];
   const items = sectores?.length
     ? sectores
@@ -96,16 +99,20 @@ function SectorMap({ sectores }) {
         { sector: "Sector Centro", patrullas: 0 },
         { sector: "Sector Sur", patrullas: 0 },
       ];
+  const mapBg = isDark ? "#141414" : "#f3f6fb";
+  const dotFill = isDark ? "#3a3a3a" : "#dbe3f0";
+  const labelBg = isDark ? "#1a1a1a" : "#fff";
+  const labelStroke = isDark ? "#2e2e2e" : "#e5e7eb";
 
   return (
     <div className="sup-map">
       <svg viewBox="0 0 420 240" className="sup-map-svg" aria-hidden="true">
         <defs>
           <pattern id="gridDots" width="14" height="14" patternUnits="userSpaceOnUse">
-            <circle cx="1" cy="1" r="1" fill="#dbe3f0" />
+            <circle cx="1" cy="1" r="1" fill={dotFill} />
           </pattern>
         </defs>
-        <rect width="420" height="240" fill="#f3f6fb" rx="12" />
+        <rect width="420" height="240" fill={mapBg} rx="12" />
         <rect width="420" height="240" fill="url(#gridDots)" opacity="0.7" />
         {/* stylized zones */}
         <path
@@ -144,9 +151,9 @@ function SectorMap({ sectores }) {
                 width="108"
                 height="44"
                 rx="8"
-                fill="#fff"
+                fill={labelBg}
                 fillOpacity="0.92"
-                stroke="#e5e7eb"
+                stroke={labelStroke}
               />
               <text x={cx} y={cy - 4} textAnchor="middle" className="sup-map-label">
                 {s.sector}
@@ -175,6 +182,7 @@ function SectorMap({ sectores }) {
 
 export default function Page() {
   const { user } = useAuth();
+  const { isDark } = useTheme();
   const name = user?.first_name || "Supervisor";
   const [data, setData] = useState(EMPTY);
   const [loading, setLoading] = useState(true);
@@ -338,7 +346,7 @@ export default function Page() {
           <h3>Control de Calidad de Partes (Hoy)</h3>
           <div className="sup-calidad">
             <div className="sup-donut-wrap">
-              <div className="sup-donut" style={donutStyle(calidad)}>
+              <div className="sup-donut" style={donutStyle(calidad, isDark)}>
                 <div className="sup-donut-hole">
                   <span>Total</span>
                   <strong>{calidad.total}</strong>
@@ -486,7 +494,7 @@ export default function Page() {
 
         <article className="sup-card">
           <h3>Distribución Operativa por Sector</h3>
-          <SectorMap sectores={data.distribucion_sectores} />
+          <SectorMap sectores={data.distribucion_sectores} isDark={isDark} />
         </article>
       </section>
     </div>

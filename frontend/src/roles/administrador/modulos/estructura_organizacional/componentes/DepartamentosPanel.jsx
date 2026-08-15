@@ -1,8 +1,10 @@
 import { useState } from "react";
 import MaterialIcon from "../../../../../shared/components/MaterialIcon";
+import { useConfirm } from "../../../../../shared/components/ConfirmContext";
 import { estructuraApi } from "../../../api";
 
 export default function DepartamentosPanel({ items, onChanged }) {
+  const confirm = useConfirm();
   const [form, setForm] = useState({ nombre: "", codigo: "", descripcion: "" });
   const [error, setError] = useState("");
 
@@ -16,6 +18,18 @@ export default function DepartamentosPanel({ items, onChanged }) {
     } catch (err) {
       setError(err.message);
     }
+  }
+
+  async function inactivar(d) {
+    const ok = await confirm({
+      title: "Inactivar departamento",
+      message: `¿Inactivar «${d.nombre}»?`,
+      confirmLabel: "Inactivar",
+      variant: "warn",
+    });
+    if (!ok) return;
+    await estructuraApi.inactivarDepartamento(d.id);
+    onChanged();
   }
 
   return (
@@ -86,10 +100,7 @@ export default function DepartamentosPanel({ items, onChanged }) {
                     <button
                       type="button"
                       className="btn-warn"
-                      onClick={async () => {
-                        await estructuraApi.inactivarDepartamento(d.id);
-                        onChanged();
-                      }}
+                      onClick={() => inactivar(d)}
                     >
                       Inactivar
                     </button>

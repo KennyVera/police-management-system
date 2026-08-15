@@ -1,10 +1,11 @@
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from accounts.permissions import AgenteOnly
-from operativo.models import AlertaDespacho, AsignacionDiaria, ParteAprehension
+from operativo.models import AlertaDespacho, AsignacionDiaria
 from operativo.serializers import AlertaDespachoSerializer, AsignacionDiariaSerializer
 
 
@@ -36,6 +37,27 @@ def _agent_context(user):
     }
 
 
+def _alertas_visibles_qs(user):
+    """Alertas del agente o de su escuadra asignada."""
+    return (
+        AlertaDespacho.objects.filter(
+            Q(agente=user)
+            | Q(escuadra__agente_lider=user)
+            | Q(escuadra__companeros=user)
+        )
+        .select_related("agente", "asignada_por", "escuadra")
+        .prefetch_related("partes")
+        .distinct()
+    )
+
+
+def _get_alerta_visible(user, pk):
+    try:
+        return _alertas_visibles_qs(user).get(pk=pk)
+    except AlertaDespacho.DoesNotExist:
+        return None
+
+
 @api_view(["GET"])
 @permission_classes([AgenteOnly])
 def mi_turno(request):
@@ -61,9 +83,7 @@ def mi_turno(request):
 @permission_classes([AgenteOnly])
 def alertas_collection(request):
     ctx = _agent_context(request.user)
-    qs = AlertaDespacho.objects.filter(agente=request.user).select_related(
-        "agente", "asignada_por"
-    ).prefetch_related("partes")
+    qs = _alertas_visibles_qs(request.user)
     estado = request.query_params.get("estado")
     if estado == "activas":
         qs = qs.filter(
@@ -106,11 +126,8 @@ def alertas_collection(request):
 @permission_classes([AgenteOnly])
 def alerta_detail(request, pk):
     ctx = _agent_context(request.user)
-    try:
-        obj = AlertaDespacho.objects.select_related("agente", "asignada_por").prefetch_related(
-            "partes"
-        ).get(pk=pk, agente=request.user)
-    except AlertaDespacho.DoesNotExist:
+    obj = _get_alerta_visible(request.user, pk)
+    if not obj:
         return Response({"detail": "Alerta no encontrada."}, status=404)
     return Response(
         AlertaDespachoSerializer(
@@ -122,9 +139,8 @@ def alerta_detail(request, pk):
 @api_view(["POST"])
 @permission_classes([AgenteOnly])
 def alerta_en_camino(request, pk):
-    try:
-        obj = AlertaDespacho.objects.get(pk=pk, agente=request.user)
-    except AlertaDespacho.DoesNotExist:
+    obj = _get_alerta_visible(request.user, pk)
+    if not obj:
         return Response({"detail": "Alerta no encontrada."}, status=404)
 
     if obj.estado not in (
@@ -132,7 +148,12 @@ def alerta_en_camino(request, pk):
         AlertaDespacho.Estado.EN_CAMINO,
     ):
         return Response(
-            {"detail": f"No puedes marcar En camino desde el estado {obj.get_estado_display()}."},
+            {
+                "detail": (
+                    f"No puedes marcar En camino desde el estado "
+                    f"{obj.get_estado_display()}."
+                )
+            },
             status=400,
         )
 
@@ -151,9 +172,8 @@ def alerta_en_camino(request, pk):
 @api_view(["POST"])
 @permission_classes([AgenteOnly])
 def alerta_llegada(request, pk):
-    try:
-        obj = AlertaDespacho.objects.get(pk=pk, agente=request.user)
-    except AlertaDespacho.DoesNotExist:
+    obj = _get_alerta_visible(request.user, pk)
+    if not obj:
         return Response({"detail": "Alerta no encontrada."}, status=404)
 
     if obj.estado not in (
@@ -162,7 +182,12 @@ def alerta_llegada(request, pk):
         AlertaDespacho.Estado.EN_LUGAR,
     ):
         return Response(
-            {"detail": f"No puedes marcar Llegada desde el estado {obj.get_estado_display()}."},
+            {
+                "detail": (
+                    f"No puedes marcar Llegada desde el estado "
+                    f"{obj.get_estado_display()}."
+                )
+            },
             status=400,
         )
 
@@ -184,9 +209,8 @@ def alerta_llegada(request, pk):
 @api_view(["POST"])
 @permission_classes([AgenteOnly])
 def alerta_cerrar(request, pk):
-    try:
-        obj = AlertaDespacho.objects.get(pk=pk, agente=request.user)
-    except AlertaDespacho.DoesNotExist:
+    obj = _get_alerta_visible(request.user, pk)
+    if not obj:
         return Response({"detail": "Alerta no encontrada."}, status=404)
 
     if obj.estado not in (
@@ -212,14 +236,17 @@ def alerta_cerrar(request, pk):
 @api_view(["GET"])
 @permission_classes([AgenteOnly])
 def resumen(request):
-    activas = AlertaDespacho.objects.filter(
-        agente=request.user,
-        estado__in=[
-            AlertaDespacho.Estado.ASIGNADA,
-            AlertaDespacho.Estado.EN_CAMINO,
-            AlertaDespacho.Estado.EN_LUGAR,
-        ],
-    ).count()
+    activas = (
+        _alertas_visibles_qs(request.user)
+        .filter(
+            estado__in=[
+                AlertaDespacho.Estado.ASIGNADA,
+                AlertaDespacho.Estado.EN_CAMINO,
+                AlertaDespacho.Estado.EN_LUGAR,
+            ],
+        )
+        .count()
+    )
     hoy = timezone.localdate()
     tiene_turno = AsignacionDiaria.objects.filter(
         agente=request.user, fecha=hoy, activo=True

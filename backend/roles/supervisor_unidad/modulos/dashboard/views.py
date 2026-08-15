@@ -5,7 +5,6 @@ from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from accounts.models import AccountStatus, SystemRole, UserProfile
 from accounts.permissions import SupervisorOnly
 from operativo.models import (
     AlertaDespacho,
@@ -15,6 +14,7 @@ from operativo.models import (
     ParteAprehension,
     VehiculoFlota,
 )
+from roles.supervisor_unidad.scope import agentes_en_zona_qs, partes_en_zona_qs
 
 
 def _pct(part, whole):
@@ -37,25 +37,29 @@ def home(request):
     ahora = timezone.localtime()
     inicio_dia = timezone.make_aware(datetime.combine(hoy, datetime.min.time()))
 
-    # —— Personal / fuerza efectiva ——
-    agentes_total = UserProfile.objects.filter(
-        role=SystemRole.AGENTE_OPERATIVO,
-        estado=AccountStatus.ACTIVO,
-    ).count()
+    # —— Personal / fuerza efectiva (solo zona del supervisor) ——
+    agentes_zona = agentes_en_zona_qs(request.user)
+    agente_ids = list(agentes_zona.values_list("id", flat=True))
+    agentes_total = len(agente_ids)
     agentes_activos = (
-        AsignacionDiaria.objects.filter(fecha=hoy, activo=True)
+        AsignacionDiaria.objects.filter(
+            fecha=hoy, activo=True, agente_id__in=agente_ids
+        )
         .values("agente_id")
         .distinct()
         .count()
+        if agente_ids
+        else 0
     )
     fuerza_pct = _pct(agentes_activos, agentes_total) if agentes_total else 0
 
-    # —— Control de calidad / partes ——
-    partes_hoy = ParteAprehension.objects.filter(creado_en__gte=inicio_dia)
+    # —— Control de calidad / partes (solo zona) ——
+    partes_zona = partes_en_zona_qs(request.user)
+    partes_hoy = partes_zona.filter(creado_en__gte=inicio_dia)
     aprobados = partes_hoy.filter(
         estado_revision=ParteAprehension.EstadoRevision.APROBADO
     ).count()
-    pendientes = ParteAprehension.objects.filter(
+    pendientes = partes_zona.filter(
         estado_revision=ParteAprehension.EstadoRevision.EN_REVISION
     ).count()
     pendientes_hoy = partes_hoy.filter(
@@ -85,9 +89,9 @@ def home(request):
         .count()
     )
 
-    # —— Últimos partes pendientes ——
+    # —— Últimos partes pendientes (solo zona) ——
     pendientes_qs = (
-        ParteAprehension.objects.filter(
+        partes_zona.filter(
             estado_revision=ParteAprehension.EstadoRevision.EN_REVISION
         )
         .select_related("creado_por", "tipo_delito")
@@ -106,9 +110,9 @@ def home(request):
         for p in pendientes_qs
     ]
 
-    # —— Actividad por escuadra ——
+    # —— Actividad por escuadra (solo del supervisor) ——
     escuadras = (
-        Escuadra.objects.filter(fecha=hoy, activo=True)
+        Escuadra.objects.filter(fecha=hoy, activo=True, supervisor=request.user)
         .annotate(n_asig=Count("asignaciones", filter=Q(asignaciones__activo=True)))
         .order_by("-n_asig", "nombre")[:8]
     )
@@ -120,12 +124,16 @@ def home(request):
     if not actividad_escuadras:
         actividad_escuadras = [
             {"nombre": e.nombre or f"Escuadra {e.id}", "total": 0}
-            for e in Escuadra.objects.filter(fecha=hoy, activo=True).order_by("nombre")[:6]
+            for e in Escuadra.objects.filter(
+                fecha=hoy, activo=True, supervisor=request.user
+            ).order_by("nombre")[:6]
         ]
 
-    # —— Distribución por sector (desde asignaciones del día) ——
+    # —— Distribución por sector (asignaciones de agentes de la zona) ——
     sectores_raw = (
-        AsignacionDiaria.objects.filter(fecha=hoy, activo=True)
+        AsignacionDiaria.objects.filter(
+            fecha=hoy, activo=True, agente_id__in=agente_ids or [-1]
+        )
         .exclude(cuadrante="")
         .values("cuadrante")
         .annotate(total=Count("id"))

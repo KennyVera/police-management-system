@@ -299,6 +299,7 @@ class AsignacionDiariaSerializer(serializers.ModelSerializer):
             "escuadra",
             "vehiculo",
             "sector_detalle",
+            "poligono",
             "hora_formacion_real",
             "hora_salida_real",
             "observaciones",
@@ -596,6 +597,7 @@ class AsignacionDiariaWriteSerializer(serializers.ModelSerializer):
             "zona_nombre",
             "cuadrante",
             "sector_detalle",
+            "poligono",
             "turno_inicio",
             "turno_fin",
             "hora_formacion_real",
@@ -662,6 +664,7 @@ class GestionHorarioSerializer(serializers.ModelSerializer):
 
 class AlertaDespachoWriteSerializer(serializers.ModelSerializer):
     agente_info = serializers.SerializerMethodField()
+    escuadra_info = serializers.SerializerMethodField()
     estado_label = serializers.CharField(source="get_estado_display", read_only=True)
     prioridad_label = serializers.CharField(source="get_prioridad_display", read_only=True)
     distancia_km = serializers.FloatField(read_only=True, required=False)
@@ -672,6 +675,8 @@ class AlertaDespachoWriteSerializer(serializers.ModelSerializer):
             "id",
             "agente",
             "agente_info",
+            "escuadra",
+            "escuadra_info",
             "titulo",
             "descripcion",
             "direccion",
@@ -690,6 +695,7 @@ class AlertaDespachoWriteSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "id",
             "agente_info",
+            "escuadra_info",
             "prioridad_label",
             "estado_label",
             "distancia_km",
@@ -699,6 +705,16 @@ class AlertaDespachoWriteSerializer(serializers.ModelSerializer):
 
     def get_agente_info(self, obj):
         return _user_label(obj.agente)
+
+    def get_escuadra_info(self, obj):
+        if not obj.escuadra_id:
+            return None
+        esc = obj.escuadra
+        return {
+            "id": esc.id,
+            "nombre": esc.nombre,
+            "fecha": esc.fecha.isoformat() if esc.fecha else None,
+        }
 
 
 class OrdenAdicionalSerializer(serializers.ModelSerializer):

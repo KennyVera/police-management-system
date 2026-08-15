@@ -12,6 +12,7 @@ from accounts.permissions import SupervisorOnly
 from operativo.models import (
     AlertaDespacho,
     AsignacionDiaria,
+    Escuadra,
     Notificacion,
     OrdenAdicional,
 )
@@ -32,35 +33,98 @@ def _haversine_km(lat1, lon1, lat2, lon2):
     return 2 * r * asin(sqrt(a))
 
 
-def _agentes_en_turno(hoy=None):
+def _escuadras_en_turno(supervisor, hoy=None):
     hoy = hoy or date.today()
     return (
-        AsignacionDiaria.objects.filter(fecha=hoy, activo=True)
-        .select_related("agente", "agente__profile", "vehiculo")
-        .order_by("agente__first_name")
+        Escuadra.objects.filter(activo=True, supervisor=supervisor, fecha=hoy)
+        .select_related("agente_lider", "agente_lider__profile", "vehiculo")
+        .prefetch_related("companeros", "companeros__profile")
+        .order_by("nombre")
     )
 
 
-def _candidatos_cercanos(lat, lng, hoy=None):
-    """Lista de unidades en turno ordenadas por distancia al incidente."""
+def _posicion_escuadra(esc, hoy=None):
+    """Coords / placa / cuadrante desde la asignación diaria de la escuadra."""
+    hoy = hoy or esc.fecha
+    asig = (
+        AsignacionDiaria.objects.filter(escuadra=esc, fecha=hoy, activo=True)
+        .order_by("id")
+        .first()
+    )
+    if not asig:
+        asig = (
+            AsignacionDiaria.objects.filter(
+                agente_id=esc.agente_lider_id, fecha=hoy, activo=True
+            )
+            .order_by("id")
+            .first()
+        )
+    placa = (
+        (asig.vehiculo_placa if asig else None)
+        or (esc.vehiculo.placa if esc.vehiculo_id else None)
+        or None
+    )
+    return {
+        "latitud": asig.latitud if asig else None,
+        "longitud": asig.longitud if asig else None,
+        "vehiculo_placa": placa,
+        "cuadrante": asig.cuadrante if asig else "",
+        "unidad_label": (asig.unidad_label if asig else None) or esc.nombre,
+    }
+
+
+def _escuadras_ocupadas_ids(supervisor, *, excluir_alerta_id=None):
+    """Escuadras con auxilio activo (no disponibles para otro incidente)."""
+    qs = AlertaDespacho.objects.filter(
+        estado__in=[
+            AlertaDespacho.Estado.ASIGNADA,
+            AlertaDespacho.Estado.EN_CAMINO,
+            AlertaDespacho.Estado.EN_LUGAR,
+        ],
+        escuadra__isnull=False,
+        escuadra__supervisor=supervisor,
+    )
+    if excluir_alerta_id:
+        qs = qs.exclude(pk=excluir_alerta_id)
+    return set(qs.values_list("escuadra_id", flat=True))
+
+
+def _candidatos_escuadras(supervisor, lat=None, lng=None, hoy=None, *, excluir_alerta_id=None):
+    """Escuadras disponibles (sin auxilio activo), ordenadas por distancia."""
+    hoy = hoy or date.today()
+    ocupadas = _escuadras_ocupadas_ids(supervisor, excluir_alerta_id=excluir_alerta_id)
     items = []
-    for a in _agentes_en_turno(hoy):
+    for esc in _escuadras_en_turno(supervisor, hoy):
+        if esc.id in ocupadas:
+            continue
+        pos = _posicion_escuadra(esc, hoy)
         dist = None
-        if lat is not None and lng is not None and a.latitud is not None and a.longitud is not None:
+        if (
+            lat is not None
+            and lng is not None
+            and pos["latitud"] is not None
+            and pos["longitud"] is not None
+        ):
             try:
-                dist = round(_haversine_km(lat, lng, a.latitud, a.longitud), 2)
+                dist = round(
+                    _haversine_km(lat, lng, pos["latitud"], pos["longitud"]), 2
+                )
             except (TypeError, ValueError):
                 dist = None
+        n_miembros = 1 + esc.companeros.count()
         items.append(
             {
-                "asignacion_id": a.id,
-                "agente": _user_label(a.agente),
-                "unidad_label": a.unidad_label,
-                "vehiculo_placa": a.vehiculo_placa,
-                "cuadrante": a.cuadrante,
-                "latitud": a.latitud,
-                "longitud": a.longitud,
+                "escuadra_id": esc.id,
+                "escuadra_nombre": esc.nombre,
+                "lider": _user_label(esc.agente_lider),
+                "miembros": n_miembros,
+                "unidad_label": pos["unidad_label"],
+                "vehiculo_placa": pos["vehiculo_placa"],
+                "cuadrante": pos["cuadrante"],
+                "latitud": pos["latitud"],
+                "longitud": pos["longitud"],
                 "distancia_km": dist,
+                "disponible": True,
             }
         )
     items.sort(
@@ -72,28 +136,39 @@ def _candidatos_cercanos(lat, lng, hoy=None):
     return items
 
 
+def _miembros_escuadra(esc):
+    miembros = [esc.agente_lider]
+    miembros.extend(list(esc.companeros.all()))
+    # únicos por id
+    seen = set()
+    out = []
+    for u in miembros:
+        if u and u.id not in seen:
+            seen.add(u.id)
+            out.append(u)
+    return out
+
+
+def _notify_escuadra(esc, *, titulo, mensaje, enlace):
+    for user in _miembros_escuadra(esc):
+        notify_user(
+            user=user,
+            tipo=Notificacion.Tipo.ALERTA,
+            titulo=titulo,
+            mensaje=mensaje,
+            enlace=enlace,
+        )
+
+
 @api_view(["GET"])
 @permission_classes([SupervisorOnly])
 def meta(request):
     lat = request.query_params.get("lat")
     lng = request.query_params.get("lng")
     if lat not in (None, "") and lng not in (None, ""):
-        candidatos = _candidatos_cercanos(lat, lng)
+        candidatos = _candidatos_escuadras(request.user, lat, lng)
     else:
-        candidatos = []
-        for a in _agentes_en_turno():
-            candidatos.append(
-                {
-                    "asignacion_id": a.id,
-                    "agente": _user_label(a.agente),
-                    "unidad_label": a.unidad_label,
-                    "vehiculo_placa": a.vehiculo_placa,
-                    "cuadrante": a.cuadrante,
-                    "latitud": a.latitud,
-                    "longitud": a.longitud,
-                    "distancia_km": None,
-                }
-            )
+        candidatos = _candidatos_escuadras(request.user)
 
     agentes = [
         _user_label(u)
@@ -108,11 +183,19 @@ def meta(request):
 
     return Response(
         {
+            "escuadras_turno": candidatos,
+            # alias legacy (ahora son escuadras)
             "unidades_turno": candidatos,
             "agentes": agentes,
-            "prioridades": [{"value": c.value, "label": c.label} for c in AlertaDespacho.Prioridad],
-            "tipos_orden": [{"value": c.value, "label": c.label} for c in OrdenAdicional.Tipo],
-            "estados_orden": [{"value": c.value, "label": c.label} for c in OrdenAdicional.Estado],
+            "prioridades": [
+                {"value": c.value, "label": c.label} for c in AlertaDespacho.Prioridad
+            ],
+            "tipos_orden": [
+                {"value": c.value, "label": c.label} for c in OrdenAdicional.Tipo
+            ],
+            "estados_orden": [
+                {"value": c.value, "label": c.label} for c in OrdenAdicional.Estado
+            ],
             "origenes": ["ECU-911", "Central ciudadana", "Radio", "Presencial"],
         }
     )
@@ -122,7 +205,9 @@ def meta(request):
 @permission_classes([SupervisorOnly])
 def alertas_collection(request):
     if request.method == "GET":
-        qs = AlertaDespacho.objects.select_related("agente", "agente__profile", "asignada_por")
+        qs = AlertaDespacho.objects.select_related(
+            "agente", "agente__profile", "asignada_por", "escuadra"
+        )
         estado = request.query_params.get("estado", "pendientes")
         if estado == "pendientes":
             qs = qs.filter(estado=AlertaDespacho.Estado.PENDIENTE)
@@ -144,9 +229,10 @@ def alertas_collection(request):
     ser = AlertaDespachoWriteSerializer(data=request.data)
     ser.is_valid(raise_exception=True)
     agente = ser.validated_data.get("agente")
+    escuadra = ser.validated_data.get("escuadra")
     estado = (
         AlertaDespacho.Estado.ASIGNADA
-        if agente
+        if (agente or escuadra)
         else AlertaDespacho.Estado.PENDIENTE
     )
     obj = ser.save(
@@ -154,7 +240,17 @@ def alertas_collection(request):
         estado=estado,
         origen=ser.validated_data.get("origen") or "ECU-911",
     )
-    if agente:
+    if escuadra:
+        if not obj.agente_id and escuadra.agente_lider_id:
+            obj.agente = escuadra.agente_lider
+            obj.save(update_fields=["agente"])
+        _notify_escuadra(
+            escuadra,
+            titulo="Nueva alerta asignada",
+            mensaje=f"{obj.titulo} · {obj.direccion}",
+            enlace="/app/agente_operativo/despacho_tareas/alertas",
+        )
+    elif agente:
         notify_user(
             user=agente,
             tipo=Notificacion.Tipo.ALERTA,
@@ -172,7 +268,16 @@ def alerta_sugerencias(request, pk):
         obj = AlertaDespacho.objects.get(pk=pk)
     except AlertaDespacho.DoesNotExist:
         return Response({"detail": "Alerta no encontrada."}, status=404)
-    return Response({"sugerencias": _candidatos_cercanos(obj.latitud, obj.longitud)})
+    return Response(
+        {
+            "sugerencias": _candidatos_escuadras(
+                request.user,
+                obj.latitud,
+                obj.longitud,
+                excluir_alerta_id=obj.id,
+            )
+        }
+    )
 
 
 @api_view(["POST"])
@@ -192,42 +297,97 @@ def alerta_asignar(request, pk):
             status=400,
         )
 
+    escuadra_id = request.data.get("escuadra")
+    # compat: si mandan agente, resolver escuadra del día
     agente_id = request.data.get("agente")
     auto = str(request.data.get("auto_cercano", "")).lower() in ("1", "true", "yes")
 
-    if auto or not agente_id:
-        cands = [c for c in _candidatos_cercanos(obj.latitud, obj.longitud) if c.get("agente")]
-        with_dist = [c for c in cands if c["distancia_km"] is not None]
-        pool = with_dist or cands
-        if not pool:
-            return Response(
-                {"detail": "No hay unidades en turno para asignar."},
-                status=400,
+    if auto or not escuadra_id:
+        if not escuadra_id and agente_id:
+            asig = (
+                AsignacionDiaria.objects.filter(
+                    agente_id=agente_id,
+                    fecha=date.today(),
+                    activo=True,
+                    escuadra__isnull=False,
+                )
+                .order_by("-id")
+                .first()
             )
-        agente_id = pool[0]["agente"]["id"]
+            if asig:
+                escuadra_id = asig.escuadra_id
+        if not escuadra_id:
+            cands = _candidatos_escuadras(
+                request.user,
+                obj.latitud,
+                obj.longitud,
+                excluir_alerta_id=obj.id,
+            )
+            with_dist = [c for c in cands if c["distancia_km"] is not None]
+            pool = with_dist or cands
+            if not pool:
+                return Response(
+                    {
+                        "detail": (
+                            "No hay escuadras disponibles. "
+                            "Todas están en un auxilio activo o no hay turno hoy."
+                        )
+                    },
+                    status=400,
+                )
+            escuadra_id = pool[0]["escuadra_id"]
 
     try:
-        agente = User.objects.get(pk=agente_id)
-    except User.DoesNotExist:
-        return Response({"detail": "Agente no encontrado."}, status=404)
+        esc = (
+            Escuadra.objects.select_related("agente_lider", "vehiculo")
+            .prefetch_related("companeros")
+            .get(pk=escuadra_id, supervisor=request.user, activo=True)
+        )
+    except Escuadra.DoesNotExist:
+        return Response(
+            {"detail": "Escuadra no encontrada o no pertenece a tu zona."},
+            status=404,
+        )
 
+    ocupadas = _escuadras_ocupadas_ids(request.user, excluir_alerta_id=obj.id)
+    if esc.id in ocupadas:
+        return Response(
+            {
+                "detail": (
+                    f"La escuadra «{esc.nombre}» ya está asignada a otro "
+                    "incidente activo. Elige una disponible."
+                )
+            },
+            status=400,
+        )
+    if not esc.agente_lider_id:
+        return Response({"detail": "La escuadra no tiene agente líder."}, status=400)
+
+    pos = _posicion_escuadra(esc)
     dist = None
-    asig = (
-        AsignacionDiaria.objects.filter(agente=agente, fecha=date.today(), activo=True)
-        .order_by("-id")
-        .first()
-    )
-    if asig and asig.latitud and obj.latitud and obj.longitud:
-        dist = round(_haversine_km(obj.latitud, obj.longitud, asig.latitud, asig.longitud), 2)
+    if (
+        pos["latitud"] is not None
+        and obj.latitud is not None
+        and obj.longitud is not None
+    ):
+        try:
+            dist = round(
+                _haversine_km(obj.latitud, obj.longitud, pos["latitud"], pos["longitud"]),
+                2,
+            )
+        except (TypeError, ValueError):
+            dist = None
 
-    obj.agente = agente
+    obj.escuadra = esc
+    obj.agente = esc.agente_lider
     obj.estado = AlertaDespacho.Estado.ASIGNADA
     obj.asignada_por = request.user
-    obj.save(update_fields=["agente", "estado", "asignada_por", "actualizado_en"])
+    obj.save(
+        update_fields=["escuadra", "agente", "estado", "asignada_por", "actualizado_en"]
+    )
 
-    notify_user(
-        user=agente,
-        tipo=Notificacion.Tipo.ALERTA,
+    _notify_escuadra(
+        esc,
         titulo="Auxilio asignado",
         mensaje=f"{obj.titulo} · {obj.direccion}"
         + (f" (~{dist} km)" if dist is not None else ""),
@@ -236,6 +396,7 @@ def alerta_asignar(request, pk):
 
     payload = AlertaDespachoWriteSerializer(obj).data
     payload["distancia_km"] = dist
+    payload["escuadra_nombre"] = esc.nombre
     return Response(payload)
 
 

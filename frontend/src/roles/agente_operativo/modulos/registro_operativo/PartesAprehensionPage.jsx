@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
 import PaginationBar from "../../../../shared/components/PaginationBar";
+import { useConfirm } from "../../../../shared/components/ConfirmContext";
 import { agenteApi, unwrapPage } from "../../api";
 import PartesLista from "./componentes/PartesLista";
 import ParteFormulario from "./componentes/ParteFormulario";
 import "../../../../shared/styles/ModuloPage.css";
+import "./RegistroOperativo.css";
 
 const PAGE_SIZE = 10;
 
@@ -17,6 +19,7 @@ const ESTADOS = [
 ];
 
 export default function PartesAprehensionPage() {
+  const confirm = useConfirm();
   const [items, setItems] = useState([]);
   const [meta, setMeta] = useState({ tipos_delito: [] });
   const [loading, setLoading] = useState(true);
@@ -83,7 +86,13 @@ export default function PartesAprehensionPage() {
   }
 
   async function handleEnviar(row) {
-    if (!window.confirm("¿Enviar este parte al supervisor para revisión?")) return;
+    const ok = await confirm({
+      title: "Enviar a revisión",
+      message: "¿Enviar este parte al supervisor para revisión?",
+      confirmLabel: "Enviar",
+      variant: "warn",
+    });
+    if (!ok) return;
     setBusyId(row.id);
     setError("");
     try {

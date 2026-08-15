@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
+import { useConfirm } from "../../../../shared/components/ConfirmContext";
 import { saasApi } from "../../../../saas/api";
 import "../../../../shared/styles/ModuloPage.css";
 import "../../../administrador/modulos/identidad_accesos/IdentidadAccesos.css";
@@ -14,6 +15,7 @@ function fmt(v) {
 }
 
 export default function AdministradoresPage() {
+  const confirm = useConfirm();
   const [items, setItems] = useState([]);
   const [instituciones, setInstituciones] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -103,7 +105,13 @@ export default function AdministradoresPage() {
   }
 
   async function revocar(row) {
-    if (!window.confirm(`¿Revocar acceso de ${row.nombre}? Quedará en baja.`)) return;
+    const ok = await confirm({
+      title: "Revocar acceso",
+      message: `¿Revocar acceso de ${row.nombre}? Quedará en baja.`,
+      confirmLabel: "Revocar",
+      variant: "danger",
+    });
+    if (!ok) return;
     setBusyId(row.id);
     setError("");
     try {

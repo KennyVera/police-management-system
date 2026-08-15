@@ -12,15 +12,22 @@ from operativo.pagination import paginate_qs
 from operativo.pdf_service import build_pdf_bytes, generar_pdf_parte
 from operativo.parquet_service import generar_parquet_parte
 from operativo.serializers import ParteAprehensionSerializer
+from roles.supervisor_unidad.scope import parte_en_zona_or_404, partes_en_zona_qs
+
+
+def _parte_no_encontrado():
+    return Response(
+        {"detail": "Parte no encontrado o fuera de tu zona."},
+        status=404,
+    )
 
 
 @api_view(["GET"])
 @permission_classes([SupervisorOnly])
 def partes_pendientes(request):
     qs = (
-        ParteAprehension.objects.filter(
-            estado_revision=ParteAprehension.EstadoRevision.EN_REVISION
-        )
+        partes_en_zona_qs(request.user)
+        .filter(estado_revision=ParteAprehension.EstadoRevision.EN_REVISION)
         .select_related("tipo_delito", "creado_por", "alerta")
         .prefetch_related("multimedia")
         .order_by("enviado_revision_en")
@@ -47,7 +54,8 @@ def partes_pendientes(request):
 @permission_classes([SupervisorOnly])
 def partes_historial(request):
     qs = (
-        ParteAprehension.objects.filter(
+        partes_en_zona_qs(request.user)
+        .filter(
             estado_revision__in=[
                 ParteAprehension.EstadoRevision.APROBADO,
                 ParteAprehension.EstadoRevision.OBSERVADO,
@@ -80,14 +88,9 @@ def partes_historial(request):
 @api_view(["GET"])
 @permission_classes([SupervisorOnly])
 def parte_detalle(request, pk):
-    try:
-        obj = (
-            ParteAprehension.objects.select_related("tipo_delito", "creado_por", "alerta")
-            .prefetch_related("multimedia")
-            .get(pk=pk)
-        )
-    except ParteAprehension.DoesNotExist:
-        return Response({"detail": "Parte no encontrado."}, status=404)
+    obj = parte_en_zona_or_404(request.user, pk)
+    if not obj:
+        return _parte_no_encontrado()
     return Response(ParteAprehensionSerializer(obj).data)
 
 
@@ -95,16 +98,9 @@ def parte_detalle(request, pk):
 @permission_classes([SupervisorOnly])
 def parte_pdf(request, pk):
     """Vista previa o descarga del PDF (incluye evidencias). Genera al vuelo."""
-    try:
-        obj = (
-            ParteAprehension.objects.select_related(
-                "tipo_delito", "creado_por", "alerta", "revisado_por"
-            )
-            .prefetch_related("multimedia")
-            .get(pk=pk)
-        )
-    except ParteAprehension.DoesNotExist:
-        return Response({"detail": "Parte no encontrado."}, status=404)
+    obj = parte_en_zona_or_404(request.user, pk)
+    if not obj:
+        return _parte_no_encontrado()
 
     try:
         pdf_bytes = build_pdf_bytes(obj)
@@ -136,10 +132,9 @@ def rechazar_parte(request, pk):
             {"detail": "Debes indicar el motivo del rechazo (ej. corrige la dirección)."},
             status=400,
         )
-    try:
-        obj = ParteAprehension.objects.select_related("creado_por").get(pk=pk)
-    except ParteAprehension.DoesNotExist:
-        return Response({"detail": "Parte no encontrado."}, status=404)
+    obj = parte_en_zona_or_404(request.user, pk)
+    if not obj:
+        return _parte_no_encontrado()
 
     if obj.estado_revision != ParteAprehension.EstadoRevision.EN_REVISION:
         return Response(
@@ -177,14 +172,9 @@ def rechazar_parte(request, pk):
 @api_view(["POST"])
 @permission_classes([SupervisorOnly])
 def aprobar_parte(request, pk):
-    try:
-        obj = (
-            ParteAprehension.objects.select_related("tipo_delito", "creado_por", "alerta")
-            .prefetch_related("multimedia")
-            .get(pk=pk)
-        )
-    except ParteAprehension.DoesNotExist:
-        return Response({"detail": "Parte no encontrado."}, status=404)
+    obj = parte_en_zona_or_404(request.user, pk)
+    if not obj:
+        return _parte_no_encontrado()
 
     if obj.estado_revision != ParteAprehension.EstadoRevision.EN_REVISION:
         return Response(

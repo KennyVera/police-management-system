@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
 import PaginationBar from "../../../../shared/components/PaginationBar";
+import { useConfirm } from "../../../../shared/components/ConfirmContext";
 import { supervisorApi, unwrapPage } from "../../api";
 import PartesPendientesLista from "./componentes/PartesPendientesLista";
 import ParteRevisionPanel from "./componentes/ParteRevisionPanel";
 import "../../../../shared/styles/ModuloPage.css";
 import "../../../../shared/components/PaginationBar.css";
+import "./ControlCalidad.css";
 
 const PAGE_SIZE = 10;
 const DEBOUNCE_MS = 350;
@@ -20,6 +22,7 @@ const PRIORIDADES = [
 ];
 
 export default function PendientesPage() {
+  const confirm = useConfirm();
   const [searchParams, setSearchParams] = useSearchParams();
   const focusParteId = Number(searchParams.get("parte") || 0) || null;
 
@@ -203,9 +206,14 @@ export default function PendientesPage() {
 
   async function handleAprobar() {
     if (!selected) return;
-    if (!window.confirm("¿Aprobar y bloquear este parte? Quedará inmutable y se generará el PDF.")) {
-      return;
-    }
+    const ok = await confirm({
+      title: "Aprobar y bloquear parte",
+      message:
+        "¿Aprobar y bloquear este parte? Quedará inmutable y se generará el PDF.",
+      confirmLabel: "Aprobar",
+      variant: "warn",
+    });
+    if (!ok) return;
     setBusy(true);
     setError("");
     setOk("");

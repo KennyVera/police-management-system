@@ -16,6 +16,7 @@ urlpatterns = [
     path("vehiculos/<int:pk>/", views.vehiculo_detail, name="sup-vehiculo-detail"),
     path("asignaciones/", views.asignaciones_collection, name="sup-asignaciones"),
     path("asignaciones/<int:pk>/", views.asignacion_detail, name="sup-asignacion-detail"),
+    path("cuadrantes-mapa/", views.cuadrantes_mapa, name="sup-cuadrantes-mapa"),
     path("horarios/", views.horarios_collection, name="sup-horarios"),
     path("horarios/<int:pk>/decidir/", views.horario_decidir, name="sup-horario-decidir"),
 ]

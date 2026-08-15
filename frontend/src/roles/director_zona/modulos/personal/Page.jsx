@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
 import PaginationBar from "../../../../shared/components/PaginationBar";
+import { useConfirm } from "../../../../shared/components/ConfirmContext";
 import { directorApi } from "../../api";
 import "../../../../shared/styles/ModuloPage.css";
 import "../../../../shared/components/PaginationBar.css";
@@ -25,6 +26,7 @@ const ROLES = [
 ];
 
 export default function PersonalPage() {
+  const confirm = useConfirm();
   const [tab, setTab] = useState("estado");
   const [data, setData] = useState(null);
   const [evals, setEvals] = useState([]);
@@ -130,7 +132,13 @@ export default function PersonalPage() {
   }
 
   async function removeEval(id) {
-    if (!window.confirm("¿Eliminar esta evaluación?")) return;
+    const ok = await confirm({
+      title: "Eliminar evaluación",
+      message: "¿Eliminar esta evaluación? Esta acción no se puede deshacer.",
+      confirmLabel: "Eliminar",
+      variant: "danger",
+    });
+    if (!ok) return;
     try {
       await directorApi.deleteEvaluacion(id);
       setEvals((prev) => prev.filter((x) => x.id !== id));

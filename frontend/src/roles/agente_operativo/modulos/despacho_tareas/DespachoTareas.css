@@ -460,3 +460,208 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* —— Modo oscuro (Agente Operativo · Despacho) —— */
+html[data-theme="dark"] .despacho-map-wrap {
+  border-color: #2e2e2e;
+  background: #111;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .despacho-map .leaflet-container {
+  background: #1a1a1a;
+}
+
+html[data-theme="dark"] .map-eta-chip {
+  background: #1f1f1f;
+  border-color: #3a3a3a;
+  color: #c4b5fd;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="dark"] .pin-dot {
+  border-color: #1a1a1a;
+}
+
+html[data-theme="dark"] .alerta-row {
+  background: #1a1a1a;
+  border-color: #2e2e2e;
+  color: #e8e8e8;
+}
+
+html[data-theme="dark"] .alerta-row:hover {
+  border-color: #4c3d6e;
+  background: #1f1c28;
+}
+
+html[data-theme="dark"] .alerta-row.selected {
+  background: #221c2e;
+  border-color: #7c5cbf;
+}
+
+html[data-theme="dark"] .alerta-row-body strong {
+  color: #f5f5f5;
+}
+
+html[data-theme="dark"] .alerta-row-meta {
+  color: #a3a3a3;
+}
+
+html[data-theme="dark"] .alerta-bell {
+  background: #262626;
+  color: #d4d4d4;
+}
+
+html[data-theme="dark"] .alerta-bell.prio-alta {
+  background: #3f1515;
+  color: #fca5a5;
+}
+
+html[data-theme="dark"] .alerta-bell.prio-media {
+  background: #3f2a12;
+  color: #fdba74;
+}
+
+html[data-theme="dark"] .alerta-bell.prio-baja {
+  background: #14352a;
+  color: #86efac;
+}
+
+html[data-theme="dark"] .ver-ruta {
+  color: #c4b5fd;
+}
+
+html[data-theme="dark"] .detalle-head h3 {
+  color: #f5f5f5;
+}
+
+html[data-theme="dark"] .detalle-time,
+html[data-theme="dark"] .parte-estado-hint {
+  color: #a3a3a3;
+}
+
+html[data-theme="dark"] .detalle-dir {
+  color: #e8e8e8;
+}
+
+html[data-theme="dark"] .nav-summary {
+  background: #141414;
+  border: 1px solid #2e2e2e;
+  color: #e8e8e8;
+}
+
+html[data-theme="dark"] .nav-summary .mod-muted,
+html[data-theme="dark"] .nav-summary span {
+  color: #a3a3a3;
+}
+
+html[data-theme="dark"] .nav-summary strong {
+  color: #f5f5f5;
+}
+
+html[data-theme="dark"] .progreso-box,
+html[data-theme="dark"] .parte-box {
+  border-top-color: #2e2e2e;
+}
+
+html[data-theme="dark"] .prog-icon {
+  background: #262626;
+  color: #a3a3a3;
+}
+
+html[data-theme="dark"] .prog-step.done .prog-icon {
+  background: #14352a;
+  color: #86efac;
+}
+
+html[data-theme="dark"] .prog-step.current .prog-icon {
+  background: #2e1f4a;
+  color: #c4b5fd;
+  box-shadow: 0 0 0 3px rgba(124, 92, 191, 0.28);
+}
+
+html[data-theme="dark"] .prog-label {
+  color: #c4c4c4;
+}
+
+html[data-theme="dark"] .safety-note {
+  background: #1a1624;
+  border: 1px solid #3a3050;
+  color: #c4c4c4;
+}
+
+html[data-theme="dark"] .safety-note .material-symbols-outlined {
+  color: #c4b5fd;
+}
+
+html[data-theme="dark"] .alerta-card {
+  background: #1a1a1a;
+  border-color: #2e2e2e;
+  box-shadow: none;
+  color: #e8e8e8;
+}
+
+html[data-theme="dark"] .badge-prio.alta {
+  background: #3f1515;
+  color: #fca5a5;
+}
+
+html[data-theme="dark"] .badge-prio.media {
+  background: #3f2a12;
+  color: #fdba74;
+}
+
+html[data-theme="dark"] .badge-prio.baja {
+  background: #14352a;
+  color: #86efac;
+}
+
+html[data-theme="dark"] .turno-hero {
+  background:
+    radial-gradient(circle at 90% 20%, rgba(124, 92, 191, 0.18), transparent 42%),
+    #1a1a1a;
+  border-color: #2e2e2e;
+  color: #e8e8e8;
+}
+
+html[data-theme="dark"] .turno-hero h3 {
+  color: #c4b5fd;
+}
+
+html[data-theme="dark"] .turno-horario {
+  background: #2e1f4a;
+  color: #c4b5fd;
+}
+
+html[data-theme="dark"] .turno-label {
+  color: #a3a3a3;
+}
+
+html[data-theme="dark"] .turno-card h4 {
+  color: #f5f5f5;
+}
+
+html[data-theme="dark"] .turno-card-icon {
+  background: #2e1f4a;
+  color: #c4b5fd;
+}
+
+html[data-theme="dark"] .turno-card-icon.vehicle {
+  background: #15253a;
+  color: #93c5fd;
+}
+
+html[data-theme="dark"] .turno-card-icon.zone {
+  background: #14352a;
+  color: #86efac;
+}
+
+html[data-theme="dark"] .turno-card-icon.sup {
+  background: #3f2a12;
+  color: #fdba74;
+}
+
+html[data-theme="dark"] .alertas-panel-head h3 {
+  color: #f5f5f5;
+}
+

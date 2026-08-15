@@ -3,7 +3,7 @@ import { supervisorApi } from "../../../api";
 
 export default function AsignarAuxilioModal({ alerta, unidades, onClose, onAssigned, onError }) {
   const [sugerencias, setSugerencias] = useState([]);
-  const [agente, setAgente] = useState("");
+  const [escuadra, setEscuadra] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -14,7 +14,7 @@ export default function AsignarAuxilioModal({ alerta, unidades, onClose, onAssig
       .then((d) => {
         const list = d.sugerencias || [];
         setSugerencias(list);
-        if (list[0]?.agente?.id) setAgente(String(list[0].agente.id));
+        if (list[0]?.escuadra_id) setEscuadra(String(list[0].escuadra_id));
       })
       .catch((err) => onError(err.message))
       .finally(() => setLoading(false));
@@ -29,7 +29,9 @@ export default function AsignarAuxilioModal({ alerta, unidades, onClose, onAssig
     try {
       const res = await supervisorApi.asignarAlerta(alerta.id, { auto_cercano: true });
       const dist = res.distancia_km != null ? ` (~${res.distancia_km} km)` : "";
-      onAssigned(`Asignado a ${res.agente_info?.nombre || "unidad"}${dist}`);
+      const nombre =
+        res.escuadra_info?.nombre || res.escuadra_nombre || res.agente_info?.nombre || "escuadra";
+      onAssigned(`Asignado a ${nombre}${dist}`);
     } catch (err) {
       onError(err.message);
     } finally {
@@ -39,12 +41,16 @@ export default function AsignarAuxilioModal({ alerta, unidades, onClose, onAssig
 
   async function asignarManual(e) {
     e.preventDefault();
-    if (!agente) return;
+    if (!escuadra) return;
     setBusy(true);
     onError("");
     try {
-      const res = await supervisorApi.asignarAlerta(alerta.id, { agente: Number(agente) });
-      onAssigned(`Asignado a ${res.agente_info?.nombre || "agente"}`);
+      const res = await supervisorApi.asignarAlerta(alerta.id, {
+        escuadra: Number(escuadra),
+      });
+      const nombre =
+        res.escuadra_info?.nombre || res.escuadra_nombre || "escuadra";
+      onAssigned(`Asignado a ${nombre}`);
     } catch (err) {
       onError(err.message);
     } finally {
@@ -60,32 +66,44 @@ export default function AsignarAuxilioModal({ alerta, unidades, onClose, onAssig
           <strong>{alerta.titulo}</strong> · {alerta.direccion}
         </p>
         {loading ? (
-          <p className="mod-muted">Calculando unidades cercanas...</p>
+          <p className="mod-muted">Calculando escuadras cercanas...</p>
         ) : (
           <div className="form-grid">
             <label className="full">
-              Unidad / agente
-              <select required value={agente} onChange={(e) => setAgente(e.target.value)}>
-                <option value="">Seleccione...</option>
+              Escuadra
+              <select
+                required
+                value={escuadra}
+                onChange={(e) => setEscuadra(e.target.value)}
+              >
+                <option value="">Seleccione escuadra...</option>
                 {pool.map((u) => (
-                  <option key={u.agente?.id || u.asignacion_id} value={u.agente?.id}>
-                    {u.agente?.nombre}
+                  <option key={u.escuadra_id} value={u.escuadra_id}>
+                    {u.escuadra_nombre}
+                    {u.lider?.nombre ? ` · Líder: ${u.lider.nombre}` : ""}
+                    {u.miembros != null ? ` · ${u.miembros} int.` : ""}
                     {u.vehiculo_placa ? ` · ${u.vehiculo_placa}` : ""}
                     {u.distancia_km != null ? ` · ${u.distancia_km} km` : ""}
                   </option>
                 ))}
               </select>
             </label>
+            {!pool.length && (
+              <p className="full mod-muted" style={{ margin: 0 }}>
+                No hay escuadras disponibles. Las que están en turno ya tienen un
+                auxilio activo, o no hay escuadras creadas para hoy.
+              </p>
+            )}
           </div>
         )}
         <div className="modal-actions">
           <button type="button" className="btn-ghost" onClick={onClose}>
             Cancelar
           </button>
-          <button type="button" className="btn-ghost" disabled={busy} onClick={asignarAuto}>
-            Más cercano
+          <button type="button" className="btn-ghost" disabled={busy || !pool.length} onClick={asignarAuto}>
+            Más cercana
           </button>
-          <button type="submit" className="btn-accent" disabled={busy || !agente}>
+          <button type="submit" className="btn-accent" disabled={busy || !escuadra}>
             Asignar
           </button>
         </div>

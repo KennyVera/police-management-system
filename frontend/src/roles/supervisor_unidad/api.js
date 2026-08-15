@@ -54,6 +54,9 @@ export const supervisorApi = {
     apiFetch(`${LOG}/asignaciones/`, { method: "POST", body: JSON.stringify(body) }),
   updateAsignacion: (id, body) =>
     apiFetch(`${LOG}/asignaciones/${id}/`, { method: "PATCH", body: JSON.stringify(body) }),
+  deleteAsignacion: (id) =>
+    apiFetch(`${LOG}/asignaciones/${id}/`, { method: "DELETE" }),
+  cuadrantesMapa: () => apiFetch(`${LOG}/cuadrantes-mapa/`),
 
   listHorarios: (params = {}) => {
     const q = new URLSearchParams(params).toString();

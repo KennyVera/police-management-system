@@ -5,6 +5,7 @@ import { agenteApi, unwrapPage } from "../../api";
 import MultimediaLista from "./componentes/MultimediaLista";
 import MultimediaUploader from "./componentes/MultimediaUploader";
 import "../../../../shared/styles/ModuloPage.css";
+import "./RegistroOperativo.css";
 
 const PAGE_SIZE = 10;
 

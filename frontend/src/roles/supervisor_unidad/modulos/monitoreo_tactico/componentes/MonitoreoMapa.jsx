@@ -120,14 +120,22 @@ export default function MonitoreoMapa({ unidades, focus, focusToken = 0 }) {
           >
             <Popup>
               <div className="monitoreo-popup">
-                <strong>{u.unidad_label || "Unidad"}</strong>
+                <strong>
+                  {u.escuadra
+                    ? `${u.escuadra}${u.vehiculo_placa ? ` · ${u.vehiculo_placa}` : ""}`
+                    : u.unidad_label || "Unidad"}
+                </strong>
                 <p className="monitoreo-popup-line">
-                  {u.agente?.nombre}
-                  {u.companero?.nombre ? ` · ${u.companero.nombre}` : ""}
+                  {(u.agentes || [])
+                    .map((a) => a?.nombre)
+                    .filter(Boolean)
+                    .join(" · ") ||
+                    [u.agente?.nombre, u.companero?.nombre].filter(Boolean).join(" · ") ||
+                    "—"}
                 </p>
                 <p className="monitoreo-popup-line">
                   {u.vehiculo_placa}
-                  {u.escuadra ? ` · ${u.escuadra}` : ""}
+                  {u.cuadrante ? ` · ${u.cuadrante}` : ""}
                 </p>
                 <p className="monitoreo-popup-dir">
                   <span aria-hidden>📍</span> {u.direccion}

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import MaterialIcon from "../../../../../shared/components/MaterialIcon";
+import { useConfirm } from "../../../../../shared/components/ConfirmContext";
 import { identidadApi } from "../../../api";
 
 export default function SesionesPanel() {
+  const confirm = useConfirm();
   const [sesiones, setSesiones] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -25,8 +27,15 @@ export default function SesionesPanel() {
     return () => clearInterval(id);
   }, []);
 
-  async function cerrar(sessionId) {
-    await identidadApi.cerrarSesion(sessionId);
+  async function cerrar(session) {
+    const ok = await confirm({
+      title: "Forzar cierre de sesión",
+      message: `¿Cerrar la sesión de ${session.user_name || session.user_email}? El usuario deberá volver a iniciar sesión.`,
+      confirmLabel: "Cerrar sesión",
+      variant: "danger",
+    });
+    if (!ok) return;
+    await identidadApi.cerrarSesion(session.id);
     load();
   }
 
@@ -66,7 +75,7 @@ export default function SesionesPanel() {
               <td>{s.ip_address || "—"}</td>
               <td>{new Date(s.last_seen).toLocaleString()}</td>
               <td>
-                <button type="button" className="btn-danger" onClick={() => cerrar(s.id)}>
+                <button type="button" className="btn-danger" onClick={() => cerrar(s)}>
                   Forzar cierre
                 </button>
               </td>

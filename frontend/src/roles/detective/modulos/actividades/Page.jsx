@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
+import { useConfirm } from "../../../../shared/components/ConfirmContext";
 import { detectiveApi } from "../../api";
 import "../../../../shared/styles/ModuloPage.css";
 
@@ -11,6 +12,7 @@ const TABS = [
 ];
 
 export default function ActividadesPage() {
+  const confirm = useConfirm();
   const [expedientes, setExpedientes] = useState([]);
   const [meta, setMeta] = useState({
     tipos_bitacora: [],
@@ -197,13 +199,14 @@ export default function ActividadesPage() {
   async function cerrarCaso(e) {
     e.preventDefault();
     if (!expId || locked) return;
-    if (
-      !window.confirm(
-        "Al emitir el Informe Investigativo Final el expediente se cerrará, se bloqueará la edición y se generará el paquete digital para Fiscalía. ¿Continuar?"
-      )
-    ) {
-      return;
-    }
+    const okConfirm = await confirm({
+      title: "Cerrar expediente",
+      message:
+        "Al emitir el Informe Investigativo Final el expediente se cerrará, se bloqueará la edición y se generará el paquete digital para Fiscalía. ¿Continuar?",
+      confirmLabel: "Cerrar caso",
+      variant: "danger",
+    });
+    if (!okConfirm) return;
     setBusy(true);
     setError("");
     setOk("");

@@ -1,6 +1,10 @@
 export default function UnidadesLista({ unidades, selectedId, onSelect }) {
   if (!unidades?.length) {
-    return <p className="mod-muted">No hay unidades en turno con asignación hoy.</p>;
+    return (
+      <p className="mod-muted">
+        No hay patrullas en turno en tu zona para hoy.
+      </p>
+    );
   }
 
   return (
@@ -8,6 +12,10 @@ export default function UnidadesLista({ unidades, selectedId, onSelect }) {
       {unidades.map((u) => {
         const active = selectedId === u.id;
         const gps = u.latitud != null && u.longitud != null;
+        const nombres =
+          (u.agentes || []).map((a) => a?.nombre).filter(Boolean).join(" · ") ||
+          u.agente?.nombre ||
+          "—";
         const direccion =
           u.alerta_activa?.direccion ||
           [u.sector_detalle, u.cuadrante].filter(Boolean).join(" · ") ||
@@ -21,14 +29,18 @@ export default function UnidadesLista({ unidades, selectedId, onSelect }) {
             title={gps ? "Ver en el mapa" : "Sin GPS"}
           >
             <div className="monitoreo-unidad-top">
-              <strong>{u.unidad_label || u.vehiculo_placa || "Unidad"}</strong>
+              <strong>
+                {u.escuadra
+                  ? `${u.escuadra}${u.vehiculo_placa ? ` · ${u.vehiculo_placa}` : ""}`
+                  : u.unidad_label || u.vehiculo_placa || "Unidad"}
+              </strong>
               <span
                 className={`badge-estado ${u.alerta_activa ? "SUSPENDIDO" : "ACTIVO"}`}
               >
                 {u.alerta_activa ? u.alerta_activa.estado_label : "Patrullaje"}
               </span>
             </div>
-            <p>{u.agente?.nombre || "—"}</p>
+            <p>{nombres}</p>
             <p className="mod-muted">
               {u.vehiculo_placa} · {u.cuadrante || "Sin cuadrante"}
               {!gps ? " · Sin GPS" : ""}

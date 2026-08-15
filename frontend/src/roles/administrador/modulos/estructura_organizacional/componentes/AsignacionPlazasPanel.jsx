@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import MaterialIcon from "../../../../../shared/components/MaterialIcon";
+import { useConfirm } from "../../../../../shared/components/ConfirmContext";
 import { estructuraApi } from "../../../api";
 import "./AsignacionZonas.css";
 
@@ -49,6 +50,7 @@ export default function AsignacionPlazasPanel({ zonas: zonasProp, onChanged }) {
   const transferRef = useRef(null);
   const zonaIdRef = useRef(zonaId);
   zonaIdRef.current = zonaId;
+  const confirm = useConfirm();
 
   async function loadPersonalZona(id) {
     if (!id) {
@@ -148,7 +150,7 @@ export default function AsignacionPlazasPanel({ zonas: zonasProp, onChanged }) {
     });
   }
 
-  function pasarAZona() {
+  async function pasarAZona() {
     setError("");
     setMsg("");
     if (!zonaId) {
@@ -171,9 +173,12 @@ export default function AsignacionPlazasPanel({ zonas: zonasProp, onChanged }) {
       zonaSel?.jefe_zona &&
       zonaSel.jefe_zona.id !== jefes[0].id
     ) {
-      const ok = window.confirm(
-        `La zona ya tiene jefe (${zonaSel.jefe_zona.nombre}). ¿Reemplazarlo?`
-      );
+      const ok = await confirm({
+        title: "Reemplazar Jefe de Zona",
+        message: `La zona ya tiene jefe (${zonaSel.jefe_zona.nombre}). ¿Deseas reemplazarlo por el seleccionado?`,
+        confirmLabel: "Reemplazar",
+        variant: "warn",
+      });
       if (!ok) return;
     }
 
@@ -192,9 +197,12 @@ export default function AsignacionPlazasPanel({ zonas: zonasProp, onChanged }) {
       setStaged((prev) => prev.filter((x) => x.id !== u.id));
       return;
     }
-    const ok = window.confirm(
-      `¿Quitar a ${fullName(u)} de «${zonaSel?.nombre || "esta zona"}»?`
-    );
+    const ok = await confirm({
+      title: "Quitar de la zona",
+      message: `¿Quitar a ${fullName(u)} de «${zonaSel?.nombre || "esta zona"}»?`,
+      confirmLabel: "Quitar",
+      variant: "warn",
+    });
     if (!ok) return;
     try {
       await estructuraApi.assignPlazasBatch({
@@ -310,11 +318,14 @@ export default function AsignacionPlazasPanel({ zonas: zonasProp, onChanged }) {
       setMsg(`«${z.nombre}» no tiene usuarios asignados.`);
       return;
     }
-    const ok = window.confirm(
-      `¿Restablecer asignaciones de «${z.nombre}»?\n` +
-        `Se quitará a todos los usuarios de esta zona (jefe, supervisores, detectives y agentes). ` +
-        `La zona NO se elimina.`
-    );
+    const ok = await confirm({
+      title: `¿Restablecer asignaciones de «${z.nombre}»?`,
+      message:
+        "Se quitará a todos los usuarios de esta zona (jefe, supervisores, detectives y agentes). La zona NO se elimina.",
+      confirmLabel: "Restablecer",
+      cancelLabel: "Cancelar",
+      variant: "danger",
+    });
     if (!ok) return;
     setBusyId(`reset-${z.id}`);
     setError("");

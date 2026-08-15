@@ -80,7 +80,7 @@ export default function AuxiliosPage() {
           <p className="mod-kicker">Despacho y Tareas Operativas</p>
           <h2>Asignación de Auxilios</h2>
           <p className="mod-desc">
-            Recibe alertas ECU-911 / central ciudadana y asígnalas al patrullero más cercano.
+            Recibe alertas ECU-911 / central ciudadana y asígnalas a la escuadra más cercana.
           </p>
         </div>
         <button type="button" className="btn-ghost" onClick={load}>

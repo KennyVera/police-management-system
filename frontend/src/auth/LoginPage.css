@@ -1,10 +1,10 @@
 .login-page {
-  --ct-purple: #6b3fa0;
-  --ct-purple-deep: #5b2d8e;
-  --ct-navy: #1e2a4a;
-  --ct-muted: #6b7280;
-  --ct-border: #e5e7eb;
-  --ct-bg: #eef1f6;
+  --login-purple: #6b3fa0;
+  --login-purple-deep: #5b2d8e;
+  --login-navy: #1e2a4a;
+  --login-muted: #6b7280;
+  --login-border: #e5e7eb;
+  --login-bg: #eef1f6;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -14,9 +14,9 @@
   background:
     radial-gradient(circle at 10% 0%, #dfe7f5 0%, transparent 40%),
     radial-gradient(circle at 90% 100%, #e8dff5 0%, transparent 35%),
-    var(--ct-bg);
+    var(--login-bg);
   font-family: "Segoe UI", "Trebuchet MS", sans-serif;
-  color: var(--ct-navy);
+  color: var(--login-navy);
 }
 
 .login-shell {
@@ -108,7 +108,7 @@
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.06em;
-  color: var(--ct-navy);
+  color: var(--login-navy);
 }
 
 .login-brand h1 {
@@ -116,14 +116,14 @@
   font-size: clamp(1.55rem, 2.4vw, 2rem);
   line-height: 1.2;
   font-weight: 800;
-  color: var(--ct-navy);
+  color: var(--login-navy);
   position: relative;
   z-index: 1;
 }
 
 .brand-copy {
   margin: 0;
-  color: var(--ct-muted);
+  color: var(--login-muted);
   font-size: 0.95rem;
   line-height: 1.45;
   max-width: 34ch;
@@ -189,8 +189,36 @@
   background: #ffffff;
 }
 
+.login-panel-top {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
+.login-theme-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #6b7280;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.login-theme-toggle:hover {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.login-theme-toggle .material-symbols-outlined {
+  font-size: 1.2rem;
+}
+
 .lang-select {
-  align-self: flex-end;
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
@@ -206,14 +234,14 @@
 
 .login-heading p {
   margin: 0.35rem 0 0;
-  color: var(--ct-muted);
+  color: var(--login-muted);
 }
 
 .login-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
-  border-bottom: 1px solid var(--ct-border);
+  border-bottom: 1px solid var(--login-border);
 }
 
 .login-tabs button {
@@ -232,8 +260,8 @@
 }
 
 .login-tabs button.active {
-  color: var(--ct-purple);
-  border-bottom-color: var(--ct-purple);
+  color: var(--login-purple);
+  border-bottom-color: var(--login-purple);
 }
 
 .login-form {
@@ -255,7 +283,7 @@
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  border: 1px solid var(--ct-border);
+  border: 1px solid var(--login-border);
   border-radius: 10px;
   padding: 0.65rem 0.75rem;
   background: #fff;
@@ -271,7 +299,7 @@
   outline: none;
   width: 100%;
   font: inherit;
-  color: var(--ct-navy);
+  color: var(--login-navy);
   background: transparent;
 }
 
@@ -280,8 +308,8 @@
 .field input:-webkit-autofill:hover,
 .field input:-webkit-autofill:focus,
 .field input:-webkit-autofill:active {
-  -webkit-text-fill-color: var(--ct-navy);
-  caret-color: var(--ct-navy);
+  -webkit-text-fill-color: var(--login-navy);
+  caret-color: var(--login-navy);
   transition: background-color 99999s ease-in-out 0s;
   box-shadow: 0 0 0 1000px #ffffff inset !important;
 }
@@ -338,7 +366,7 @@
 
 .btn-primary {
   border: 0;
-  background: var(--ct-purple);
+  background: var(--login-purple);
   color: #fff;
 }
 
@@ -350,7 +378,7 @@
 .btn-outline {
   border: 1.5px solid #cbb3e8;
   background: #fff;
-  color: var(--ct-purple-deep);
+  color: var(--login-purple-deep);
 }
 
 .divider {
@@ -366,7 +394,7 @@
 .divider::after {
   content: "";
   height: 1px;
-  background: var(--ct-border);
+  background: var(--login-border);
 }
 
 .signup-hint {
@@ -411,7 +439,7 @@
   margin: 0 0 0.25rem;
   font-size: 0.78rem;
   font-weight: 700;
-  color: var(--ct-purple-deep);
+  color: var(--login-purple-deep);
 }
 
 .demo-hint code {

@@ -313,6 +313,11 @@ class AsignacionDiaria(models.Model):
     )
     cuadrante = models.CharField(max_length=120)
     sector_detalle = models.CharField(max_length=255, blank=True)
+    poligono = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="GeoJSON Polygon del área de patrullaje (coordenadas [lng, lat]).",
+    )
     turno_inicio = models.TimeField()
     turno_fin = models.TimeField()
     hora_formacion_real = models.TimeField(null=True, blank=True)
@@ -364,6 +369,14 @@ class AlertaDespacho(models.Model):
         blank=True,
         on_delete=models.PROTECT,
         related_name="alertas_despacho",
+    )
+    escuadra = models.ForeignKey(
+        "Escuadra",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="alertas_despacho",
+        help_text="Escuadra asignada al auxilio (todos los integrantes reciben la alerta).",
     )
     asignada_por = models.ForeignKey(
         User,

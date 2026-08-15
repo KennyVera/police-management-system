@@ -279,6 +279,20 @@ html[data-theme="dark"] .btn-warn {
   border-color: #5c4018 !important;
 }
 
+html[data-theme="dark"] .btn-danger {
+  background: #3a1515 !important;
+  color: #fca5a5 !important;
+  border: 1px solid #5c2020 !important;
+}
+
+html[data-theme="dark"] .data-table tr.is-selected {
+  background: #2a2438 !important;
+}
+
+html[data-theme="dark"] .data-table tr.is-selected td {
+  color: #f5f5f5 !important;
+}
+
 html[data-theme="dark"] .btn-accent {
   color: #fff !important;
 }
@@ -331,6 +345,12 @@ html[data-theme="dark"] .mod-error {
   background: var(--ct-danger-bg);
   color: var(--ct-danger-text);
   border-color: #5c2020;
+}
+
+html[data-theme="dark"] .mod-ok {
+  background: var(--ct-ok-bg);
+  color: var(--ct-ok-text);
+  border-color: #14532d;
 }
 
 html[data-theme="dark"] .mod-kicker,
@@ -389,12 +409,37 @@ html[data-theme="dark"] .az-hist-list li {
 
 /* —— Login —— */
 html[data-theme="dark"] .login-page {
-  background: var(--ct-bg);
+  background:
+    radial-gradient(circle at 10% 0%, #1a1a1a 0%, transparent 42%),
+    radial-gradient(circle at 90% 100%, #181818 0%, transparent 38%),
+    var(--ct-bg) !important;
   color: var(--ct-text);
 }
 
+html[data-theme="dark"] .login-shell {
+  background: #141414 !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55) !important;
+}
+
 html[data-theme="dark"] .login-brand {
-  background: #141414;
+  background:
+    radial-gradient(ellipse at 55% 58%, rgba(80, 70, 110, 0.18) 0%, transparent 55%),
+    #141414 !important;
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .login-brand::after {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 20%,
+    rgba(255, 255, 255, 0.08) 80%,
+    transparent 100%
+  );
+}
+
+html[data-theme="dark"] .login-panel {
+  background: #141414 !important;
   color: var(--ct-text);
 }
 
@@ -405,13 +450,151 @@ html[data-theme="dark"] .login-heading h2 {
 }
 
 html[data-theme="dark"] .brand-copy,
-html[data-theme="dark"] .login-heading p {
+html[data-theme="dark"] .login-heading p,
+html[data-theme="dark"] .lang-select,
+html[data-theme="dark"] .signup-hint,
+html[data-theme="dark"] .remember,
+html[data-theme="dark"] .divider,
+html[data-theme="dark"] .login-footer {
   color: var(--ct-muted) !important;
+}
+
+html[data-theme="dark"] .brand-values {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .brand-values li {
+  color: var(--ct-muted-2) !important;
+}
+
+html[data-theme="dark"] .brand-values li + li {
+  border-left-color: rgba(255, 255, 255, 0.1);
+}
+
+html[data-theme="dark"] .brand-mark:not(.has-logo) {
+  background: #222;
 }
 
 html[data-theme="dark"] .brand-mark.has-logo {
   background: #111;
   border-color: var(--ct-border);
+}
+
+html[data-theme="dark"] .brand-art {
+  mix-blend-mode: normal;
+  filter: brightness(0.92) contrast(1.05) saturate(0.95);
+  opacity: 0.95;
+}
+
+html[data-theme="dark"] .login-tabs {
+  border-bottom-color: var(--ct-border);
+}
+
+html[data-theme="dark"] .login-tabs button {
+  color: var(--ct-muted) !important;
+}
+
+html[data-theme="dark"] .login-tabs button.active {
+  color: var(--ct-accent) !important;
+  border-bottom-color: var(--ct-accent);
+}
+
+html[data-theme="dark"] .login-form > label {
+  color: var(--ct-text-2) !important;
+}
+
+html[data-theme="dark"] .login-page .field {
+  background: var(--ct-input-bg) !important;
+  border-color: var(--ct-border-strong) !important;
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .login-page .field:focus-within {
+  border-color: #8b6fd1;
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.18);
+}
+
+html[data-theme="dark"] .login-page .field .material-symbols-outlined,
+html[data-theme="dark"] .login-page .icon-btn {
+  color: #8a8a8a !important;
+}
+
+html[data-theme="dark"] .login-page .field input {
+  background: transparent !important;
+  color: var(--ct-text) !important;
+  border-color: transparent !important;
+  -webkit-text-fill-color: var(--ct-text);
+  caret-color: var(--ct-text);
+}
+
+html[data-theme="dark"] .login-page .field input:-webkit-autofill,
+html[data-theme="dark"] .login-page .field input:-webkit-autofill:hover,
+html[data-theme="dark"] .login-page .field input:-webkit-autofill:focus,
+html[data-theme="dark"] .login-page .field input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--ct-text) !important;
+  caret-color: var(--ct-text);
+  box-shadow: 0 0 0 1000px #141414 inset !important;
+  transition: background-color 99999s ease-in-out 0s;
+}
+
+html[data-theme="dark"] .login-page .btn-outline {
+  background: #1a1a1a !important;
+  border-color: #4a3a66 !important;
+  color: #c4b5fd !important;
+}
+
+html[data-theme="dark"] .login-page .btn-outline:hover {
+  background: #222 !important;
+}
+
+html[data-theme="dark"] .login-page .divider::before,
+html[data-theme="dark"] .login-page .divider::after {
+  background: var(--ct-border);
+}
+
+html[data-theme="dark"] .login-page .text-link,
+html[data-theme="dark"] .login-footer a {
+  color: #c4b5fd !important;
+}
+
+html[data-theme="dark"] .login-page .form-error {
+  background: var(--ct-danger-bg) !important;
+  border-color: #5c2020 !important;
+  color: var(--ct-danger-text) !important;
+}
+
+html[data-theme="dark"] .login-page .institutional-box {
+  background: #1a1a1a !important;
+  border-color: var(--ct-border-strong) !important;
+  color: var(--ct-muted-2) !important;
+}
+
+html[data-theme="dark"] .login-page .demo-hint {
+  background: #1a1a1a !important;
+  border-color: #2e2e2e !important;
+}
+
+html[data-theme="dark"] .login-page .demo-hint p {
+  color: #c4b5fd !important;
+}
+
+html[data-theme="dark"] .login-page .demo-hint code {
+  color: var(--ct-muted-2) !important;
+}
+
+html[data-theme="dark"] .login-page .demo-hint a {
+  color: #c4b5fd !important;
+}
+
+html[data-theme="dark"] .login-theme-toggle {
+  background: #1a1a1a;
+  border-color: var(--ct-border);
+  color: var(--ct-muted-2);
+}
+
+html[data-theme="dark"] .login-theme-toggle:hover {
+  background: #222;
+  color: var(--ct-text);
 }
 
 /* —— Misc module pages —— */
@@ -531,6 +714,7 @@ html[data-theme="dark"] option {
 html[data-theme="dark"] .admin-dash,
 html[data-theme="dark"] .agente-dash,
 html[data-theme="dark"] .su-dash,
+html[data-theme="dark"] .sup-dash,
 html[data-theme="dark"] .det-dash,
 html[data-theme="dark"] .dz-dash,
 html[data-theme="dark"] .dz-exec {
@@ -543,6 +727,8 @@ html[data-theme="dark"] .kpi-card,
 html[data-theme="dark"] .panel,
 html[data-theme="dark"] .quick-btn,
 html[data-theme="dark"] .su-card,
+html[data-theme="dark"] .sup-card,
+html[data-theme="dark"] .sup-kpi,
 html[data-theme="dark"] .det-card,
 html[data-theme="dark"] .dz-card,
 html[data-theme="dark"] .dz-panel,

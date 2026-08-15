@@ -105,9 +105,9 @@ export default function NovedadFormulario({ tipos, initial, onClose, onSaved }) 
             <textarea
               required
               rows={4}
+              className="novedad-textarea"
               value={form.descripcion}
               onChange={(e) => setField("descripcion", e.target.value)}
-              style={{ border: "1px solid #e5e9f2", borderRadius: 10, padding: "0.6rem 0.7rem", font: "inherit" }}
             />
           </label>
           <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -122,9 +122,9 @@ export default function NovedadFormulario({ tipos, initial, onClose, onSaved }) 
             Observaciones
             <textarea
               rows={2}
+              className="novedad-textarea"
               value={form.observaciones}
               onChange={(e) => setField("observaciones", e.target.value)}
-              style={{ border: "1px solid #e5e9f2", borderRadius: 10, padding: "0.6rem 0.7rem", font: "inherit" }}
             />
           </label>
         </div>

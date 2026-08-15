@@ -1,0 +1,115 @@
+.juris-personal-modal {
+  width: min(760px, 100%);
+  max-height: min(86vh, 820px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  overflow: hidden;
+}
+
+.juris-personal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.juris-personal-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: min(62vh, 560px);
+  padding-right: 0.35rem;
+  display: grid;
+  gap: 1rem;
+  scrollbar-gutter: stable;
+}
+
+.juris-personal-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.juris-personal-scroll::-webkit-scrollbar-thumb {
+  background: #c5c9d4;
+  border-radius: 999px;
+}
+
+.juris-personal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.juris-role-block {
+  border: 1px solid var(--ct-border, #e8ecf3);
+  border-radius: 12px;
+  background: var(--ct-surface-2, #fafbfd);
+  overflow: hidden;
+}
+
+.juris-role-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.85rem;
+  background: var(--ct-surface, #fff);
+  border-bottom: 1px solid var(--ct-border, #e8ecf3);
+}
+
+.juris-role-title h4 {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ct-text, #1a2338);
+}
+
+.juris-role-title span {
+  min-width: 1.6rem;
+  height: 1.6rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--ct-accent-soft, #f1ebff);
+  color: var(--ct-accent, #7c5cbf);
+}
+
+.juris-role-table {
+  margin: 0;
+  background: transparent;
+}
+
+.juris-role-table th,
+.juris-role-table td {
+  padding: 0.55rem 0.85rem;
+}
+
+.juris-role-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--ct-surface-2, #f7f8fc);
+  z-index: 1;
+}
+
+html[data-theme="dark"] .juris-role-block {
+  background: #161616;
+  border-color: var(--ct-border);
+}
+
+html[data-theme="dark"] .juris-role-title {
+  background: #1a1a1a;
+  border-bottom-color: var(--ct-border);
+}
+
+html[data-theme="dark"] .juris-role-title h4 {
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .juris-role-table thead th {
+  background: #161616;
+}
+
+html[data-theme="dark"] .juris-personal-scroll::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+}

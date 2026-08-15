@@ -5,6 +5,7 @@ import { agenteApi, unwrapPage } from "../../api";
 import NovedadesLista from "./componentes/NovedadesLista";
 import NovedadFormulario from "./componentes/NovedadFormulario";
 import "../../../../shared/styles/ModuloPage.css";
+import "./RegistroOperativo.css";
 
 const PAGE_SIZE = 10;
 

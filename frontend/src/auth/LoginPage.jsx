@@ -3,12 +3,14 @@ import { Navigate, useNavigate } from "react-router-dom";
 import loginArt from "../assets/imagenParaelInicioSesion.png";
 import MaterialIcon from "../shared/components/MaterialIcon";
 import { useBranding } from "../shared/branding/BrandingContext";
+import { useTheme } from "../shared/theme/ThemeContext";
 import { useAuth } from "./AuthContext";
 import "./LoginPage.css";
 
 export default function LoginPage() {
   const { login, isAuthenticated, user, loading } = useAuth();
   const { branding, assetUrl } = useBranding();
+  const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [tab, setTab] = useState("sesion");
   const [email, setEmail] = useState("");
@@ -91,10 +93,21 @@ export default function LoginPage() {
         </aside>
 
         <section className="login-panel">
-          <div className="lang-select">
-            <MaterialIcon name="language" />
-            <span>Español</span>
-            <MaterialIcon name="expand_more" />
+          <div className="login-panel-top">
+            <button
+              type="button"
+              className="login-theme-toggle"
+              onClick={toggleTheme}
+              aria-label={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+              title={isDark ? "Modo claro" : "Modo oscuro"}
+            >
+              <MaterialIcon name={isDark ? "light_mode" : "dark_mode"} />
+            </button>
+            <div className="lang-select">
+              <MaterialIcon name="language" />
+              <span>Español</span>
+              <MaterialIcon name="expand_more" />
+            </div>
           </div>
 
           <header className="login-heading">

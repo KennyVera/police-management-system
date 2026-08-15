@@ -14,7 +14,7 @@ function nowTime() {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function emptyFromAlerta(alertaContext, oficialNombre) {
+function emptyFromAlerta(alertaContext, oficialNombre, sectorZona = "") {
   return {
     numero_caso: "",
     tipo_delito: "",
@@ -26,7 +26,7 @@ function emptyFromAlerta(alertaContext, oficialNombre) {
     prioridad: "MEDIA",
     nivel_riesgo: "MEDIO",
     lugar: alertaContext?.direccion || "",
-    sector_zona: "",
+    sector_zona: sectorZona || "",
     descripcion: alertaContext
       ? `Atención a alerta: ${alertaContext.titulo}. ${alertaContext.descripcion || ""}`.trim()
       : "",
@@ -81,14 +81,23 @@ export default function ParteFormulario({
     user?.email ||
     "";
 
+  const sectorZonaAuto = useMemo(() => {
+    const z = meta.zona_operativa;
+    if (!z) return "";
+    if (z.label) return z.label;
+    return [z.zona_nombre, z.cuadrante, z.sector_detalle].filter(Boolean).join(" · ");
+  }, [meta.zona_operativa]);
+
   const isEdit = Boolean(initial?.id);
   const locked =
     readOnly ||
     initial?.estado_revision === "EN_REVISION" ||
     initial?.estado_revision === "APROBADO";
 
-  const [form, setForm] = useState(
-    initial ? fromInitial(initial, oficialNombre) : emptyFromAlerta(alertaContext, oficialNombre)
+  const [form, setForm] = useState(() =>
+    initial
+      ? fromInitial(initial, oficialNombre)
+      : emptyFromAlerta(alertaContext, oficialNombre, sectorZonaAuto)
   );
   const [files, setFiles] = useState([]);
   const [error, setError] = useState("");
@@ -96,6 +105,17 @@ export default function ParteFormulario({
   const [geoBusy, setGeoBusy] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const dragRef = useRef(null);
+
+  // Autocompletar sector/zona desde el turno del agente (nueva o borrador sin zona)
+  useEffect(() => {
+    if (!sectorZonaAuto || locked) return;
+    setForm((f) => {
+      if (f.sector_zona && isEdit && initial?.sector_zona) return f;
+      if (f.sector_zona === sectorZonaAuto) return f;
+      if (isEdit && initial?.sector_zona) return f;
+      return { ...f, sector_zona: sectorZonaAuto };
+    });
+  }, [sectorZonaAuto, locked, isEdit, initial?.sector_zona]);
 
   useEffect(() => {
     function onMove(e) {
@@ -425,10 +445,22 @@ export default function ParteFormulario({
             <label className="full">
               Sector / zona
               <input
+                readOnly
                 value={form.sector_zona}
-                placeholder="Ej. Centro histórico, La Mariscal"
-                onChange={(e) => setField("sector_zona", e.target.value)}
+                placeholder={
+                  sectorZonaAuto
+                    ? sectorZonaAuto
+                    : "Se completa con la zona de tu turno"
+                }
+                title="Se completa automáticamente según tu zona / cuadrante del turno"
               />
+              <span className="mod-muted" style={{ fontSize: "0.78rem", fontWeight: 500 }}>
+                Automático según tu asignación del día
+                {meta.zona_operativa?.zona_nombre
+                  ? ` (${meta.zona_operativa.zona_nombre})`
+                  : ""}
+                .
+              </span>
             </label>
 
             <label className="full">
@@ -553,29 +585,9 @@ export default function ParteFormulario({
                 “Elegir archivos” para sumar más evidencias. Se guardan en MinIO.
               </span>
               {files.length > 0 && (
-                <ul
-                  style={{
-                    margin: "0.45rem 0 0",
-                    padding: "0.55rem 0.7rem",
-                    listStyle: "none",
-                    background: "#f8fafc",
-                    border: "1px solid #e8ecf3",
-                    borderRadius: 10,
-                    display: "grid",
-                    gap: "0.35rem",
-                  }}
-                >
+                <ul className="registro-files-list">
                   {files.map((f, idx) => (
-                    <li
-                      key={`${f.name}-${f.size}-${f.lastModified}-${idx}`}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: "0.5rem",
-                        alignItems: "center",
-                        fontSize: "0.85rem",
-                      }}
-                    >
+                    <li key={`${f.name}-${f.size}-${f.lastModified}-${idx}`}>
                       <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
                         {f.name}
                         <span className="mod-muted"> · {(f.size / 1024).toFixed(1)} KB</span>

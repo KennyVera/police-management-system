@@ -3,7 +3,6 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from accounts.models import SystemRole
 from accounts.permissions import SupervisorOnly
 from operativo.models import AsignacionDiaria, Escuadra, GestionHorario, Notificacion, VehiculoFlota
 from operativo.notifications import notify_user
@@ -15,27 +14,48 @@ from operativo.serializers import (
     _user_label,
 )
 from organizacion.models import Jurisdiction
+from roles.supervisor_unidad.cuadrantes_geo import build_cuadrantes_for_supervisor
+from roles.supervisor_unidad.scope import (
+    agente_ids_en_zona,
+    agentes_en_zona_qs,
+    supervisor_zone_scope,
+)
 
 
-def _agentes_qs():
-    return User.objects.filter(
-        profile__role=SystemRole.AGENTE_OPERATIVO,
-        profile__estado="ACTIVO",
-        is_active=True,
-    ).select_related("profile").order_by("first_name", "last_name")
+def _assert_agentes_en_zona(user, *, lider=None, companeros=None):
+    """Valida que líder y compañeros pertenezcan a la zona del supervisor."""
+    allowed = set(agentes_en_zona_qs(user).values_list("id", flat=True))
+    if lider is not None and lider.id not in allowed:
+        return (
+            "El agente líder no pertenece a tu zona. "
+            "Solo puedes asignar agentes de tu jurisdicción."
+        )
+    for c in companeros or []:
+        if c.id not in allowed:
+            return (
+                f"El compañero {_user_label(c)} no pertenece a tu zona. "
+                "Solo puedes asignar agentes de tu jurisdicción."
+            )
+    return None
 
 
 @api_view(["GET"])
 @permission_classes([SupervisorOnly])
 def meta(request):
-    agentes = [_user_label(u) for u in _agentes_qs()]
-    zonas = list(
-        Jurisdiction.objects.filter(activo=True).order_by("nombre").values("id", "nombre", "tipo", "codigo")
-    )
+    tree, labels = supervisor_zone_scope(request.user)
+    agentes = [_user_label(u) for u in agentes_en_zona_qs(request.user)]
+    if tree:
+        zonas_qs = Jurisdiction.objects.filter(id__in=tree, activo=True)
+    elif labels:
+        zonas_qs = Jurisdiction.objects.filter(nombre__in=labels, activo=True)
+    else:
+        zonas_qs = Jurisdiction.objects.none()
+    zonas = list(zonas_qs.order_by("nombre").values("id", "nombre", "tipo", "codigo"))
     return Response(
         {
             "agentes": agentes,
             "zonas": zonas,
+            "zona_supervisor": labels[0] if labels else None,
             "tipos_vehiculo": [
                 {"value": c.value, "label": c.label} for c in VehiculoFlota.TipoVehiculo
             ],
@@ -47,6 +67,13 @@ def meta(request):
             ],
         }
     )
+
+
+@api_view(["GET"])
+@permission_classes([SupervisorOnly])
+def cuadrantes_mapa(request):
+    """Polígonos de cuadrantes centrados en la zona del supervisor (mapa Leaflet)."""
+    return Response(build_cuadrantes_for_supervisor(request.user))
 
 
 @api_view(["GET", "POST"])
@@ -68,6 +95,13 @@ def escuadras_collection(request):
 
     ser = EscuadraSerializer(data=request.data)
     ser.is_valid(raise_exception=True)
+    err = _assert_agentes_en_zona(
+        request.user,
+        lider=ser.validated_data.get("agente_lider"),
+        companeros=ser.validated_data.get("companeros") or [],
+    )
+    if err:
+        return Response({"detail": err}, status=400)
     obj = ser.save(supervisor=request.user)
     return Response(EscuadraSerializer(obj).data, status=status.HTTP_201_CREATED)
 
@@ -76,12 +110,20 @@ def escuadras_collection(request):
 @permission_classes([SupervisorOnly])
 def escuadra_detail(request, pk):
     try:
-        obj = Escuadra.objects.get(pk=pk)
+        obj = Escuadra.objects.get(pk=pk, supervisor=request.user)
     except Escuadra.DoesNotExist:
         return Response({"detail": "Escuadra no encontrada."}, status=404)
 
     ser = EscuadraSerializer(obj, data=request.data, partial=True)
     ser.is_valid(raise_exception=True)
+    lider = ser.validated_data.get("agente_lider", obj.agente_lider)
+    if "companeros" in ser.validated_data:
+        companeros = ser.validated_data.get("companeros") or []
+    else:
+        companeros = list(obj.companeros.all())
+    err = _assert_agentes_en_zona(request.user, lider=lider, companeros=companeros)
+    if err:
+        return Response({"detail": err}, status=400)
     obj = ser.save()
     return Response(EscuadraSerializer(obj).data)
 
@@ -90,7 +132,7 @@ def escuadra_detail(request, pk):
 @permission_classes([SupervisorOnly])
 def escuadra_inactivar(request, pk):
     try:
-        obj = Escuadra.objects.get(pk=pk)
+        obj = Escuadra.objects.get(pk=pk, supervisor=request.user)
     except Escuadra.DoesNotExist:
         return Response({"detail": "Escuadra no encontrada."}, status=404)
     obj.activo = False
@@ -195,17 +237,195 @@ def vehiculo_detail(request, pk):
 @api_view(["GET", "POST"])
 @permission_classes([SupervisorOnly])
 def asignaciones_collection(request):
-    """Asignación de vehículos y/o sectores a patrullas del día."""
+    """Asignación de sectores/rutas a escuadras (o listado legacy de asignaciones)."""
     if request.method == "GET":
-        qs = AsignacionDiaria.objects.filter(activo=True).select_related(
+        fecha = request.query_params.get("fecha")
+        por_escuadra = str(request.query_params.get("por_escuadra", "")).lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+
+        if por_escuadra:
+            esc_qs = Escuadra.objects.filter(
+                activo=True, supervisor=request.user
+            ).select_related("vehiculo", "agente_lider").prefetch_related("companeros")
+            if fecha:
+                esc_qs = esc_qs.filter(fecha=fecha)
+            esc_qs = esc_qs.order_by("nombre")
+
+            rows = []
+            for esc in esc_qs:
+                asig = (
+                    AsignacionDiaria.objects.filter(
+                        escuadra=esc, activo=True, fecha=esc.fecha
+                    )
+                    .select_related("zona")
+                    .order_by("id")
+                    .first()
+                )
+                n_miembros = 1 + esc.companeros.count()
+                rows.append(
+                    {
+                        "id": asig.id if asig else None,
+                        "escuadra": esc.id,
+                        "escuadra_nombre": esc.nombre,
+                        "fecha": esc.fecha.isoformat(),
+                        "miembros": n_miembros,
+                        "cuadrante": asig.cuadrante if asig else "",
+                        "sector_detalle": asig.sector_detalle if asig else "",
+                        "poligono": asig.poligono if asig else None,
+                        "latitud": str(asig.latitud) if asig and asig.latitud is not None else None,
+                        "longitud": str(asig.longitud) if asig and asig.longitud is not None else None,
+                        "zona": asig.zona_id if asig else None,
+                        "zona_nombre": asig.zona.nombre if asig and asig.zona_id else None,
+                        "vehiculo_placa": (
+                            (asig.vehiculo_placa if asig else None)
+                            or (esc.vehiculo.placa if esc.vehiculo_id else None)
+                            or "—"
+                        ),
+                        "tiene_sector": bool(
+                            asig and (asig.cuadrante or asig.sector_detalle)
+                        ),
+                        "tiene_poligono": bool(asig and asig.poligono),
+                    }
+                )
+            return Response(rows)
+
+        qs = AsignacionDiaria.objects.filter(
+            activo=True, supervisor=request.user
+        ).select_related(
             "agente", "companero", "vehiculo", "zona", "escuadra", "agente__profile"
         )
-        fecha = request.query_params.get("fecha")
         if fecha:
             qs = qs.filter(fecha=fecha)
         return Response(AsignacionDiariaWriteSerializer(qs, many=True).data)
 
     data = {**request.data}
+    escuadra_id = data.get("escuadra")
+
+    # —— Flujo principal: asignar sector a toda la escuadra ——
+    if escuadra_id:
+        try:
+            esc = (
+                Escuadra.objects.select_related("agente_lider", "vehiculo")
+                .prefetch_related("companeros")
+                .get(pk=escuadra_id, supervisor=request.user, activo=True)
+            )
+        except Escuadra.DoesNotExist:
+            return Response(
+                {"detail": "Escuadra no encontrada o no pertenece a tu zona."},
+                status=404,
+            )
+
+        fecha = data.get("fecha") or esc.fecha
+        if str(fecha) != str(esc.fecha):
+            return Response(
+                {
+                    "detail": (
+                        f"La escuadra «{esc.nombre}» es del {esc.fecha}. "
+                        "Selecciona esa fecha o crea una escuadra para el día elegido."
+                    )
+                },
+                status=400,
+            )
+
+        cuadrante = (data.get("cuadrante") or "").strip() or "Por definir"
+        sector_detalle = (data.get("sector_detalle") or "").strip()
+        poligono = data.get("poligono") or None
+        latitud = data.get("latitud")
+        longitud = data.get("longitud")
+        # Si viene polígono sin centro, calcular centroide simple
+        if poligono and (latitud is None or longitud is None):
+            try:
+                ring = (poligono.get("coordinates") or [[]])[0]
+                if ring:
+                    lngs = [p[0] for p in ring[:-1] if len(p) >= 2]
+                    lats = [p[1] for p in ring[:-1] if len(p) >= 2]
+                    if lngs and lats:
+                        longitud = round(sum(lngs) / len(lngs), 7)
+                        latitud = round(sum(lats) / len(lats), 7)
+            except (TypeError, AttributeError, IndexError, ZeroDivisionError):
+                pass
+        zona_id = data.get("zona") or None
+        turno_inicio = data.get("turno_inicio") or "07:00:00"
+        turno_fin = data.get("turno_fin") or "19:00:00"
+        if len(str(turno_inicio)) == 5:
+            turno_inicio = f"{turno_inicio}:00"
+        if len(str(turno_fin)) == 5:
+            turno_fin = f"{turno_fin}:00"
+
+        vehiculo = esc.vehiculo
+        placa = (vehiculo.placa if vehiculo else None) or data.get("vehiculo_placa") or "S/P"
+        tipo_v = (
+            vehiculo.get_tipo_display() if vehiculo else data.get("vehiculo_tipo") or "Patrulla"
+        )
+
+        miembros = [esc.agente_lider] + list(esc.companeros.all())
+        if not esc.agente_lider_id:
+            return Response({"detail": "La escuadra no tiene agente líder."}, status=400)
+
+        actualizados = []
+        for agente in miembros:
+            otros = [m for m in miembros if m.id != agente.id]
+            companero = otros[0] if otros else None
+            payload = {
+                "agente": agente.id,
+                "companero": companero.id if companero else None,
+                "fecha": fecha,
+                "escuadra": esc.id,
+                "vehiculo": vehiculo.id if vehiculo else None,
+                "vehiculo_placa": placa,
+                "vehiculo_tipo": tipo_v,
+                "zona": zona_id,
+                "cuadrante": cuadrante,
+                "sector_detalle": sector_detalle,
+                "poligono": poligono,
+                "latitud": latitud,
+                "longitud": longitud,
+                "turno_inicio": turno_inicio,
+                "turno_fin": turno_fin,
+                "unidad_label": f"{esc.nombre} · {placa}",
+                "activo": True,
+            }
+            existente = (
+                AsignacionDiaria.objects.filter(
+                    agente_id=agente.id, fecha=fecha, activo=True
+                )
+                .order_by("-id")
+                .first()
+            )
+            if existente:
+                ser = AsignacionDiariaWriteSerializer(
+                    existente, data=payload, partial=True
+                )
+                ser.is_valid(raise_exception=True)
+                obj = ser.save(supervisor=request.user, activo=True)
+            else:
+                ser = AsignacionDiariaWriteSerializer(data=payload)
+                ser.is_valid(raise_exception=True)
+                obj = ser.save(supervisor=request.user, activo=True)
+            actualizados.append(obj)
+
+        primario = next(
+            (a for a in actualizados if a.agente_id == esc.agente_lider_id),
+            actualizados[0],
+        )
+        return Response(
+            {
+                "detail": (
+                    f"Sector asignado a «{esc.nombre}» "
+                    f"({len(actualizados)} integrante(s))."
+                ),
+                "escuadra": esc.id,
+                "escuadra_nombre": esc.nombre,
+                "miembros": len(actualizados),
+                "asignacion": AsignacionDiariaWriteSerializer(primario).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    # —— Legacy: asignación por agente individual ——
     vehiculo_id = data.get("vehiculo")
     if vehiculo_id and not data.get("vehiculo_placa"):
         try:
@@ -215,13 +435,20 @@ def asignaciones_collection(request):
         except VehiculoFlota.DoesNotExist:
             return Response({"detail": "Vehículo no encontrado."}, status=400)
 
-    # Si ya hay asignación activa del agente ese día, se actualiza (vehículo + sector).
     agente_id = data.get("agente")
     fecha = data.get("fecha")
+    if agente_id and agente_id not in agente_ids_en_zona(request.user):
+        return Response(
+            {"detail": "El agente no pertenece a tu zona."},
+            status=400,
+        )
+
     existente = None
     if agente_id and fecha:
         existente = (
-            AsignacionDiaria.objects.filter(agente_id=agente_id, fecha=fecha, activo=True)
+            AsignacionDiaria.objects.filter(
+                agente_id=agente_id, fecha=fecha, activo=True
+            )
             .order_by("-id")
             .first()
         )
@@ -238,13 +465,38 @@ def asignaciones_collection(request):
     return Response(AsignacionDiariaWriteSerializer(obj).data, status=status.HTTP_201_CREATED)
 
 
-@api_view(["PATCH"])
+@api_view(["PATCH", "DELETE"])
 @permission_classes([SupervisorOnly])
 def asignacion_detail(request, pk):
+    """Actualiza o elimina la ruta de una asignación (propaga a la escuadra)."""
     try:
-        obj = AsignacionDiaria.objects.get(pk=pk)
+        obj = AsignacionDiaria.objects.select_related("escuadra").get(
+            pk=pk, supervisor=request.user, activo=True
+        )
     except AsignacionDiaria.DoesNotExist:
         return Response({"detail": "Asignación no encontrada."}, status=404)
+
+    if request.method == "DELETE":
+        qs = AsignacionDiaria.objects.filter(
+            supervisor=request.user,
+            activo=True,
+            fecha=obj.fecha,
+        )
+        if obj.escuadra_id:
+            qs = qs.filter(escuadra_id=obj.escuadra_id)
+        else:
+            qs = qs.filter(pk=obj.pk)
+        n = qs.update(activo=False)
+        nombre = obj.escuadra.nombre if obj.escuadra_id else "asignación"
+        return Response(
+            {
+                "detail": (
+                    f"Ruta eliminada de «{nombre}» "
+                    f"({n} integrante(s))."
+                ),
+                "eliminados": n,
+            }
+        )
 
     data = {**request.data}
     vehiculo_id = data.get("vehiculo")
@@ -255,6 +507,45 @@ def asignacion_detail(request, pk):
             data.setdefault("vehiculo_tipo", v.get_tipo_display())
         except VehiculoFlota.DoesNotExist:
             return Response({"detail": "Vehículo no encontrado."}, status=400)
+
+    # Si viene escuadra_id en PATCH para actualizar sector de toda la escuadra
+    escuadra_id = data.pop("escuadra_id", None) or (
+        obj.escuadra_id if obj.escuadra_id else None
+    )
+    sector_fields = {
+        k: data[k]
+        for k in (
+            "cuadrante",
+            "sector_detalle",
+            "poligono",
+            "latitud",
+            "longitud",
+            "zona",
+            "turno_inicio",
+            "turno_fin",
+        )
+        if k in data
+    }
+
+    if escuadra_id and sector_fields:
+        qs = AsignacionDiaria.objects.filter(
+            escuadra_id=escuadra_id,
+            fecha=obj.fecha,
+            activo=True,
+            supervisor=request.user,
+        )
+        updated = []
+        for row in qs:
+            ser = AsignacionDiariaWriteSerializer(row, data=sector_fields, partial=True)
+            ser.is_valid(raise_exception=True)
+            updated.append(ser.save())
+        if updated:
+            return Response(
+                {
+                    "detail": f"Sector actualizado en {len(updated)} integrante(s).",
+                    "asignacion": AsignacionDiariaWriteSerializer(updated[0]).data,
+                }
+            )
 
     ser = AsignacionDiariaWriteSerializer(obj, data=data, partial=True)
     ser.is_valid(raise_exception=True)

@@ -1,35 +1,47 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
+import { useConfirm } from "../../../../shared/components/ConfirmContext";
 import { localISODate } from "../../../../shared/utils/date";
 import { supervisorApi } from "../../api";
 import "../../../../shared/styles/ModuloPage.css";
+import "./SectoresPage.css";
+import CuadranteMapaModal from "./CuadranteMapaModal";
 
 export default function SectoresPage() {
+  const confirm = useConfirm();
   const [items, setItems] = useState([]);
-  const [meta, setMeta] = useState({ agentes: [], zonas: [] });
+  const [escuadras, setEscuadras] = useState([]);
+  const [meta, setMeta] = useState({ zonas: [] });
   const [fecha, setFecha] = useState(localISODate());
   const [form, setForm] = useState({
-    agente: "",
+    escuadra: "",
     zona: "",
     cuadrante: "",
     sector_detalle: "",
-    turno_inicio: "07:00",
-    turno_fin: "19:00",
-    vehiculo_placa: "S/P",
+    poligono: null,
+    latitud: null,
+    longitud: null,
   });
+  const [mapOpen, setMapOpen] = useState(false);
+  const [editRow, setEditRow] = useState(null);
+  const [editSector, setEditSector] = useState("");
   const [error, setError] = useState("");
+  const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   async function load(f = fecha) {
     setLoading(true);
     setError("");
     try {
-      const [list, m] = await Promise.all([
-        supervisorApi.listAsignaciones({ fecha: f }),
+      const [list, esc, m] = await Promise.all([
+        supervisorApi.listAsignaciones({ fecha: f, por_escuadra: 1 }),
+        supervisorApi.listEscuadras({ fecha: f }),
         supervisorApi.meta(),
       ]);
-      setItems(list);
-      setMeta(m);
+      setItems(Array.isArray(list) ? list : []);
+      setEscuadras(Array.isArray(esc) ? esc : []);
+      setMeta(m || { zonas: [] });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -38,45 +50,125 @@ export default function SectoresPage() {
   }
 
   useEffect(() => {
-    load();
+    load(fecha);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fecha]);
+
+  const escuadrasDisponibles = useMemo(() => {
+    return escuadras.filter((e) => e.activo !== false);
+  }, [escuadras]);
+
+  function onMapConfirm(sel) {
+    setForm((f) => ({
+      ...f,
+      cuadrante: sel.cuadrante,
+      sector_detalle: sel.sector_detalle,
+      poligono: sel.poligono,
+      latitud: sel.latitud,
+      longitud: sel.longitud,
+    }));
+    setMapOpen(false);
+    setMsg(`Cuadrante «${sel.cuadrante}» listo. Confirma con Asignar sector.`);
+  }
 
   async function submit(e) {
     e.preventDefault();
+    setError("");
+    setMsg("");
+    if (!form.escuadra) {
+      setError("Selecciona una escuadra.");
+      return;
+    }
+    if (!form.cuadrante || !form.poligono) {
+      setError("Selecciona el lugar en el mapa (botón «Seleccionar en Mapa»).");
+      return;
+    }
+    setSaving(true);
     try {
-      await supervisorApi.createAsignacion({
+      const res = await supervisorApi.createAsignacion({
         fecha,
-        agente: Number(form.agente),
+        escuadra: Number(form.escuadra),
         zona: form.zona ? Number(form.zona) : null,
         cuadrante: form.cuadrante,
         sector_detalle: form.sector_detalle,
-        vehiculo_placa: form.vehiculo_placa || "S/P",
-        vehiculo_tipo: "Patrulla",
-        turno_inicio: `${form.turno_inicio}:00`,
-        turno_fin: `${form.turno_fin}:00`,
+        poligono: form.poligono,
+        latitud: form.latitud,
+        longitud: form.longitud,
+        turno_inicio: "07:00:00",
+        turno_fin: "19:00:00",
       });
+      setMsg(res.detail || "Sector asignado a la escuadra.");
       setForm({
-        agente: "",
+        escuadra: "",
         zona: "",
         cuadrante: "",
         sector_detalle: "",
-        turno_inicio: "07:00",
-        turno_fin: "19:00",
-        vehiculo_placa: "S/P",
+        poligono: null,
+        latitud: null,
+        longitud: null,
       });
-      load();
+      await load(fecha);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setSaving(false);
     }
   }
 
-  async function updateSector(id, patch) {
+  async function guardarEdicion() {
+    if (!editRow?.id && !editRow?.escuadra) return;
+    setSaving(true);
+    setError("");
     try {
-      await supervisorApi.updateAsignacion(id, patch);
-      load();
+      if (editRow.id) {
+        await supervisorApi.updateAsignacion(editRow.id, {
+          sector_detalle: editSector,
+          escuadra_id: editRow.escuadra,
+        });
+      } else {
+        await supervisorApi.createAsignacion({
+          fecha: editRow.fecha || fecha,
+          escuadra: editRow.escuadra,
+          cuadrante: editRow.cuadrante || "Por definir",
+          sector_detalle: editSector,
+          zona: editRow.zona || null,
+          poligono: editRow.poligono || null,
+        });
+      }
+      setEditRow(null);
+      setEditSector("");
+      setMsg("Ruta actualizada para toda la escuadra.");
+      await load(fecha);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function eliminarRuta(row) {
+    if (!row?.id) {
+      setError("Esta escuadra aún no tiene una ruta asignada.");
+      return;
+    }
+    const ok = await confirm({
+      title: "Eliminar ruta",
+      message: `¿Eliminar la ruta de «${row.escuadra_nombre || "la escuadra"}»? Se quita el sector de todos los integrantes.`,
+      confirmLabel: "Eliminar",
+      variant: "danger",
+    });
+    if (!ok) return;
+    setSaving(true);
+    setError("");
+    setMsg("");
+    try {
+      const res = await supervisorApi.deleteAsignacion(row.id);
+      setMsg(res.detail || "Ruta eliminada.");
+      await load(fecha);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -87,11 +179,13 @@ export default function SectoresPage() {
           <p className="mod-kicker">Gestión de Turnos · Logística Diaria</p>
           <h2>Asignación de Sectores (Rutas)</h2>
           <p className="mod-desc">
-            Designa subcircuito o cuadras específicas a cada patrulla durante su guardia.
+            Asigna el sector de patrullaje a la escuadra completa. Elige el cuadrante en el
+            mapa; se guardan el nombre, el detalle de ruta y el polígono GPS.
           </p>
         </div>
       </header>
       {error && <p className="mod-error">{error}</p>}
+      {msg && <p className="mod-ok">{msg}</p>}
 
       <form className="panel-card form-grid" onSubmit={submit}>
         <h3 className="full" style={{ margin: 0 }}>
@@ -99,19 +193,29 @@ export default function SectoresPage() {
         </h3>
         <label>
           Fecha
-          <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+          <input
+            type="date"
+            value={fecha}
+            onChange={(e) => {
+              setFecha(e.target.value);
+              setForm((f) => ({ ...f, escuadra: "" }));
+            }}
+          />
         </label>
         <label>
-          Agente
+          Escuadra
           <select
             required
-            value={form.agente}
-            onChange={(e) => setForm({ ...form, agente: e.target.value })}
+            value={form.escuadra}
+            onChange={(e) => setForm({ ...form, escuadra: e.target.value })}
           >
-            <option value="">Seleccione...</option>
-            {(meta.agentes || []).map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.nombre}
+            <option value="">Seleccione escuadra...</option>
+            {escuadrasDisponibles.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.nombre}
+                {e.agente_lider_info?.nombre
+                  ? ` · Líder: ${e.agente_lider_info.nombre}`
+                  : ""}
               </option>
             ))}
           </select>
@@ -132,27 +236,55 @@ export default function SectoresPage() {
         </label>
         <label>
           Cuadrante
-          <input
-            required
-            value={form.cuadrante}
-            onChange={(e) => setForm({ ...form, cuadrante: e.target.value })}
-            placeholder="Cuadrante C-12"
-          />
+          <div className="sector-cuadrante-row">
+            <input
+              required
+              readOnly
+              value={form.cuadrante}
+              placeholder="Selecciona en el mapa…"
+              title="Se completa al confirmar en el mapa"
+            />
+            <button
+              type="button"
+              className="btn-map-select"
+              title="Abrir mapa de cuadrantes"
+              onClick={() => setMapOpen(true)}
+            >
+              🗺️ Seleccionar en Mapa
+            </button>
+          </div>
         </label>
         <label className="full">
           Detalle de ruta / cuadras
           <input
+            readOnly
             value={form.sector_detalle}
-            onChange={(e) => setForm({ ...form, sector_detalle: e.target.value })}
-            placeholder="Av. 10 de Agosto entre Colón y Patria"
+            placeholder="Se completa al confirmar la selección en el mapa"
+            title="Se completa al confirmar en el mapa"
           />
+          {form.poligono && (
+            <span className="sector-geo-ok">
+              <MaterialIcon name="check_circle" /> Polígono GPS listo para el agente operativo
+            </span>
+          )}
         </label>
+        {!escuadrasDisponibles.length && (
+          <p className="full mod-muted" style={{ margin: 0 }}>
+            No hay escuadras activas para esta fecha. Crea una en{" "}
+            <strong>Gestión de Escuadras</strong> primero.
+          </p>
+        )}
         <div className="full">
-          <button type="submit" className="btn-accent">
+          <button type="submit" className="btn-accent" disabled={saving || !escuadrasDisponibles.length}>
             <MaterialIcon name="map" />
-            Asignar sector
+            {saving ? "Asignando…" : "Asignar sector"}
           </button>
-          <button type="button" className="btn-ghost" style={{ marginLeft: 8 }} onClick={() => load(fecha)}>
+          <button
+            type="button"
+            className="btn-ghost"
+            style={{ marginLeft: 8 }}
+            onClick={() => load(fecha)}
+          >
             Filtrar fecha
           </button>
         </div>
@@ -165,38 +297,60 @@ export default function SectoresPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Agente</th>
+                <th>Escuadra</th>
+                <th>Integrantes</th>
                 <th>Cuadrante</th>
                 <th>Sector / ruta</th>
                 <th>Zona</th>
+                <th>GPS</th>
                 <th />
               </tr>
             </thead>
             <tbody>
               {items.map((a) => (
-                <tr key={a.id}>
-                  <td>{a.agente_info?.nombre}</td>
-                  <td>{a.cuadrante}</td>
+                <tr key={a.escuadra || a.id}>
+                  <td>
+                    <strong>{a.escuadra_nombre || "—"}</strong>
+                  </td>
+                  <td>{a.miembros ?? "—"}</td>
+                  <td>{a.cuadrante || "—"}</td>
                   <td>{a.sector_detalle || "—"}</td>
                   <td>{a.zona_nombre || "—"}</td>
+                  <td>{a.tiene_poligono ? "✓" : "—"}</td>
                   <td>
-                    <button
-                      type="button"
-                      className="btn-ghost"
-                      onClick={() => {
-                        const sector = window.prompt("Actualizar detalle de ruta", a.sector_detalle || "");
-                        if (sector != null) updateSector(a.id, { sector_detalle: sector });
-                      }}
-                    >
-                      Editar ruta
-                    </button>
+                    <div className="sector-row-actions">
+                      <button
+                        type="button"
+                        className="btn-ghost"
+                        onClick={() => {
+                          setEditRow(a);
+                          setEditSector(a.sector_detalle || "");
+                        }}
+                      >
+                        Editar ruta
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-danger"
+                        disabled={saving || !a.id}
+                        title={
+                          a.id
+                            ? "Eliminar ruta de la escuadra"
+                            : "Sin ruta asignada"
+                        }
+                        onClick={() => eliminarRuta(a)}
+                      >
+                        <MaterialIcon name="delete" />
+                        Eliminar
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
               {!items.length && (
                 <tr>
-                  <td colSpan={5} className="mod-muted">
-                    Sin asignaciones de sector.
+                  <td colSpan={7} className="mod-muted">
+                    Sin escuadras para esta fecha. Crea una escuadra y asígnale el sector.
                   </td>
                 </tr>
               )}
@@ -204,6 +358,49 @@ export default function SectoresPage() {
           </table>
         </div>
       )}
+
+      {editRow && (
+        <div className="modal-backdrop" onClick={() => setEditRow(null)} role="presentation">
+          <div
+            className="modal-card"
+            style={{ width: "min(440px, 100%)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: 0 }}>Editar ruta · {editRow.escuadra_nombre}</h3>
+            <p className="mod-muted" style={{ margin: 0 }}>
+              El cambio aplica a todos los integrantes de la escuadra.
+            </p>
+            <label className="stack-form">
+              Detalle de ruta / cuadras
+              <input
+                value={editSector}
+                onChange={(e) => setEditSector(e.target.value)}
+                placeholder="Av. 10 de Agosto entre Colón y Patria"
+                autoFocus
+              />
+            </label>
+            <div className="modal-actions">
+              <button type="button" className="btn-ghost" onClick={() => setEditRow(null)}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn-accent"
+                disabled={saving}
+                onClick={guardarEdicion}
+              >
+                {saving ? "Guardando…" : "Guardar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <CuadranteMapaModal
+        open={mapOpen}
+        onClose={() => setMapOpen(false)}
+        onConfirm={onMapConfirm}
+      />
     </div>
   );
 }

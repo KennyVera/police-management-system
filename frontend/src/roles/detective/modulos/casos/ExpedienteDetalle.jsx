@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
+import { useConfirm } from "../../../../shared/components/ConfirmContext";
 import { detectiveApi } from "../../api";
 import "./ExpedienteDetalle.css";
 import ExpedienteEvidencias from "./ExpedienteEvidencias";
@@ -63,6 +64,7 @@ export default function ExpedienteDetalle({
   onUpdated,
   onNotify,
 }) {
+  const confirm = useConfirm();
   const [exp, setExp] = useState(initial);
   const [tab, setTab] = useState("resumen");
   const [invFilter, setInvFilter] = useState("TODOS");
@@ -333,7 +335,13 @@ export default function ExpedienteDetalle({
 
   async function removeInvolucrado(id) {
     if (locked) return;
-    if (!window.confirm("¿Eliminar involucrado?")) return;
+    const ok = await confirm({
+      title: "Eliminar involucrado",
+      message: "¿Eliminar involucrado? Esta acción no se puede deshacer.",
+      confirmLabel: "Eliminar",
+      variant: "danger",
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       await detectiveApi.deleteInvolucrado(exp.id, id);

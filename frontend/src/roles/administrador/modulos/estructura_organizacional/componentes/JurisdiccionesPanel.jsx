@@ -1,6 +1,8 @@
 import { useState } from "react";
 import MaterialIcon from "../../../../../shared/components/MaterialIcon";
+import { useConfirm } from "../../../../../shared/components/ConfirmContext";
 import { estructuraApi } from "../../../api";
+import "./JurisdiccionesPanel.css";
 
 const TIPO_PREFIX = {
   ZONA: "ZN",
@@ -9,6 +11,48 @@ const TIPO_PREFIX = {
   CIRCUITO: "CR",
   SUBCIRCUITO: "SC",
 };
+
+const PERSONAL_GROUPS = [
+  {
+    key: "DIRECTOR_ZONA",
+    title: "Jefe de Zona",
+    roles: ["DIRECTOR_ZONA"],
+  },
+  {
+    key: "SUPERVISOR_UNIDAD",
+    title: "Supervisores",
+    roles: ["SUPERVISOR_UNIDAD"],
+  },
+  {
+    key: "DETECTIVE",
+    title: "Detectives",
+    roles: ["DETECTIVE"],
+  },
+  {
+    key: "AGENTE_OPERATIVO",
+    title: "Agentes",
+    roles: ["AGENTE_OPERATIVO"],
+  },
+  {
+    key: "OTROS",
+    title: "Otros roles",
+    roles: null,
+  },
+];
+
+function groupPersonal(list = []) {
+  const used = new Set();
+  const groups = PERSONAL_GROUPS.filter((g) => g.roles).map((g) => {
+    const items = list.filter((u) => g.roles.includes(u.role));
+    items.forEach((u) => used.add(u.id));
+    return { ...g, items };
+  });
+  const otros = list.filter((u) => !used.has(u.id));
+  if (otros.length) {
+    groups.push({ ...PERSONAL_GROUPS[PERSONAL_GROUPS.length - 1], items: otros });
+  }
+  return groups;
+}
 
 function slugFromName(nombre) {
   return (nombre || "")
@@ -49,6 +93,7 @@ function generarCodigo({ tipo, nombre, parentId, items }) {
 }
 
 export default function JurisdiccionesPanel({ tipos, items, onChanged }) {
+  const confirm = useConfirm();
   const [form, setForm] = useState({
     tipo: "ZONA",
     nombre: "",
@@ -58,6 +103,18 @@ export default function JurisdiccionesPanel({ tipos, items, onChanged }) {
   const [error, setError] = useState("");
   const [detalle, setDetalle] = useState(null);
   const [detalleLoading, setDetalleLoading] = useState(false);
+
+  async function inactivar(j) {
+    const ok = await confirm({
+      title: "Inactivar jurisdicción",
+      message: `¿Inactivar «${j.nombre}»? Dejará de estar disponible para nuevas asignaciones.`,
+      confirmLabel: "Inactivar",
+      variant: "warn",
+    });
+    if (!ok) return;
+    await estructuraApi.inactivarJurisdiccion(j.id);
+    onChanged();
+  }
 
   function generarCodigoAuto() {
     const codigo = generarCodigo({
@@ -206,10 +263,7 @@ export default function JurisdiccionesPanel({ tipos, items, onChanged }) {
                       <button
                         type="button"
                         className="btn-warn"
-                        onClick={async () => {
-                          await estructuraApi.inactivarJurisdiccion(j.id);
-                          onChanged();
-                        }}
+                        onClick={() => inactivar(j)}
                       >
                         Inactivar
                       </button>
@@ -225,11 +279,10 @@ export default function JurisdiccionesPanel({ tipos, items, onChanged }) {
       {(detalle || detalleLoading) && (
         <div className="modal-backdrop" onClick={() => setDetalle(null)}>
           <div
-            className="modal-card"
-            style={{ width: "min(720px, 100%)" }}
+            className="modal-card juris-personal-modal"
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
+            <div className="juris-personal-head">
               <div>
                 <h3 style={{ margin: 0 }}>
                   Personal en {detalle?.jurisdiccion?.nombre || "…"}
@@ -245,41 +298,51 @@ export default function JurisdiccionesPanel({ tipos, items, onChanged }) {
                 Cerrar
               </button>
             </div>
+
             {detalleLoading ? (
               <p className="mod-muted">Cargando personal…</p>
+            ) : (detalle?.personal || []).length === 0 ? (
+              <p className="mod-muted">Nadie asignado aún a esta zona.</p>
             ) : (
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Funcionario</th>
-                    <th>Rol</th>
-                    <th>Placa</th>
-                    <th>Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(detalle?.personal || []).length === 0 && (
-                    <tr>
-                      <td colSpan={4}>Nadie asignado aún a esta zona.</td>
-                    </tr>
-                  )}
-                  {(detalle?.personal || []).map((u) => (
-                    <tr key={u.id}>
-                      <td>
-                        <strong>
-                          {u.first_name} {u.last_name}
-                        </strong>
-                        <div className="mod-muted">{u.email}</div>
-                      </td>
-                      <td>{u.role_label}</td>
-                      <td>{u.placa || "—"}</td>
-                      <td>
-                        <span className={`badge-estado ${u.estado}`}>{u.estado}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="juris-personal-scroll">
+                {groupPersonal(detalle.personal).map((group) =>
+                  group.items.length === 0 ? null : (
+                    <section key={group.key} className="juris-role-block">
+                      <header className="juris-role-title">
+                        <h4>{group.title}</h4>
+                        <span>{group.items.length}</span>
+                      </header>
+                      <table className="data-table juris-role-table">
+                        <thead>
+                          <tr>
+                            <th>Funcionario</th>
+                            <th>Placa</th>
+                            <th>Estado</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {group.items.map((u) => (
+                            <tr key={u.id}>
+                              <td>
+                                <strong>
+                                  {u.first_name} {u.last_name}
+                                </strong>
+                                <div className="mod-muted">{u.email}</div>
+                              </td>
+                              <td>{u.placa || "—"}</td>
+                              <td>
+                                <span className={`badge-estado ${u.estado}`}>
+                                  {u.estado}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </section>
+                  )
+                )}
+              </div>
             )}
           </div>
         </div>

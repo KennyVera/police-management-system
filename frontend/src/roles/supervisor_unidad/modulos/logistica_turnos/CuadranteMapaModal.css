@@ -1,0 +1,93 @@
+.sector-map-backdrop {
+  z-index: 1200;
+}
+
+.sector-map-modal {
+  width: min(720px, 100%);
+  max-height: min(92vh, 860px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem 1rem;
+}
+
+.sector-map-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.sector-map-head h3 {
+  margin: 0 0 0.25rem;
+}
+
+.sector-map-canvas {
+  height: min(420px, 52vh);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border, #2a2a2a);
+  background: #111;
+}
+
+.sector-map-canvas .leaflet-container {
+  background: #1a1a1a;
+  font-family: inherit;
+}
+
+.sector-map-selection {
+  min-height: 3.2rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface, #161616) 90%, #7c3aed 10%);
+  border: 1px solid color-mix(in srgb, #7c3aed 35%, transparent);
+}
+
+.sector-map-selection p {
+  margin: 0 0 0.2rem;
+}
+
+.sector-map-loading {
+  padding: 2rem;
+  text-align: center;
+}
+
+.sector-map-actions {
+  margin-top: 0.25rem;
+}
+
+.btn-map-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-weight: 600;
+  background: linear-gradient(135deg, #5b21b6, #7c3aed);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-map-select:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.45);
+}
+
+.btn-map-select:active {
+  transform: translateY(0);
+}
+
+html[data-theme="light"] .sector-map-selection {
+  background: #f5f0ff;
+  border-color: #c4b5fd;
+}
+
+html[data-theme="light"] .sector-map-canvas {
+  border-color: #d4d4d8;
+  background: #f4f4f5;
+}

@@ -115,11 +115,11 @@ export default function EscuadraFormulario({
               Compañeros ({form.companeros.length})
             </p>
             <p className="mod-muted" style={{ margin: "0 0 0.6rem", fontSize: "0.85rem" }}>
-              Puedes marcar varios agentes. El líder no aparece en esta lista.
+              Solo agentes de tu zona. Puedes marcar varios. El líder no aparece aquí.
             </p>
             <div
               style={{
-                border: "1px solid #e5e9f2",
+                border: "1px solid var(--ct-border, #e5e9f2)",
                 borderRadius: 10,
                 padding: "0.65rem 0.75rem",
                 maxHeight: 180,
@@ -128,13 +128,17 @@ export default function EscuadraFormulario({
                 gap: "0.35rem",
               }}
             >
-              {!form.agente_lider ? (
+              {!agentes.length ? (
+                <p className="mod-muted" style={{ margin: 0 }}>
+                  No hay agentes asignados a tu zona.
+                </p>
+              ) : !form.agente_lider ? (
                 <p className="mod-muted" style={{ margin: 0 }}>
                   Primero elige el agente líder.
                 </p>
               ) : !companerosDisponibles.length ? (
                 <p className="mod-muted" style={{ margin: 0 }}>
-                  No hay más agentes disponibles.
+                  No hay más agentes disponibles en tu zona.
                 </p>
               ) : (
                 companerosDisponibles.map((a) => (

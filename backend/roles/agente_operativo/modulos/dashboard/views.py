@@ -1,3 +1,5 @@
+from django.db.models import Q
+from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
@@ -9,7 +11,6 @@ from operativo.models import (
     NovedadIncidente,
     ParteAprehension,
 )
-from django.utils import timezone
 
 
 @api_view(["GET"])
@@ -20,14 +21,20 @@ def home(request):
     partes = ParteAprehension.objects.filter(creado_por=user).count()
     novedades = NovedadIncidente.objects.filter(creado_por=user).count()
     multimedia = MultimediaEvidencia.objects.filter(subido_por=user).count()
-    alertas = AlertaDespacho.objects.filter(
-        agente=user,
-        estado__in=[
-            AlertaDespacho.Estado.ASIGNADA,
-            AlertaDespacho.Estado.EN_CAMINO,
-            AlertaDespacho.Estado.EN_LUGAR,
-        ],
-    ).count()
+    alertas = (
+        AlertaDespacho.objects.filter(
+            Q(agente=user)
+            | Q(escuadra__agente_lider=user)
+            | Q(escuadra__companeros=user),
+            estado__in=[
+                AlertaDespacho.Estado.ASIGNADA,
+                AlertaDespacho.Estado.EN_CAMINO,
+                AlertaDespacho.Estado.EN_LUGAR,
+            ],
+        )
+        .distinct()
+        .count()
+    )
     tiene_turno = AsignacionDiaria.objects.filter(
         agente=user, fecha=hoy, activo=True
     ).exists()

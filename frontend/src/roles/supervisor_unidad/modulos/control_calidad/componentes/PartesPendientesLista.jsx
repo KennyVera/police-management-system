@@ -32,10 +32,7 @@ export default function PartesPendientesLista({ items, selectedId, onSelect }) {
               key={p.id}
               onClick={() => onSelect(p)}
               className={active ? "is-selected" : ""}
-              style={{
-                cursor: "pointer",
-                background: active ? "#f5f0ff" : undefined,
-              }}
+              style={{ cursor: "pointer" }}
             >
               <td>{p.numero_caso || p.id}</td>
               <td>{p.agente}</td>

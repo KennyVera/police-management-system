@@ -9,7 +9,13 @@ from rest_framework.response import Response
 from accounts.permissions import AgenteOnly
 from catalogos.models import TipoDelito
 from operativo.minio_service import upload_evidencia
-from operativo.models import AlertaDespacho, MultimediaEvidencia, NovedadIncidente, ParteAprehension
+from operativo.models import (
+    AlertaDespacho,
+    AsignacionDiaria,
+    MultimediaEvidencia,
+    NovedadIncidente,
+    ParteAprehension,
+)
 from operativo.pagination import paginate_qs
 from operativo.pdf_service import build_pdf_bytes
 from operativo.serializers import (
@@ -20,10 +26,53 @@ from operativo.serializers import (
 )
 
 
+def _zona_operativa_agente(user):
+    """Sector/zona del turno actual del agente (asignación del día → perfil)."""
+    hoy = timezone.localdate()
+    asig = (
+        AsignacionDiaria.objects.filter(agente=user, fecha=hoy, activo=True)
+        .select_related("zona", "escuadra")
+        .order_by("-id")
+        .first()
+    )
+    zona_nombre = ""
+    cuadrante = ""
+    sector_detalle = ""
+    escuadra_nombre = ""
+    if asig:
+        zona_nombre = asig.zona.nombre if asig.zona_id else ""
+        cuadrante = (asig.cuadrante or "").strip()
+        sector_detalle = (asig.sector_detalle or "").strip()
+        escuadra_nombre = asig.escuadra.nombre if asig.escuadra_id else ""
+
+    profile = getattr(user, "profile", None)
+    if not zona_nombre and profile:
+        zona_nombre = (getattr(profile, "zona", None) or "").strip()
+        if not zona_nombre:
+            jur = getattr(profile, "jurisdiccion", None)
+            if jur:
+                zona_nombre = jur.nombre or ""
+
+    parts = []
+    for p in (zona_nombre, cuadrante, sector_detalle):
+        if p and p not in parts:
+            parts.append(p)
+    label = " · ".join(parts) if parts else ""
+
+    return {
+        "label": label,
+        "zona_nombre": zona_nombre or None,
+        "cuadrante": cuadrante or None,
+        "sector_detalle": sector_detalle or None,
+        "escuadra": escuadra_nombre or None,
+    }
+
+
 @api_view(["GET"])
 @permission_classes([AgenteOnly])
 def meta(request):
     delitos = TipoDelito.objects.filter(activo=True).order_by("nombre")
+    zona = _zona_operativa_agente(request.user)
     return Response(
         {
             "tipos_delito": TipoDelitoMiniSerializer(delitos, many=True).data,
@@ -47,6 +96,7 @@ def meta(request):
                 "nombre": f"{request.user.first_name} {request.user.last_name}".strip()
                 or request.user.username
             },
+            "zona_operativa": zona,
         }
     )
 
@@ -90,7 +140,12 @@ def partes_collection(request):
             status=400,
         )
     try:
-        alerta = AlertaDespacho.objects.get(pk=alerta_id, agente=request.user)
+        alerta = AlertaDespacho.objects.filter(
+            Q(pk=alerta_id),
+            Q(agente=request.user)
+            | Q(escuadra__agente_lider=request.user)
+            | Q(escuadra__companeros=request.user),
+        ).distinct().get()
     except AlertaDespacho.DoesNotExist:
         return Response({"detail": "Alerta no encontrada."}, status=404)
 
@@ -108,7 +163,15 @@ def partes_collection(request):
     if existente:
         return Response(ParteAprehensionSerializer(existente).data)
 
-    data = {**request.data, "alerta": alerta.id, "lugar": request.data.get("lugar") or alerta.direccion}
+    data = {
+        **request.data,
+        "alerta": alerta.id,
+        "lugar": request.data.get("lugar") or alerta.direccion,
+    }
+    if not (data.get("sector_zona") or "").strip():
+        zona = _zona_operativa_agente(request.user)
+        if zona.get("label"):
+            data["sector_zona"] = zona["label"]
     serializer = ParteAprehensionSerializer(data=data)
     serializer.is_valid(raise_exception=True)
     obj = serializer.save(

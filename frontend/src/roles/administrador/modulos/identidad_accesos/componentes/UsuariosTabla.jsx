@@ -1,11 +1,17 @@
 import MaterialIcon from "../../../../../shared/components/MaterialIcon";
+import { useConfirm } from "../../../../../shared/components/ConfirmContext";
 import { identidadApi } from "../../../api";
 
 export default function UsuariosTabla({ usuarios, onEdit, onCredenciales, onChanged }) {
+  const confirm = useConfirm();
+
   async function setEstado(user, estado) {
-    const ok = window.confirm(
-      `¿Confirmas marcar a ${user.first_name} ${user.last_name} como ${estado}?`
-    );
+    const ok = await confirm({
+      title: "Cambiar estado de usuario",
+      message: `¿Confirmas marcar a ${user.first_name} ${user.last_name} como ${estado}?`,
+      confirmLabel: "Confirmar",
+      variant: estado === "ACTIVO" ? "warn" : "danger",
+    });
     if (!ok) return;
     await identidadApi.setEstado(user.id, estado);
     onChanged();

@@ -294,3 +294,72 @@
     height: 360px;
   }
 }
+
+/* —— Modo oscuro —— */
+html[data-theme="dark"] .monitoreo-mapa-wrap {
+  border-color: #2e2e2e;
+  background: #141414;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .monitoreo-leyenda {
+  background: rgba(20, 20, 20, 0.94);
+  border-color: #2e2e2e;
+  color: #d4d4d4;
+}
+
+html[data-theme="dark"] .monitoreo-popup strong {
+  color: #f5f5f5;
+}
+
+html[data-theme="dark"] .monitoreo-popup-line,
+html[data-theme="dark"] .monitoreo-popup-status {
+  color: #d4d4d4;
+}
+
+html[data-theme="dark"] .monitoreo-popup-dir,
+html[data-theme="dark"] .monitoreo-unidad-dir {
+  color: #c4b5fd !important;
+}
+
+html[data-theme="dark"] .monitoreo-popup-meta {
+  color: #a3a3a3;
+}
+
+html[data-theme="dark"] .monitoreo-sin-gps {
+  background: #3a2a12;
+  border-color: #5c4018;
+  color: #fdba74;
+}
+
+html[data-theme="dark"] .monitoreo-unidad {
+  background: #1a1a1a;
+  border-color: #2e2e2e;
+  color: #f5f5f5;
+}
+
+html[data-theme="dark"] .monitoreo-unidad:hover,
+html[data-theme="dark"] .monitoreo-unidad.is-active {
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.18);
+}
+
+html[data-theme="dark"] .monitoreo-kpi {
+  background: #1a1a1a;
+  border-color: #2e2e2e;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+  color: #f5f5f5;
+}
+
+html[data-theme="dark"] .monitoreo-kpi-label,
+html[data-theme="dark"] .monitoreo-kpi-hint {
+  color: #a3a3a3;
+}
+
+html[data-theme="dark"] .monitoreo-kpi-value {
+  color: #f5f5f5;
+}
+
+html[data-theme="dark"] .monitoreo-alerta-line {
+  color: #c4b5fd;
+}

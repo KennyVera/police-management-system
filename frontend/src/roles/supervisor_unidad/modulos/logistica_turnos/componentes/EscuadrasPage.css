@@ -124,3 +124,46 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* —— Modo oscuro —— */
+html[data-theme="dark"] .escuadras-filters-head {
+  color: #f5f5f5;
+}
+
+html[data-theme="dark"] .escuadras-filters-grid label {
+  color: #e5e5e5;
+}
+
+html[data-theme="dark"] .escuadras-filters-grid input,
+html[data-theme="dark"] .escuadras-filters-grid select {
+  background: #141414;
+  border-color: #3a3a3a;
+  color: #f5f5f5;
+}
+
+html[data-theme="dark"] .badge-estado.PENDIENTE {
+  background: #3a2a12;
+  color: #fdba74;
+}
+
+html[data-theme="dark"] .badge-estado.ASIGNADA {
+  background: #14301f;
+  color: #86efac;
+}
+
+html[data-theme="dark"] .escuadras-icon-btn {
+  background: #1a1a1a;
+  border-color: #3a3a3a;
+}
+
+html[data-theme="dark"] .escuadras-icon-btn:hover {
+  background: #222;
+}
+
+html[data-theme="dark"] .escuadras-icon-btn.edit {
+  color: #a5b4fc;
+}
+
+html[data-theme="dark"] .escuadras-sin-asignar {
+  color: #fca5a5;
+}

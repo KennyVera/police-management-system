@@ -1,0 +1,31 @@
+.sector-cuadrante-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.sector-cuadrante-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.sector-geo-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  color: #34d399;
+}
+
+html[data-theme="light"] .sector-geo-ok {
+  color: #059669;
+}
+
+.sector-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  justify-content: flex-end;
+}

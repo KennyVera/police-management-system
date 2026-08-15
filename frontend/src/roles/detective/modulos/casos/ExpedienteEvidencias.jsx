@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
+import { useConfirm } from "../../../../shared/components/ConfirmContext";
 import { detectiveApi } from "../../api";
 import "./ExpedienteEvidencias.css";
 
@@ -39,6 +40,7 @@ export default function ExpedienteEvidencias({
   locked,
   onNotify,
 }) {
+  const confirm = useConfirm();
   const [items, setItems] = useState([]);
   const [estados, setEstados] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -115,9 +117,13 @@ export default function ExpedienteEvidencias({
 
   async function handleDelete(ev) {
     if (locked) return;
-    if (!window.confirm(`¿Eliminar la evidencia «${ev.nombre_archivo || ev.codigo}»?`)) {
-      return;
-    }
+    const ok = await confirm({
+      title: "Eliminar evidencia",
+      message: `¿Eliminar la evidencia «${ev.nombre_archivo || ev.codigo}»?`,
+      confirmLabel: "Eliminar",
+      variant: "danger",
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       await detectiveApi.deleteEvidencia(ev.id);

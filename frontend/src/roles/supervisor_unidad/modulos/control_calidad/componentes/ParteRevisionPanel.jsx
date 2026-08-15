@@ -1,4 +1,5 @@
 import MaterialIcon from "../../../../../shared/components/MaterialIcon";
+import "../ControlCalidad.css";
 
 export default function ParteRevisionPanel({
   parte,
@@ -46,18 +47,8 @@ export default function ParteRevisionPanel({
         </p>
       )}
 
-      <div
-        style={{
-          background: "#f7f8fc",
-          borderRadius: 12,
-          padding: "0.85rem 1rem",
-          maxHeight: 180,
-          overflow: "auto",
-        }}
-      >
-        <p style={{ margin: 0, whiteSpace: "pre-wrap", lineHeight: 1.45 }}>
-          {parte.descripcion || parte.relato_hechos || "Sin relato."}
-        </p>
+      <div className="cq-relato-box">
+        <p>{parte.descripcion || parte.relato_hechos || "Sin relato."}</p>
       </div>
 
       {(parte.hay_heridos === "SI" || parte.hay_armas === "SI") && (
