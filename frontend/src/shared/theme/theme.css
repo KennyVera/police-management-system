@@ -1,0 +1,635 @@
+/* Tema claro (default) — variables base */
+:root {
+  color-scheme: light;
+  --ct-bg: #eef1f6;
+  --ct-page: #f5f7fb;
+  --ct-surface: #ffffff;
+  --ct-surface-2: #fafbfd;
+  --ct-border: #e8ecf3;
+  --ct-border-strong: #e5e9f2;
+  --ct-text: #1a2338;
+  --ct-text-2: #374151;
+  --ct-muted: #8b95a8;
+  --ct-muted-2: #6b7280;
+  --ct-accent: #7c5cbf;
+  --ct-accent-soft: #f1ebff;
+  --ct-danger-bg: #fef3f2;
+  --ct-danger-text: #b42318;
+  --ct-ok-bg: #eaf8ef;
+  --ct-ok-text: #1f7a45;
+  --ct-warn-bg: #fff7ed;
+  --ct-warn-text: #c2410c;
+  --ct-shadow: rgba(30, 42, 74, 0.06);
+  --ct-input-bg: #ffffff;
+  --ct-table-head: #8b95a8;
+  --ct-overlay: rgba(16, 24, 40, 0.45);
+}
+
+/* Modo oscuro: negro/gris neutro (sin tinte azul) */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --ct-bg: #0c0c0c;
+  --ct-page: #0f0f0f;
+  --ct-surface: #1a1a1a;
+  --ct-surface-2: #222222;
+  --ct-border: #2e2e2e;
+  --ct-border-strong: #3a3a3a;
+  --ct-text: #f5f5f5;
+  --ct-text-2: #e8e8e8;
+  --ct-muted: #a3a3a3;
+  --ct-muted-2: #b3b3b3;
+  --ct-accent: #a78bfa;
+  --ct-accent-soft: #2a2438;
+  --ct-danger-bg: #3a1515;
+  --ct-danger-text: #fca5a5;
+  --ct-ok-bg: #14301f;
+  --ct-ok-text: #86efac;
+  --ct-warn-bg: #3a2a12;
+  --ct-warn-text: #fdba74;
+  --ct-shadow: rgba(0, 0, 0, 0.45);
+  --ct-input-bg: #141414;
+  --ct-table-head: #a3a3a3;
+  --ct-overlay: rgba(0, 0, 0, 0.65);
+}
+
+html[data-theme="dark"] body {
+  background: var(--ct-bg);
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .boot-screen {
+  background: var(--ct-bg);
+  color: var(--ct-muted);
+}
+
+/* —— Shell / layout —— */
+html[data-theme="dark"] .role-shell {
+  --sidebar-bg: #141414;
+  --page-bg: var(--ct-page);
+  background: var(--ct-page);
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .role-sidebar {
+  background: #141414;
+  color: var(--ct-text);
+  border-right-color: var(--ct-border);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .role-brand {
+  border-bottom-color: var(--ct-border);
+}
+
+html[data-theme="dark"] .role-brand strong,
+html[data-theme="dark"] .role-topbar h1,
+html[data-theme="dark"] .user-meta strong,
+html[data-theme="dark"] .mod-header h2,
+html[data-theme="dark"] .modal-card h3,
+html[data-theme="dark"] .panel-card h3,
+html[data-theme="dark"] .az-col-head h3,
+html[data-theme="dark"] .az-zonas-table h3 {
+  color: var(--ct-text) !important;
+}
+
+html[data-theme="dark"] .role-brand span,
+html[data-theme="dark"] .eyebrow,
+html[data-theme="dark"] .user-meta span,
+html[data-theme="dark"] .mod-desc,
+html[data-theme="dark"] .mod-muted,
+html[data-theme="dark"] .sidebar-copy,
+html[data-theme="dark"] .az-count,
+html[data-theme="dark"] .az-hint,
+html[data-theme="dark"] .az-empty,
+html[data-theme="dark"] .pager-range {
+  color: var(--ct-muted) !important;
+}
+
+html[data-theme="dark"] .brand-icon.has-logo {
+  background: #111;
+  border-color: var(--ct-border);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .collapse-btn,
+html[data-theme="dark"] .icon-chip {
+  background: var(--ct-surface);
+  border-color: var(--ct-border);
+  color: var(--ct-muted-2);
+}
+
+html[data-theme="dark"] .collapse-btn:hover,
+html[data-theme="dark"] .icon-chip:hover {
+  background: var(--ct-surface-2);
+  border-color: #525252;
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .nav-item {
+  color: var(--ct-muted-2);
+}
+
+html[data-theme="dark"] .nav-item .material-symbols-outlined {
+  color: #737373;
+}
+
+html[data-theme="dark"] .nav-item:hover {
+  background: #1f1f1f;
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .nav-item:hover .material-symbols-outlined {
+  color: var(--ct-accent);
+}
+
+html[data-theme="dark"] .nav-item.active {
+  background: var(--ct-accent-soft);
+  color: #ddd6fe;
+}
+
+html[data-theme="dark"] .nav-item.active .material-symbols-outlined {
+  color: var(--ct-accent);
+}
+
+html[data-theme="dark"] .nav-children {
+  border-left-color: #333;
+}
+
+html[data-theme="dark"] .role-topbar {
+  background: #141414;
+  border-bottom-color: var(--ct-border);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .role-content {
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .user-chip {
+  background: var(--ct-surface);
+  border-color: var(--ct-border);
+}
+
+html[data-theme="dark"] .avatar {
+  background: #333;
+  color: #fff;
+}
+
+/* —— Cards / panels / tables —— */
+html[data-theme="dark"] .panel-card,
+html[data-theme="dark"] .mod-card,
+html[data-theme="dark"] .stat-card,
+html[data-theme="dark"] .dash-card,
+html[data-theme="dark"] .kpi-card,
+html[data-theme="dark"] .filters-bar,
+html[data-theme="dark"] .az-col,
+html[data-theme="dark"] .az-transfer.panel-card,
+html[data-theme="dark"] .cfg-form,
+html[data-theme="dark"] .login-panel,
+html[data-theme="dark"] .login-shell {
+  background: var(--ct-surface) !important;
+  border-color: var(--ct-border) !important;
+  box-shadow: 0 8px 24px var(--ct-shadow) !important;
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .az-col {
+  background: #161616 !important;
+}
+
+html[data-theme="dark"] .data-table th {
+  color: var(--ct-table-head) !important;
+  border-bottom-color: var(--ct-border) !important;
+}
+
+html[data-theme="dark"] .data-table td {
+  color: var(--ct-text-2) !important;
+  border-bottom-color: var(--ct-border) !important;
+}
+
+html[data-theme="dark"] .data-table strong {
+  color: var(--ct-text) !important;
+}
+
+html[data-theme="dark"] .az-detail-row td,
+html[data-theme="dark"] .az-detail {
+  background: #161616 !important;
+}
+
+/* —— Forms / inputs —— */
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] .form-grid input,
+html[data-theme="dark"] .form-grid select,
+html[data-theme="dark"] .form-grid textarea,
+html[data-theme="dark"] .stack-form input,
+html[data-theme="dark"] .stack-form select,
+html[data-theme="dark"] .stack-form textarea,
+html[data-theme="dark"] .filters-bar input,
+html[data-theme="dark"] .filters-bar select,
+html[data-theme="dark"] .cfg-form input,
+html[data-theme="dark"] .cfg-form select,
+html[data-theme="dark"] .cfg-form textarea,
+html[data-theme="dark"] .az-search,
+html[data-theme="dark"] .az-zona-select select,
+html[data-theme="dark"] .login-page input,
+html[data-theme="dark"] .login-page select {
+  background: var(--ct-input-bg) !important;
+  color: var(--ct-text) !important;
+  border-color: var(--ct-border-strong) !important;
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: #737373 !important;
+}
+
+html[data-theme="dark"] label,
+html[data-theme="dark"] .form-grid label,
+html[data-theme="dark"] .stack-form label,
+html[data-theme="dark"] .filters-bar label,
+html[data-theme="dark"] .az-zona-select,
+html[data-theme="dark"] .cfg-form label {
+  color: var(--ct-text-2) !important;
+}
+
+html[data-theme="dark"] .readonly-input {
+  background: #1f1f1f !important;
+  color: var(--ct-muted) !important;
+}
+
+/* —— Buttons —— */
+html[data-theme="dark"] .btn-ghost,
+html[data-theme="dark"] .row-actions button {
+  background: #1f1f1f !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text-2) !important;
+}
+
+html[data-theme="dark"] .btn-ghost:hover,
+html[data-theme="dark"] .row-actions button:hover {
+  background: #2a2a2a !important;
+  color: var(--ct-text) !important;
+}
+
+html[data-theme="dark"] .btn-warn {
+  background: var(--ct-warn-bg) !important;
+  color: var(--ct-warn-text) !important;
+  border-color: #5c4018 !important;
+}
+
+html[data-theme="dark"] .btn-accent {
+  color: #fff !important;
+}
+
+html[data-theme="dark"] .pager-btn {
+  background: var(--ct-surface);
+  border-color: var(--ct-border);
+  color: var(--ct-text-2);
+}
+
+html[data-theme="dark"] .pager-btn.active {
+  background: var(--ct-accent-soft);
+  color: #ddd6fe;
+  border-color: #4c3d6e;
+}
+
+/* —— Modals —— */
+html[data-theme="dark"] .modal-backdrop {
+  background: var(--ct-overlay) !important;
+}
+
+html[data-theme="dark"] .modal-card {
+  background: #1a1a1a !important;
+  color: var(--ct-text);
+  border: 1px solid var(--ct-border);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="dark"] .modal-drag-handle {
+  border-bottom-color: var(--ct-border);
+}
+
+/* —— Badges / status —— */
+html[data-theme="dark"] .badge-estado.ACTIVO {
+  background: var(--ct-ok-bg);
+  color: var(--ct-ok-text);
+}
+
+html[data-theme="dark"] .badge-estado.SUSPENDIDO {
+  background: var(--ct-warn-bg);
+  color: var(--ct-warn-text);
+}
+
+html[data-theme="dark"] .badge-estado.BAJA {
+  background: #2a2a2a;
+  color: #a3a3a3;
+}
+
+html[data-theme="dark"] .mod-error {
+  background: var(--ct-danger-bg);
+  color: var(--ct-danger-text);
+  border-color: #5c2020;
+}
+
+html[data-theme="dark"] .mod-kicker,
+html[data-theme="dark"] .az-ok {
+  color: var(--ct-accent) !important;
+}
+
+html[data-theme="dark"] .az-ok {
+  color: var(--ct-ok-text) !important;
+}
+
+/* —— Transfer / personas —— */
+html[data-theme="dark"] .az-person,
+html[data-theme="dark"] .az-person-static {
+  background: #1a1a1a !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .az-person.is-selected {
+  background: var(--ct-accent-soft) !important;
+  border-color: #5b4a7a !important;
+}
+
+html[data-theme="dark"] .az-person-static.is-pending {
+  background: #1c1824 !important;
+  border-color: #6d5a8f !important;
+}
+
+html[data-theme="dark"] .az-person-text small {
+  color: var(--ct-muted) !important;
+}
+
+html[data-theme="dark"] .az-search {
+  background: var(--ct-input-bg) !important;
+}
+
+html[data-theme="dark"] .az-search .material-symbols-outlined {
+  color: #737373;
+}
+
+html[data-theme="dark"] .az-remove {
+  background: #2a2a2a;
+  color: var(--ct-muted);
+}
+
+html[data-theme="dark"] .az-remove:hover {
+  background: #3a1515;
+  color: #fca5a5;
+}
+
+html[data-theme="dark"] .az-hist-list li {
+  background: #161616;
+  border-color: var(--ct-border);
+}
+
+/* —— Login —— */
+html[data-theme="dark"] .login-page {
+  background: var(--ct-bg);
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .login-brand {
+  background: #141414;
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .login-brand h1,
+html[data-theme="dark"] .brand-name,
+html[data-theme="dark"] .login-heading h2 {
+  color: var(--ct-text) !important;
+}
+
+html[data-theme="dark"] .brand-copy,
+html[data-theme="dark"] .login-heading p {
+  color: var(--ct-muted) !important;
+}
+
+html[data-theme="dark"] .brand-mark.has-logo {
+  background: #111;
+  border-color: var(--ct-border);
+}
+
+/* —— Misc module pages —— */
+html[data-theme="dark"] .mod-page,
+html[data-theme="dark"] .mod-tabs button {
+  color: var(--ct-muted-2);
+}
+
+html[data-theme="dark"] .mod-tabs {
+  border-bottom-color: var(--ct-border);
+}
+
+html[data-theme="dark"] .mod-tabs button.active {
+  background: var(--ct-accent-soft);
+  color: #ddd6fe;
+}
+
+html[data-theme="dark"] .gps-block,
+html[data-theme="dark"] .cfg-upload-box,
+html[data-theme="dark"] .cfg-upload-preview {
+  background: #161616 !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .notification-panel,
+html[data-theme="dark"] .notif-dropdown,
+html[data-theme="dark"] .bell-panel {
+  background: var(--ct-surface) !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text);
+}
+
+/* Catch remaining dark text on light-looking surfaces */
+html[data-theme="dark"] .role-content p,
+html[data-theme="dark"] .role-content span,
+html[data-theme="dark"] .role-content li,
+html[data-theme="dark"] .role-content td,
+html[data-theme="dark"] .role-content th,
+html[data-theme="dark"] .role-content label,
+html[data-theme="dark"] .role-content h1,
+html[data-theme="dark"] .role-content h2,
+html[data-theme="dark"] .role-content h3,
+html[data-theme="dark"] .role-content h4 {
+  color: inherit;
+}
+
+html[data-theme="dark"] .role-content {
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] a {
+  color: #c4b5fd;
+}
+
+/* Forzar texto claro donde los CSS de módulos ponen negro fijo */
+html[data-theme="dark"] .mod-page,
+html[data-theme="dark"] .mod-page h1,
+html[data-theme="dark"] .mod-page h2,
+html[data-theme="dark"] .mod-page h3,
+html[data-theme="dark"] .mod-page h4,
+html[data-theme="dark"] .mod-page strong,
+html[data-theme="dark"] .mod-header h2,
+html[data-theme="dark"] .panel-card,
+html[data-theme="dark"] .panel-card strong,
+html[data-theme="dark"] .data-table,
+html[data-theme="dark"] .cfg-form,
+html[data-theme="dark"] .az-page,
+html[data-theme="dark"] .az-page strong,
+html[data-theme="dark"] .login-page,
+html[data-theme="dark"] .login-page strong {
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .mod-desc,
+html[data-theme="dark"] .mod-muted,
+html[data-theme="dark"] .data-table th {
+  color: var(--ct-muted) !important;
+}
+
+html[data-theme="dark"] .panel-card,
+html[data-theme="dark"] .mod-page .panel-card {
+  background: var(--ct-surface);
+  border-color: var(--ct-border);
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .notif-dot {
+  box-shadow: 0 0 0 2px #141414;
+}
+
+/* Dashboards / cards genéricas */
+html[data-theme="dark"] .dash-grid > *,
+html[data-theme="dark"] .stat-card,
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .chart-card,
+html[data-theme="dark"] .widget-card {
+  background: var(--ct-surface) !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+}
+
+html[data-theme="dark"] .user-meta strong {
+  color: var(--ct-text) !important;
+}
+
+html[data-theme="dark"] .user-meta span {
+  color: var(--ct-muted) !important;
+}
+
+html[data-theme="dark"] option {
+  background: #1a1a1a;
+  color: #f5f5f5;
+}
+
+/* —— Dashboards (todos los roles) —— */
+html[data-theme="dark"] .admin-dash,
+html[data-theme="dark"] .agente-dash,
+html[data-theme="dark"] .su-dash,
+html[data-theme="dark"] .det-dash,
+html[data-theme="dark"] .dz-dash,
+html[data-theme="dark"] .dz-exec {
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .welcome-card,
+html[data-theme="dark"] .platform-card,
+html[data-theme="dark"] .kpi-card,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .quick-btn,
+html[data-theme="dark"] .su-card,
+html[data-theme="dark"] .det-card,
+html[data-theme="dark"] .dz-card,
+html[data-theme="dark"] .dz-panel,
+html[data-theme="dark"] .dash-card,
+html[data-theme="dark"] .stat-card,
+html[data-theme="dark"] .chart-card,
+html[data-theme="dark"] .widget-card,
+html[data-theme="dark"] .kpi,
+html[data-theme="dark"] .card {
+  background: var(--ct-surface) !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+  box-shadow: 0 10px 28px var(--ct-shadow) !important;
+}
+
+html[data-theme="dark"] .welcome-card {
+  background:
+    radial-gradient(circle at 85% 30%, rgba(167, 139, 250, 0.12), transparent 42%),
+    var(--ct-surface) !important;
+}
+
+html[data-theme="dark"] .welcome-copy h2,
+html[data-theme="dark"] .platform-head h3,
+html[data-theme="dark"] .panel-head h3,
+html[data-theme="dark"] .quick-actions h3,
+html[data-theme="dark"] .platform-value,
+html[data-theme="dark"] .kpi-value,
+html[data-theme="dark"] .inst-list strong,
+html[data-theme="dark"] .alert-list strong {
+  color: var(--ct-text) !important;
+}
+
+html[data-theme="dark"] .welcome-copy p,
+html[data-theme="dark"] .platform-label,
+html[data-theme="dark"] .kpi-label,
+html[data-theme="dark"] .inst-list span,
+html[data-theme="dark"] .alert-list span,
+html[data-theme="dark"] .chart-labels,
+html[data-theme="dark"] .chip-select {
+  color: var(--ct-muted) !important;
+}
+
+html[data-theme="dark"] .chip-select {
+  background: var(--ct-surface-2) !important;
+  border-color: var(--ct-border) !important;
+}
+
+html[data-theme="dark"] .spark-chart path,
+html[data-theme="dark"] .spark-chart polyline {
+  stroke: #a78bfa;
+}
+
+html[data-theme="dark"] .spark-chart .area-fill,
+html[data-theme="dark"] .spark-chart polygon {
+  fill: rgba(167, 139, 250, 0.2);
+}
+
+html[data-theme="dark"] .notif-panel,
+html[data-theme="dark"] .notif-item {
+  background: #1a1a1a !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+}
+
+html[data-theme="dark"] .notif-panel-head {
+  border-bottom-color: var(--ct-border) !important;
+}
+
+html[data-theme="dark"] .notif-item.unread {
+  background: #221c2e !important;
+}
+
+html[data-theme="dark"] .notif-item:hover {
+  background: #242424 !important;
+}
+
+html[data-theme="dark"] .notif-type {
+  background: var(--ct-accent-soft) !important;
+  color: var(--ct-accent) !important;
+}
+
+html[data-theme="dark"] .notif-empty {
+  color: var(--ct-muted) !important;
+}
+
+html[data-theme="dark"] .icon-chip.is-dark-active {
+  background: #2a2a2a;
+  border-color: #525252;
+  color: #f5f5f5;
+}

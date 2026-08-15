@@ -10,7 +10,8 @@ body,
 }
 
 body {
-  background: #eef1f6;
+  background: var(--ct-bg, #eef1f6);
+  color: var(--ct-text, #1a2338);
 }
 
 .material-symbols-outlined {

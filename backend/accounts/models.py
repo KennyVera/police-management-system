@@ -13,13 +13,14 @@ class SystemRole(models.TextChoices):
     AGENTE_OPERATIVO = "AGENTE_OPERATIVO", "Agente Operativo"
 
 
-# Roles que el administrador puede asignar a policías
-ASSIGNABLE_ROLES = {
+# Roles que el administrador puede asignar a policías (orden de UI)
+ASSIGNABLE_ROLES = (
     SystemRole.VISOR_EJECUTIVO,
+    SystemRole.DIRECTOR_ZONA,
     SystemRole.SUPERVISOR_UNIDAD,
     SystemRole.DETECTIVE,
     SystemRole.AGENTE_OPERATIVO,
-}
+)
 
 
 ROLE_ROUTE_MAP = {
@@ -49,6 +50,11 @@ class UserProfile(models.Model):
     unidad = models.CharField(max_length=120, blank=True)
     zona = models.CharField(max_length=120, blank=True)
     telefono = models.CharField(max_length=32, blank=True)
+    avatar_url = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text="URL/proxy de foto de perfil (MinIO).",
+    )
     estado = models.CharField(
         max_length=20,
         choices=AccountStatus.choices,

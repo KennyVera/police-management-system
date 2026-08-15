@@ -1,12 +1,27 @@
-import { apiFetch } from "../../auth/api";
+import { apiFetch, getToken, API_URL } from "../../auth/api";
+import { cleanParams, unwrapPage } from "../../shared/utils/pagination";
 
 const ID = "/api/roles/administrador/identidad_accesos";
 const EO = "/api/roles/administrador/estructura_organizacional";
 const PC = "/api/roles/administrador/parametros_catalogos";
 
+export { unwrapPage };
+
+async function fetchBlob(path) {
+  const headers = {};
+  const token = getToken();
+  if (token) headers.Authorization = `Token ${token}`;
+  const response = await fetch(`${API_URL}${path}`, { headers });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.detail || "No se pudo descargar el archivo");
+  }
+  return response.blob();
+}
+
 export const identidadApi = {
   listUsuarios: (params = {}) => {
-    const q = new URLSearchParams(params).toString();
+    const q = new URLSearchParams(cleanParams(params)).toString();
     return apiFetch(`${ID}/usuarios/${q ? `?${q}` : ""}`);
   },
   createUsuario: (body) =>
@@ -32,6 +47,7 @@ export const identidadApi = {
   cerrarSesion: (sessionId) =>
     apiFetch(`${ID}/sesiones/${sessionId}/cerrar/`, { method: "POST", body: "{}" }),
   rolesAsignables: () => apiFetch(`${ID}/roles-asignables/`),
+  generarIdentificadores: () => apiFetch(`${ID}/generar-identificadores/`),
 };
 
 export const estructuraApi = {
@@ -49,21 +65,21 @@ export const estructuraApi = {
     }),
   inactivarJurisdiccion: (id) =>
     apiFetch(`${EO}/jurisdicciones/${id}/inactivar/`, { method: "POST", body: "{}" }),
-  listDepartamentos: (params = {}) => {
-    const q = new URLSearchParams(params).toString();
-    return apiFetch(`${EO}/departamentos/${q ? `?${q}` : ""}`);
-  },
-  createDepartamento: (body) =>
-    apiFetch(`${EO}/departamentos/`, { method: "POST", body: JSON.stringify(body) }),
-  updateDepartamento: (id, body) =>
-    apiFetch(`${EO}/departamentos/${id}/`, {
-      method: "PATCH",
-      body: JSON.stringify(body),
+  jurisdiccionPersonal: (id) => apiFetch(`${EO}/jurisdicciones/${id}/personal/`),
+  jurisdiccionPersonalPdf: (id) =>
+    fetchBlob(`${EO}/jurisdicciones/${id}/personal/pdf/`),
+  restablecerAsignaciones: (id) =>
+    apiFetch(`${EO}/jurisdicciones/${id}/restablecer-asignaciones/`, {
+      method: "POST",
+      body: "{}",
     }),
-  inactivarDepartamento: (id) =>
-    apiFetch(`${EO}/departamentos/${id}/inactivar/`, { method: "POST", body: "{}" }),
-  listPlazas: () => apiFetch(`${EO}/plazas/`),
+  listPlazas: (params = {}) => {
+    const q = new URLSearchParams(cleanParams(params)).toString();
+    return apiFetch(`${EO}/plazas/${q ? `?${q}` : ""}`);
+  },
   assignPlaza: (body) =>
+    apiFetch(`${EO}/plazas/`, { method: "POST", body: JSON.stringify(body) }),
+  assignPlazasBatch: (body) =>
     apiFetch(`${EO}/plazas/`, { method: "POST", body: JSON.stringify(body) }),
 };
 

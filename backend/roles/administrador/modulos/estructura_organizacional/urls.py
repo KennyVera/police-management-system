@@ -5,10 +5,13 @@ from . import views
 urlpatterns = [
     path("jurisdicciones/", views.jurisdicciones_collection),
     path("jurisdicciones/<int:pk>/", views.jurisdiccion_detail),
+    path("jurisdicciones/<int:pk>/personal/", views.jurisdiccion_personal),
+    path("jurisdicciones/<int:pk>/personal/pdf/", views.jurisdiccion_personal_pdf),
+    path(
+        "jurisdicciones/<int:pk>/restablecer-asignaciones/",
+        views.jurisdiccion_restablecer_asignaciones,
+    ),
     path("jurisdicciones/<int:pk>/inactivar/", views.jurisdiccion_inactivar),
-    path("departamentos/", views.departamentos_collection),
-    path("departamentos/<int:pk>/", views.departamento_detail),
-    path("departamentos/<int:pk>/inactivar/", views.departamento_inactivar),
     path("plazas/", views.plazas),
     path("catalogos/", views.catalogos),
 ]

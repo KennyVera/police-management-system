@@ -14,6 +14,7 @@ from accounts.serializers import (
     ResetPasswordSerializer,
     SessionSerializer,
 )
+from operativo.pagination import paginate_qs
 
 
 @api_view(["GET", "POST"])
@@ -45,8 +46,9 @@ def usuarios_collection(request):
                 | Q(email__icontains=q)
                 | Q(profile__cedula__icontains=q)
                 | Q(profile__placa__icontains=q)
+                | Q(profile__rango_policial__icontains=q)
             )
-        return Response(PoliceUserSerializer(qs, many=True).data)
+        return paginate_qs(request, qs, PoliceUserSerializer)
 
     serializer = PoliceUserCreateSerializer(
         data=request.data, context={"institucion": institucion}
@@ -159,3 +161,41 @@ def roles_asignables(request):
         for code in ASSIGNABLE_ROLES
     ]
     return Response(data)
+
+
+@api_view(["GET"])
+@permission_classes([AdminOnly])
+def generar_identificadores(request):
+    """Genera cédula y placa únicas (no existentes en BD)."""
+    import random
+    from django.contrib.auth.models import User
+
+    from accounts.models import UserProfile
+
+    def _cedula_unica():
+        for _ in range(80):
+            cedula = f"09{random.randint(10000000, 99999999)}"
+            if UserProfile.objects.filter(cedula=cedula).exists():
+                continue
+            if User.objects.filter(username=cedula).exists():
+                continue
+            return cedula
+        raise RuntimeError("No se pudo generar cédula única")
+
+    def _placa_unica():
+        for _ in range(80):
+            placa = f"P-{random.randint(1000, 9999)}"
+            if UserProfile.objects.filter(placa__iexact=placa).exists():
+                continue
+            return placa
+        # fallback más largo
+        for _ in range(40):
+            placa = f"P-{random.randint(10000, 99999)}"
+            if not UserProfile.objects.filter(placa__iexact=placa).exists():
+                return placa
+        raise RuntimeError("No se pudo generar placa única")
+
+    try:
+        return Response({"cedula": _cedula_unica(), "placa": _placa_unica()})
+    except RuntimeError as exc:
+        return Response({"detail": str(exc)}, status=500)

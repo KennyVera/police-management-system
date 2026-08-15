@@ -19,6 +19,8 @@ class UserSerializer(serializers.ModelSerializer):
     rango_tipico = serializers.CharField(source="profile.rango_tipico")
     unidad = serializers.CharField(source="profile.unidad")
     zona = serializers.CharField(source="profile.zona")
+    telefono = serializers.CharField(source="profile.telefono", allow_blank=True)
+    avatar_url = serializers.CharField(source="profile.avatar_url", allow_blank=True)
     cedula = serializers.CharField(source="profile.cedula", allow_null=True)
     placa = serializers.CharField(source="profile.placa")
     rango_policial = serializers.CharField(source="profile.rango_policial")
@@ -43,6 +45,8 @@ class UserSerializer(serializers.ModelSerializer):
             "rango_tipico",
             "unidad",
             "zona",
+            "telefono",
+            "avatar_url",
             "cedula",
             "placa",
             "rango_policial",
@@ -56,6 +60,44 @@ class UserSerializer(serializers.ModelSerializer):
     def get_institucion_nombre(self, obj):
         inst = getattr(obj.profile, "institucion", None)
         return inst.nombre_comercial if inst else None
+
+
+class MeUpdateSerializer(serializers.Serializer):
+    first_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    last_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    email = serializers.EmailField(required=False)
+    telefono = serializers.CharField(max_length=32, required=False, allow_blank=True)
+
+    def validate_email(self, value):
+        user = self.context["request"].user
+        if (
+            User.objects.filter(email__iexact=value)
+            .exclude(pk=user.pk)
+            .exists()
+        ):
+            raise serializers.ValidationError("Ya existe otro usuario con este correo.")
+        return value.lower()
+
+    def update(self, instance, validated_data):
+        for field in ("first_name", "last_name", "email"):
+            if field in validated_data:
+                setattr(instance, field, validated_data[field])
+        instance.save()
+        if "telefono" in validated_data:
+            instance.profile.telefono = validated_data["telefono"]
+            instance.profile.save(update_fields=["telefono"])
+        return instance
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(min_length=8, write_only=True)
+
+    def validate_current_password(self, value):
+        user = self.context["request"].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("La contraseña actual no es correcta.")
+        return value
 
 
 class LoginSerializer(serializers.Serializer):
@@ -303,10 +345,11 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
 class PlazaAssignSerializer(serializers.Serializer):
     user_id = serializers.IntegerField()
-    departamento_id = serializers.IntegerField(allow_null=True, required=False)
     jurisdiccion_id = serializers.IntegerField(allow_null=True, required=False)
+    # Compat: se ignora; la asignación territorial ya no usa departamento
+    departamento_id = serializers.IntegerField(allow_null=True, required=False)
 
     def validate_user_id(self, value):
-        if not User.objects.filter(pk=value).exists():
+        if not User.objects.filter(pk=value, profile__isnull=False).exists():
             raise serializers.ValidationError("Usuario no encontrado.")
         return value

@@ -6,15 +6,16 @@
   flex-wrap: wrap;
   margin-top: 0.85rem;
   padding: 0.65rem 0.85rem;
-  border: 1px solid #e8ecf3;
+  border: 1px solid var(--ct-border, #e8ecf3);
   border-radius: 12px;
-  background: #fff;
-  color: #6b7280;
+  background: var(--ct-surface, #fff);
+  color: var(--ct-muted-2, #6b7280);
   font-size: 0.85rem;
 }
 
 .pager-range {
   font-weight: 600;
+  color: var(--ct-text-2, #374151);
 }
 
 .pager-controls {
@@ -25,14 +26,14 @@
 }
 
 .pager-btn {
-  border: 1px solid #e5e9f2;
-  background: #fff;
+  border: 1px solid var(--ct-border-strong, #e5e9f2);
+  background: var(--ct-surface-2, #fff);
   border-radius: 8px;
   min-width: 2rem;
   height: 2rem;
   padding: 0 0.45rem;
   cursor: pointer;
-  color: #5b6478;
+  color: var(--ct-text-2, #5b6478);
   font: inherit;
   display: inline-flex;
   align-items: center;
@@ -40,13 +41,14 @@
 }
 
 .pager-btn:hover:not(:disabled) {
-  border-color: #c4b5e8;
-  color: #5b3d9a;
+  border-color: var(--ct-accent, #c4b5e8);
+  color: var(--ct-accent, #5b3d9a);
+  background: var(--ct-accent-soft, #f8f5ff);
 }
 
 .pager-btn.active {
-  background: #7c5cbf;
-  border-color: #7c5cbf;
+  background: var(--ct-accent, #7c5cbf);
+  border-color: var(--ct-accent, #7c5cbf);
   color: #fff;
   font-weight: 700;
 }
@@ -57,7 +59,7 @@
 }
 
 .pager-ellipsis {
-  color: #9ca3af;
+  color: var(--ct-muted, #9ca3af);
   padding: 0 0.15rem;
 }
 
@@ -66,6 +68,9 @@
   grid-template-columns: minmax(0, 1.6fr) repeat(2, minmax(140px, 0.7fr)) auto;
   gap: 0.55rem;
   align-items: end;
+  background: var(--ct-surface, #fff);
+  border: 1px solid var(--ct-border, #e8ecf3);
+  color: var(--ct-text, #1a2338);
 }
 
 .filters-bar label {
@@ -73,17 +78,17 @@
   gap: 0.28rem;
   font-size: 0.78rem;
   font-weight: 700;
-  color: #5b6478;
+  color: var(--ct-muted-2, #5b6478);
 }
 
 .filters-bar input,
 .filters-bar select {
-  border: 1px solid #e5e9f2;
+  border: 1px solid var(--ct-border-strong, #e5e9f2);
   border-radius: 10px;
   padding: 0.6rem 0.7rem;
   font: inherit;
-  color: #1f2937;
-  background: #fff;
+  color: var(--ct-text, #1f2937);
+  background: var(--ct-input-bg, #fff);
 }
 
 .filters-actions {

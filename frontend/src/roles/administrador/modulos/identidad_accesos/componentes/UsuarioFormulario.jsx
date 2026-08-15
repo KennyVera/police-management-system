@@ -1,4 +1,5 @@
 import { useState } from "react";
+import MaterialIcon from "../../../../../shared/components/MaterialIcon";
 import { identidadApi } from "../../../api";
 
 const EMPTY = {
@@ -28,9 +29,27 @@ export default function UsuarioFormulario({ roles, initial, onClose, onSaved }) 
   );
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   function setField(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function generarCedulaPlaca() {
+    setGenerating(true);
+    setError("");
+    try {
+      const data = await identidadApi.generarIdentificadores();
+      setForm((prev) => ({
+        ...prev,
+        cedula: data.cedula || prev.cedula,
+        placa: data.placa || prev.placa,
+      }));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGenerating(false);
+    }
   }
 
   async function handleSubmit(e) {
@@ -85,31 +104,67 @@ export default function UsuarioFormulario({ roles, initial, onClose, onSaved }) 
               value={form.email}
               onChange={(e) => setField("email", e.target.value)}
               disabled={isEdit}
+              autoComplete="off"
+              name="funcionario_email"
             />
           </label>
           {!isEdit && (
+            <>
+              <label>
+                Cédula
+                <input
+                  required
+                  value={form.cedula}
+                  onChange={(e) => setField("cedula", e.target.value)}
+                  autoComplete="off"
+                  name="cedula"
+                />
+              </label>
+              <label>
+                Placa / Credencial
+                <input
+                  required
+                  value={form.placa}
+                  onChange={(e) => setField("placa", e.target.value)}
+                  autoComplete="off"
+                  name="placa"
+                />
+              </label>
+              <div className="full id-gen-row">
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  disabled={generating}
+                  onClick={generarCedulaPlaca}
+                >
+                  <MaterialIcon name="auto_awesome" />
+                  {generating ? "Generando…" : "Generar cédula y placa"}
+                </button>
+                <span className="mod-muted">
+                  Únicas: no se repiten con las ya registradas.
+                </span>
+              </div>
+            </>
+          )}
+          {isEdit && (
             <label>
-              Cédula
+              Placa / Credencial
               <input
-                required
-                value={form.cedula}
-                onChange={(e) => setField("cedula", e.target.value)}
+                value={form.placa}
+                onChange={(e) => setField("placa", e.target.value)}
+                autoComplete="off"
+                name="placa"
               />
             </label>
           )}
-          <label>
-            Placa / Credencial
-            <input
-              value={form.placa}
-              onChange={(e) => setField("placa", e.target.value)}
-            />
-          </label>
           <label>
             Rango policial
             <input
               value={form.rango_policial}
               onChange={(e) => setField("rango_policial", e.target.value)}
               placeholder="Ej. Cabo, Teniente..."
+              autoComplete="off"
+              name="rango_policial"
             />
           </label>
           <label>
@@ -118,6 +173,7 @@ export default function UsuarioFormulario({ roles, initial, onClose, onSaved }) 
               value={form.role}
               onChange={(e) => setField("role", e.target.value)}
               required
+              autoComplete="off"
             >
               {roles.map((r) => (
                 <option key={r.code} value={r.code}>
@@ -135,6 +191,8 @@ export default function UsuarioFormulario({ roles, initial, onClose, onSaved }) 
                 minLength={8}
                 value={form.password}
                 onChange={(e) => setField("password", e.target.value)}
+                autoComplete="new-password"
+                name="password_inicial"
               />
             </label>
           )}

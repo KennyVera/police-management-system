@@ -9,7 +9,6 @@ import AdminIdentidadUsuarios from "./roles/administrador/modulos/identidad_acce
 import AdminIdentidadCredenciales from "./roles/administrador/modulos/identidad_accesos/CredencialesPage";
 import AdminIdentidadSesiones from "./roles/administrador/modulos/identidad_accesos/SesionesPage";
 import AdminEstructuraJurisdicciones from "./roles/administrador/modulos/estructura_organizacional/JurisdiccionesPage";
-import AdminEstructuraDepartamentos from "./roles/administrador/modulos/estructura_organizacional/DepartamentosPage";
 import AdminEstructuraPlazas from "./roles/administrador/modulos/estructura_organizacional/PlazasPage";
 import AdminCatalogosDelitos from "./roles/administrador/modulos/parametros_catalogos/TiposDelitosPage";
 import AdminCatalogosOperativos from "./roles/administrador/modulos/parametros_catalogos/CatalogosOperativosPage";
@@ -173,7 +172,7 @@ export default function App() {
         />
         <Route
           path="estructura_organizacional/departamentos"
-          element={<AdminEstructuraDepartamentos />}
+          element={<Navigate to="/app/administrador/estructura_organizacional/jurisdicciones" replace />}
         />
         <Route
           path="estructura_organizacional/plazas"

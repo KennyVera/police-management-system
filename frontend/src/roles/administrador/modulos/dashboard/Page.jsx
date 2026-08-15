@@ -50,13 +50,13 @@ const ALERTS = [
     icon: "check_circle",
     tone: "ok",
     title: "Estructura organizacional",
-    text: "Jurisdicciones, departamentos y plazas listos para gestionar.",
+    text: "Jurisdicciones y asignación de personal a zonas.",
   },
   {
     icon: "confirmation_number",
     tone: "purple",
     title: "Siguiente paso",
-    text: "Registrar policías reales y vincularlos a su plaza geográfica.",
+    text: "Registrar policías y vincularlos a su zona de trabajo.",
   },
 ];
 

@@ -19,4 +19,9 @@ urlpatterns = [
         name="admin-sesion-cerrar",
     ),
     path("roles-asignables/", views.roles_asignables, name="admin-roles-asignables"),
+    path(
+        "generar-identificadores/",
+        views.generar_identificadores,
+        name="admin-generar-identificadores",
+    ),
 ]

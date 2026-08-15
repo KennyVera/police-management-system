@@ -2,17 +2,13 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import MaterialIcon from "./MaterialIcon";
 import NotificationBell from "./NotificationBell";
+import UserMenu from "./UserMenu";
 import { useAuth } from "../../auth/AuthContext";
 import { useBranding } from "../branding/BrandingContext";
+import { useTheme } from "../theme/ThemeContext";
 import "./RoleShell.css";
 
 const COLLAPSE_KEY = "sgp_sidebar_collapsed";
-
-function initials(user) {
-  const a = (user?.first_name || "?").charAt(0);
-  const b = (user?.last_name || "").charAt(0);
-  return `${a}${b}`.toUpperCase();
-}
 
 function NavGroup({ role, mod, sidebarCollapsed }) {
   const location = useLocation();
@@ -73,8 +69,9 @@ function NavGroup({ role, mod, sidebarCollapsed }) {
 }
 
 export default function RoleShell({ role }) {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const { branding, assetUrl } = useBranding();
+  const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -195,18 +192,16 @@ export default function RoleShell({ role }) {
 
           <div className="topbar-actions">
             <NotificationBell />
-            <button type="button" className="icon-chip" aria-label="Tema">
-              <MaterialIcon name="dark_mode" />
+            <button
+              type="button"
+              className={`icon-chip${isDark ? " is-dark-active" : ""}`}
+              aria-label={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+              title={isDark ? "Modo claro" : "Modo oscuro"}
+              onClick={toggleTheme}
+            >
+              <MaterialIcon name={isDark ? "light_mode" : "dark_mode"} />
             </button>
-            <div className="user-chip">
-              <span className="avatar">{initials(user)}</span>
-              <div className="user-meta">
-                <strong>
-                  {user?.first_name} {user?.last_name}
-                </strong>
-                <span>{user?.email}</span>
-              </div>
-            </div>
+            <UserMenu />
           </div>
         </header>
         <section className="role-content">

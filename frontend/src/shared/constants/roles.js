@@ -45,14 +45,8 @@ export const ROLES = {
             path: "estructura_organizacional/jurisdicciones",
           },
           {
-            slug: "departamentos",
-            label: "Departamentos",
-            icon: "domain",
-            path: "estructura_organizacional/departamentos",
-          },
-          {
             slug: "plazas",
-            label: "Asignación de plazas",
+            label: "Asignación a zonas",
             icon: "badge",
             path: "estructura_organizacional/plazas",
           },

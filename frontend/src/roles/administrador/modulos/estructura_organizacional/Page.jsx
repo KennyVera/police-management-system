@@ -1,30 +1,26 @@
 import { useEffect, useState } from "react";
 import { estructuraApi } from "../../api";
 import JurisdiccionesPanel from "./componentes/JurisdiccionesPanel";
-import DepartamentosPanel from "./componentes/DepartamentosPanel";
 import AsignacionPlazasPanel from "./componentes/AsignacionPlazasPanel";
 import "../identidad_accesos/IdentidadAccesos.css";
+import "../../../../shared/components/PaginationBar.css";
 
 const META = {
   jurisdicciones: {
     title: "Jurisdicciones",
-    desc: "Crear, editar o inactivar Zonas, Subzonas, Distritos, Circuitos y Subcircuitos.",
-  },
-  departamentos: {
-    title: "Departamentos",
-    desc: "Unidades especializadas según órdenes de la Comandancia (DINASED, Cibercrimen, etc.).",
+    desc: "Gestionar zonas y ver el personal que trabaja en cada una.",
   },
   plazas: {
-    title: "Asignación de plazas",
-    desc: "Vincular policías a un departamento y a una jurisdicción geográfica.",
+    title: "Asignación a zonas",
+    desc: "Selecciona una zona, pasa usuarios sin asignar y confirma. Supervisores, detectives y agentes quedan bajo el Jefe de esa zona.",
   },
 };
 
 export default function EstructuraOrganizacionalPage({ section = "jurisdicciones" }) {
   const meta = META[section] || META.jurisdicciones;
   const [tipos, setTipos] = useState([]);
+  const [zonas, setZonas] = useState([]);
   const [jurisdicciones, setJurisdicciones] = useState([]);
-  const [departamentos, setDepartamentos] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -32,14 +28,13 @@ export default function EstructuraOrganizacionalPage({ section = "jurisdicciones
     setLoading(true);
     setError("");
     try {
-      const [cat, jurs, deps] = await Promise.all([
+      const [cat, jurs] = await Promise.all([
         estructuraApi.catalogos(),
         estructuraApi.listJurisdicciones(),
-        estructuraApi.listDepartamentos(),
       ]);
       setTipos(cat.tipos_jurisdiccion || []);
+      setZonas(cat.zonas || []);
       setJurisdicciones(jurs);
-      setDepartamentos(deps);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -73,14 +68,8 @@ export default function EstructuraOrganizacionalPage({ section = "jurisdicciones
               onChanged={load}
             />
           )}
-          {section === "departamentos" && (
-            <DepartamentosPanel items={departamentos} onChanged={load} />
-          )}
           {section === "plazas" && (
-            <AsignacionPlazasPanel
-              departamentos={departamentos.filter((d) => d.activo)}
-              jurisdicciones={jurisdicciones.filter((j) => j.activo)}
-            />
+            <AsignacionPlazasPanel zonas={zonas} onChanged={load} />
           )}
         </>
       )}

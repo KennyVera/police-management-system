@@ -26,8 +26,12 @@
 
 .mod-desc {
   margin: 0;
-  color: #6b7280;
+  color: var(--ct-muted-2, #6b7280);
   font-size: 0.9rem;
+}
+
+.mod-muted {
+  color: var(--ct-muted, #8b95a8);
 }
 
 .mod-tabs {
@@ -102,16 +106,13 @@
   border: 1px solid #fecdca;
 }
 
-.mod-muted {
-  color: #8b95a8;
-}
-
 .panel-card {
-  background: #fff;
-  border: 1px solid #e8ecf3;
+  background: var(--ct-surface, #fff);
+  border: 1px solid var(--ct-border, #e8ecf3);
   border-radius: 16px;
   padding: 1rem;
-  box-shadow: 0 8px 24px rgba(30, 42, 74, 0.04);
+  box-shadow: 0 8px 24px var(--ct-shadow, rgba(30, 42, 74, 0.04));
+  color: var(--ct-text, inherit);
 }
 
 .data-table {
@@ -218,6 +219,29 @@
   border-radius: 10px;
   padding: 0.6rem 0.7rem;
   font: inherit;
+}
+
+.jur-codigo-row {
+  display: flex;
+  gap: 0.45rem;
+  align-items: stretch;
+}
+
+.jur-codigo-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.jur-codigo-row .btn-ghost {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.id-gen-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
 }
 
 .form-grid .full {

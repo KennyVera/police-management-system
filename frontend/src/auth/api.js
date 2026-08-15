@@ -28,8 +28,10 @@ export function clearSession() {
 }
 
 export async function apiFetch(path, options = {}) {
+  const isFormData =
+    typeof FormData !== "undefined" && options.body instanceof FormData;
   const headers = {
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...(options.headers || {}),
   };
   const token = getToken();
@@ -47,7 +49,7 @@ export async function apiFetch(path, options = {}) {
       data.non_field_errors?.[0] ||
       (typeof data === "object" ? Object.values(data).flat()?.[0] : null) ||
       "Error de solicitud";
-    throw new Error(detail);
+    throw new Error(typeof detail === "string" ? detail : "Error de solicitud");
   }
   return data;
 }
@@ -69,4 +71,39 @@ export async function logoutRequest() {
 
 export async function meRequest() {
   return apiFetch("/api/auth/me/");
+}
+
+export async function updateMeRequest(payload) {
+  return apiFetch("/api/auth/me/", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function changePasswordRequest(payload) {
+  return apiFetch("/api/auth/me/password/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function uploadAvatarRequest(file) {
+  const body = new FormData();
+  body.append("file", file);
+  return apiFetch("/api/auth/me/avatar/", {
+    method: "POST",
+    body,
+  });
+}
+
+export function resolveMediaUrl(path) {
+  if (!path) return "";
+  if (
+    path.startsWith("http://") ||
+    path.startsWith("https://") ||
+    path.startsWith("blob:")
+  ) {
+    return path;
+  }
+  return `${API_URL}${path}`;
 }

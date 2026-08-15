@@ -51,6 +51,21 @@ export function AuthProvider({ children }) {
       token,
       loading,
       isAuthenticated: Boolean(token && user),
+      updateUser(next) {
+        setUser(next);
+        if (next && getToken()) persistSession(getToken(), next);
+      },
+      applySession(nextToken, nextUser) {
+        persistSession(nextToken, nextUser);
+        setToken(nextToken);
+        setUser(nextUser);
+      },
+      async refreshUser() {
+        const me = await meRequest();
+        setUser(me);
+        persistSession(getToken(), me);
+        return me;
+      },
       async login(credentials) {
         const data = await loginRequest(credentials);
         persistSession(data.token, data.user);

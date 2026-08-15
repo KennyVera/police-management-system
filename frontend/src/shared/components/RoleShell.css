@@ -1,14 +1,14 @@
 .role-shell {
   --role-accent: #7c5cbf;
-  --sidebar-bg: #ffffff;
-  --page-bg: #f5f7fb;
+  --sidebar-bg: var(--ct-surface, #ffffff);
+  --page-bg: var(--ct-page, #f5f7fb);
   --sidebar-width: 268px;
   --sidebar-collapsed: 84px;
   min-height: 100vh;
   display: grid;
   grid-template-columns: var(--sidebar-width) 1fr;
   background: var(--page-bg);
-  color: #1e2a4a;
+  color: var(--ct-text, #1e2a4a);
   font-family: "Segoe UI", "Trebuchet MS", sans-serif;
   transition: grid-template-columns 0.22s ease;
 }
@@ -19,13 +19,13 @@
 
 .role-sidebar {
   background: var(--sidebar-bg);
-  color: #1a2338;
+  color: var(--ct-text, #1a2338);
   padding: 1.15rem 0.9rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  border-right: 1px solid #e8ecf3;
-  box-shadow: 4px 0 24px rgba(28, 39, 68, 0.03);
+  border-right: 1px solid var(--ct-border, #e8ecf3);
+  box-shadow: 4px 0 24px var(--ct-shadow, rgba(28, 39, 68, 0.03));
   overflow: hidden;
 }
 
@@ -34,7 +34,7 @@
   gap: 0.65rem;
   align-items: center;
   padding: 0.45rem 0.35rem 1rem;
-  border-bottom: 1px solid #eef1f6;
+  border-bottom: 1px solid var(--ct-border, #eef1f6);
   position: relative;
 }
 
@@ -88,7 +88,7 @@
   display: block;
   font-size: 1rem;
   letter-spacing: 0.01em;
-  color: #1a2338;
+  color: var(--ct-text, #1a2338);
   white-space: nowrap;
 }
 
@@ -96,7 +96,7 @@
   display: block;
   margin-top: 0.15rem;
   font-size: 0.72rem;
-  color: #8b95a8;
+  color: var(--ct-muted, #8b95a8);
   line-height: 1.25;
   white-space: nowrap;
   overflow: hidden;
@@ -104,9 +104,9 @@
 }
 
 .collapse-btn {
-  border: 1px solid #e5e9f2;
-  background: #fff;
-  color: #6b7280;
+  border: 1px solid var(--ct-border-strong, #e5e9f2);
+  background: var(--ct-surface, #fff);
+  color: var(--ct-muted-2, #6b7280);
   width: 32px;
   height: 32px;
   border-radius: 10px;
@@ -145,7 +145,7 @@
   gap: 0.7rem;
   padding: 0.78rem 0.85rem;
   border-radius: 12px;
-  color: #5b6478;
+  color: var(--ct-muted-2, #5b6478);
   text-decoration: none;
   font-weight: 600;
   font-size: 0.92rem;
@@ -155,27 +155,27 @@
 
 .nav-item .material-symbols-outlined {
   font-size: 22px;
-  color: #8b95a8;
+  color: var(--ct-muted, #8b95a8);
   flex-shrink: 0;
 }
 
 .nav-item:hover {
-  background: #f5f3fb;
-  color: #1a2338;
+  background: var(--ct-accent-soft, #f5f3fb);
+  color: var(--ct-text, #1a2338);
 }
 
 .nav-item:hover .material-symbols-outlined {
-  color: #7c5cbf;
+  color: var(--ct-accent, #7c5cbf);
 }
 
 .nav-item.active {
-  background: #f1ebff;
-  color: #6f4fb8;
+  background: var(--ct-accent-soft, #f1ebff);
+  color: var(--ct-accent, #6f4fb8);
   font-weight: 700;
 }
 
 .nav-item.active .material-symbols-outlined {
-  color: #7c5cbf;
+  color: var(--ct-accent, #7c5cbf);
 }
 
 .nav-group {
@@ -290,8 +290,8 @@
 }
 
 .role-topbar {
-  background: #fff;
-  border-bottom: 1px solid #e8ecf3;
+  background: var(--ct-surface, #fff);
+  border-bottom: 1px solid var(--ct-border, #e8ecf3);
   padding: 1rem 1.6rem;
   display: flex;
   justify-content: space-between;
@@ -307,7 +307,7 @@
 
 .eyebrow {
   margin: 0;
-  color: #8b95a8;
+  color: var(--ct-muted, #8b95a8);
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -318,7 +318,7 @@
   margin: 0.2rem 0 0;
   font-size: 1.35rem;
   font-weight: 800;
-  color: #1a2338;
+  color: var(--ct-text, #1a2338);
 }
 
 .topbar-actions {
@@ -331,9 +331,9 @@
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  border: 1px solid #e5e9f2;
-  background: #fff;
-  color: #5b6478;
+  border: 1px solid var(--ct-border-strong, #e5e9f2);
+  background: var(--ct-surface, #fff);
+  color: var(--ct-muted-2, #5b6478);
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -355,8 +355,8 @@
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  background: #f7f8fc;
-  border: 1px solid #e5e9f2;
+  background: var(--ct-surface-2, #f7f8fc);
+  border: 1px solid var(--ct-border-strong, #e5e9f2);
   border-radius: 999px;
   padding: 0.3rem 0.9rem 0.3rem 0.3rem;
 }
@@ -380,11 +380,12 @@
 
 .user-chip strong {
   font-size: 0.88rem;
+  color: var(--ct-text, #111827);
 }
 
 .user-chip span {
   font-size: 0.72rem;
-  color: #6b7280;
+  color: var(--ct-muted-2, #6b7280);
 }
 
 .role-content {
