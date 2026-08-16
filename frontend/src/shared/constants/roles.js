@@ -223,7 +223,7 @@ export const ROLES = {
     accent: "#3d2a6d",
     modules: [
       { slug: "dashboard", label: "Dashboard", icon: "space_dashboard", path: "dashboard" },
-      { slug: "indicadores", label: "Indicadores", icon: "analytics", path: "indicadores" },
+      { slug: "indicadores", label: "Ficha Técnica de Jurisdicción", icon: "map", path: "indicadores" },
       {
         slug: "reportes_estrategicos",
         label: "Reportes",

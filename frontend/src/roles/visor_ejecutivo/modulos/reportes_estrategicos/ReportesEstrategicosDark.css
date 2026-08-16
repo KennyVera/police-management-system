@@ -1,0 +1,48 @@
+html[data-theme="dark"] .re-page {
+  --re-card: #1a2332;
+  --re-border: #2a3548;
+  --re-text: #e8eef7;
+  --re-muted: #94a3b8;
+  --re-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .re-head h2,
+html[data-theme="dark"] .re-card h3 {
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] .re-card {
+  background: var(--re-card);
+  border-color: var(--re-border);
+}
+
+html[data-theme="dark"] .re-card:hover {
+  border-color: #5b4a8a;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+}
+
+html[data-theme="dark"] .re-icon {
+  background: #2a2150;
+  color: #c4b5fd;
+}
+
+html[data-theme="dark"] .re-tags span {
+  background: #121a26;
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .re-flash {
+  background: #2a2150;
+  border-color: #4c1d95;
+  color: #ddd6fe;
+}
+
+html[data-theme="dark"] .re-error {
+  background: #3f1d1d;
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+html[data-theme="dark"] .re-btn {
+  box-shadow: 0 8px 18px rgba(124, 92, 191, 0.35);
+}

@@ -1,0 +1,101 @@
+html[data-theme="dark"] .ft-page {
+  --ft-card: #1a2332;
+  --ft-border: #2a3548;
+  --ft-text: #e8eef7;
+  --ft-muted: #94a3b8;
+  --ft-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .ft-head h2,
+html[data-theme="dark"] .ft-ficha-head h3,
+html[data-theme="dark"] .ft-card h4,
+html[data-theme="dark"] .ft-metric-big strong,
+html[data-theme="dark"] .ft-tree-root strong,
+html[data-theme="dark"] .ft-branch-head strong,
+html[data-theme="dark"] .ft-table strong {
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] .ft-list-wrap,
+html[data-theme="dark"] .ft-card,
+html[data-theme="dark"] .ft-back,
+html[data-theme="dark"] .ft-semaforo {
+  background: var(--ft-card);
+  border-color: var(--ft-border);
+}
+
+html[data-theme="dark"] .ft-list-toolbar input {
+  background: #121a26;
+  border-color: var(--ft-border);
+  color: #e8eef7;
+}
+
+html[data-theme="dark"] .ft-table th {
+  background: #121a26;
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .ft-table tbody tr:hover {
+  background: #243044;
+}
+
+html[data-theme="dark"] .ft-back {
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .ft-semaforo.tone-danger {
+  background: #3f1d1d;
+  border-color: #7f1d1d;
+}
+
+html[data-theme="dark"] .ft-semaforo.tone-warn {
+  background: #422006;
+  border-color: #9a3412;
+}
+
+html[data-theme="dark"] .ft-semaforo.tone-good {
+  background: #14532d;
+  border-color: #166534;
+}
+
+html[data-theme="dark"] .ft-semaforo p,
+html[data-theme="dark"] .ft-stat-list li {
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .ft-compare,
+html[data-theme="dark"] .ft-fleet-bars > div,
+html[data-theme="dark"] .ft-branch-head {
+  background: #121a26;
+  border-color: var(--ft-border);
+}
+
+html[data-theme="dark"] .ft-tree-root {
+  background: linear-gradient(135deg, #2a2150, #1e1b4b);
+  border-color: #4c1d95;
+}
+
+html[data-theme="dark"] .ft-branch {
+  background: var(--ft-card);
+  border-color: var(--ft-border);
+}
+
+html[data-theme="dark"] .ft-branch li {
+  border-top-color: #2a3548;
+}
+
+html[data-theme="dark"] .ft-branch-head em {
+  background: #2a2150;
+  color: #c4b5fd;
+}
+
+html[data-theme="dark"] .ft-error,
+html[data-theme="dark"] .ft-alert {
+  background: #3f1d1d;
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+html[data-theme="dark"] .ft-open {
+  color: #c4b5fd;
+}

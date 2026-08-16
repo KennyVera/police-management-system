@@ -2060,3 +2060,185 @@ def build_personal_disponibilidad_pdf(data: dict[str, Any], *, emisor: str) -> b
     )
     doc.build(body)
     return buffer.getvalue()
+
+
+def _estado_partes_bar_chart(por_estado: list[dict]) -> Drawing | None:
+    rows = [r for r in (por_estado or []) if int(r.get("total") or 0) > 0][:6]
+    if not rows:
+        return None
+    drawing = Drawing(480, 160)
+    chart = HorizontalBarChart()
+    chart.x = 140
+    chart.y = 20
+    chart.height = 120
+    chart.width = 300
+    chart.data = [[int(r.get("total") or 0) for r in rows]]
+    chart.categoryAxis.categoryNames = [
+        (r.get("label") or r.get("estado") or "-")[:28] for r in rows
+    ]
+    chart.bars[0].fillColor = PURPLE
+    chart.valueAxis.valueMin = 0
+    chart.categoryAxis.labels.fontSize = 8
+    chart.valueAxis.labels.fontSize = 8
+    drawing.add(chart)
+    return drawing
+
+
+def _analisis_estado_partes(data: dict) -> str:
+    tasa = data.get("tasa_resolucion") or 0
+    aprobado = data.get("aprobado") or 0
+    pendiente = data.get("pendiente") or 0
+    observado = data.get("observado") or 0
+    total = data.get("total") or 0
+    partes = [
+        f"En el periodo hay <b>{total}</b> partes en la zona. "
+        f"La <b>tasa de resolucion</b> es <b>{tasa}%</b> "
+        f"({aprobado} aprobados sobre el flujo de control de calidad)."
+    ]
+    if pendiente:
+        partes.append(
+            f"Quedan <b>{pendiente}</b> pendientes de revision: priorice la bandeja "
+            "de supervisores para no acumular backlog."
+        )
+    if observado:
+        partes.append(
+            f"Hay <b>{observado}</b> partes devueltos/observados: revise calidad del "
+            "relato e indicios antes de reenviar."
+        )
+    if tasa >= 80:
+        partes.append("La zona mantiene un buen ritmo de cierre de partes.")
+    elif tasa < 50 and (aprobado + pendiente + observado) > 0:
+        partes.append(
+            "La tasa es baja: refuerce supervision y estandarice el llenado del parte."
+        )
+    return " ".join(partes)
+
+
+def build_estado_partes_pdf(
+    *,
+    emisor: str,
+    jurisdiccion: dict[str, Any],
+    filtros: dict[str, Any],
+    estado_partes: dict[str, Any] | None = None,
+) -> bytes:
+    """PDF de Estado de Partes / Tasa de Resolucion."""
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=1.5 * cm,
+        rightMargin=1.5 * cm,
+        topMargin=1.2 * cm,
+        bottomMargin=1.2 * cm,
+    )
+    styles = getSampleStyleSheet()
+    title = ParagraphStyle(
+        "EpTitle",
+        parent=styles["Heading1"],
+        fontSize=16,
+        textColor=PURPLE_DARK,
+        spaceAfter=4,
+    )
+    kicker = ParagraphStyle(
+        "EpKicker",
+        parent=styles["Normal"],
+        fontSize=9,
+        textColor=PURPLE,
+        fontName="Helvetica-Bold",
+        spaceAfter=2,
+    )
+    h2 = ParagraphStyle(
+        "EpH2",
+        parent=styles["Heading2"],
+        fontSize=12,
+        textColor=SLATE,
+        spaceBefore=8,
+        spaceAfter=6,
+    )
+    analysis_style = ParagraphStyle(
+        "EpAnalysis",
+        parent=styles["Normal"],
+        fontSize=8.5,
+        textColor=SLATE,
+        leading=11.5,
+    )
+    small = ParagraphStyle(
+        "EpSmall",
+        parent=styles["Normal"],
+        fontSize=8,
+        textColor=MUTED,
+        leading=10,
+    )
+
+    data = estado_partes or {}
+    generado = datetime.now().strftime("%Y-%m-%d %H:%M")
+    body: list[Any] = [
+        Paragraph("INTELIGENCIA TACTICA · ESTADO DE PARTES", kicker),
+        Paragraph(
+            f"Tasa de resolucion — {jurisdiccion.get('nombre') or 'Zona'}",
+            title,
+        ),
+        Paragraph(
+            f"Emisor: {emisor} · Generado: {generado} · "
+            f"Filtro {filtros.get('fecha_desde') or '-'} -> {filtros.get('fecha_hasta') or '-'}"
+            + (
+                f" · Distrito: {filtros.get('distrito')}"
+                if filtros.get("distrito")
+                else ""
+            ),
+            small,
+        ),
+        Spacer(1, 0.35 * cm),
+        HRFlowable(width="100%", thickness=0.6, color=LINE),
+        Spacer(1, 0.35 * cm),
+    ]
+
+    kpi_rows = [
+        ["Tasa de resolucion", f"{data.get('tasa_resolucion', 0)}%"],
+        ["Total partes", str(data.get("total") or 0)],
+        ["Aprobados", str(data.get("aprobado") or 0)],
+        ["Pendientes", str(data.get("pendiente") or 0)],
+        ["Devueltos", str(data.get("observado") or 0)],
+        ["Borradores", str(data.get("borrador") or 0)],
+    ]
+    body.append(_kpi_card_table([[a, b] for a, b in kpi_rows]))
+    body.append(Spacer(1, 0.35 * cm))
+    body.append(
+        Paragraph(
+            data.get("nota")
+            or "Tasa = Aprobados / (Aprobados + Pendientes + Devueltos).",
+            small,
+        )
+    )
+
+    body.append(Paragraph("Distribucion por estado", h2))
+    chart = _estado_partes_bar_chart(data.get("por_estado") or [])
+    if chart:
+        body.append(chart)
+        body.append(Spacer(1, 0.25 * cm))
+
+    table_rows = [["Estado", "Cantidad", "%"]]
+    for r in data.get("por_estado") or []:
+        table_rows.append(
+            [
+                r.get("label") or r.get("estado") or "-",
+                str(r.get("total") or 0),
+                f"{r.get('pct') or 0}%",
+            ]
+        )
+    if len(table_rows) > 1:
+        body.append(_styled_data_table(table_rows, [8 * cm, 3.5 * cm, 3 * cm]))
+
+    body.append(Spacer(1, 0.4 * cm))
+    body.append(Paragraph("Lectura tactica", h2))
+    body.append(_analysis_box(_analisis_estado_partes(data), analysis_style))
+    body.append(Spacer(1, 0.45 * cm))
+    body.append(HRFlowable(width="100%", thickness=0.5, color=LINE))
+    body.append(
+        Paragraph(
+            "Documento generado desde Dashboard de zona · CrimeTrack · Uso interno",
+            small,
+        )
+    )
+    doc.build(body)
+    return buffer.getvalue()

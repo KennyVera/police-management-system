@@ -329,3 +329,47 @@ html[data-theme="dark"] .dz-map .leaflet-container,
 html[data-theme="dark"] .dir-map .leaflet-container {
   background: #1a1a1a;
 }
+
+/* —— Estado de Partes / Tasa de resolución —— */
+html[data-theme="dark"] .dz-ep-kpi.tone-purple {
+  border-color: #4c3d6e;
+}
+html[data-theme="dark"] .dz-ep-kpi.tone-green {
+  border-color: #166534;
+}
+html[data-theme="dark"] .dz-ep-kpi.tone-orange {
+  border-color: #9a3412;
+}
+html[data-theme="dark"] .dz-ep-kpi.tone-red {
+  border-color: #7f1d1d;
+}
+
+html[data-theme="dark"] .dz-ep-donut-hole {
+  background: var(--ct-surface);
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .dz-ep-donut-hole span,
+html[data-theme="dark"] .dz-ep-legend strong em,
+html[data-theme="dark"] .dz-ep-legend small,
+html[data-theme="dark"] .dz-ep-legend-mini,
+html[data-theme="dark"] .dz-ep-bar-col small,
+html[data-theme="dark"] .dz-ep-note {
+  color: var(--ct-muted);
+}
+
+html[data-theme="dark"] .dz-ep-legend strong {
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .dz-ep-bars {
+  border-bottom-color: var(--ct-border);
+}
+
+html[data-theme="dark"] .dz-ep-bar-stack {
+  background: #2a2a2a;
+}
+
+html[data-theme="dark"] .dz-ep-note .material-symbols-outlined {
+  color: var(--ct-accent);
+}

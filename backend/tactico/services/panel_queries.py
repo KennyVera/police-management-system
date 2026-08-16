@@ -177,6 +177,146 @@ def fuerza_efectiva(user) -> dict:
     }
 
 
+ESTADO_LABELS = {
+    "APROBADO": "Aprobado",
+    "EN_REVISION": "Pendiente de revisión",
+    "OBSERVADO": "Devuelto / observado",
+    "BORRADOR": "Borrador",
+}
+
+ESTADO_TONES = {
+    "APROBADO": "ok",
+    "EN_REVISION": "warn",
+    "OBSERVADO": "danger",
+    "BORRADOR": "muted",
+}
+
+
+def estado_partes_resolucion(
+    scope: ZoneScope,
+    desde: date,
+    hasta: date,
+    *,
+    distrito: str = "",
+    tipo_delito: str = "",
+) -> dict:
+    """
+    Estado de partes y tasa de resolución desde Postgres (zona del jefe).
+
+    Tasa de resolución = APROBADO / (APROBADO + EN_REVISION + OBSERVADO) × 100
+    (excluye borradores: aún no enviados a control de calidad).
+    """
+    d0 = timezone.make_aware(datetime.combine(desde, datetime.min.time()))
+    d1 = timezone.make_aware(datetime.combine(hasta, datetime.max.time()))
+    qs = ParteAprehension.objects.filter(
+        Q(sector_zona__in=scope.sectores) | Q(lugar__in=scope.sectores),
+        fecha_hora__gte=d0,
+        fecha_hora__lte=d1,
+    )
+    if distrito:
+        qs = qs.filter(Q(sector_zona=distrito) | Q(lugar__icontains=distrito))
+    if tipo_delito:
+        qs = qs.filter(
+            Q(tipo_delito__nombre__iexact=tipo_delito) | Q(titulo__icontains=tipo_delito)
+        )
+
+    from django.db.models import Count
+    from django.db.models.functions import TruncDate
+
+    raw = {
+        row["estado_revision"]: int(row["c"])
+        for row in qs.values("estado_revision").annotate(c=Count("id"))
+    }
+    order = ["APROBADO", "EN_REVISION", "OBSERVADO", "BORRADOR"]
+    por_estado = []
+    total = 0
+    for key in order:
+        n = int(raw.get(key) or 0)
+        total += n
+        por_estado.append(
+            {
+                "estado": key,
+                "label": ESTADO_LABELS.get(key, key),
+                "total": n,
+                "pct": 0.0,
+                "tone": ESTADO_TONES.get(key, "muted"),
+            }
+        )
+    # Estados desconocidos
+    for key, n in raw.items():
+        if key not in order and n:
+            total += int(n)
+            por_estado.append(
+                {
+                    "estado": key,
+                    "label": key,
+                    "total": int(n),
+                    "pct": 0.0,
+                    "tone": "muted",
+                }
+            )
+    for row in por_estado:
+        row["pct"] = _pct(row["total"], total)
+
+    aprobado = int(raw.get("APROBADO") or 0)
+    pendiente = int(raw.get("EN_REVISION") or 0)
+    observado = int(raw.get("OBSERVADO") or 0)
+    borrador = int(raw.get("BORRADOR") or 0)
+    pipeline = aprobado + pendiente + observado
+    tasa = _pct(aprobado, pipeline) if pipeline else 0.0
+
+    daily_qs = (
+        qs.exclude(estado_revision=ParteAprehension.EstadoRevision.BORRADOR)
+        .annotate(dia=TruncDate("fecha_hora"))
+        .values("dia", "estado_revision")
+        .annotate(c=Count("id"))
+        .order_by("dia")
+    )
+    by_day: dict[str, dict[str, int]] = {}
+    for row in daily_qs:
+        dia = row["dia"]
+        if not dia:
+            continue
+        key = dia.isoformat() if hasattr(dia, "isoformat") else str(dia)[:10]
+        bucket = by_day.setdefault(key, {"aprobado": 0, "pendiente": 0, "observado": 0})
+        est = row["estado_revision"]
+        n = int(row["c"] or 0)
+        if est == "APROBADO":
+            bucket["aprobado"] += n
+        elif est == "EN_REVISION":
+            bucket["pendiente"] += n
+        elif est == "OBSERVADO":
+            bucket["observado"] += n
+
+    evolucion = [
+        {
+            "fecha": fecha,
+            "aprobado": vals["aprobado"],
+            "pendiente": vals["pendiente"],
+            "observado": vals["observado"],
+            "total": vals["aprobado"] + vals["pendiente"] + vals["observado"],
+        }
+        for fecha, vals in sorted(by_day.items())
+    ]
+
+    return {
+        "total": total,
+        "aprobado": aprobado,
+        "pendiente": pendiente,
+        "observado": observado,
+        "borrador": borrador,
+        "pipeline": pipeline,
+        "tasa_resolucion": tasa,
+        "por_estado": por_estado,
+        "evolucion": evolucion,
+        "fuente": "postgres",
+        "nota": (
+            "Tasa de resolución = partes Aprobados ÷ (Aprobados + Pendientes + Devueltos). "
+            "Los borradores no cuentan en la tasa."
+        ),
+    }
+
+
 def evolucion_diaria(
     scope: ZoneScope,
     desde: date,
@@ -685,6 +825,9 @@ def build_panel(
     eficiencia = ranking_eficiencia(
         scope, desde, hasta, distrito=distrito, tipo_delito=tipo_delito
     )
+    estado_partes = estado_partes_resolucion(
+        scope, desde, hasta, distrito=distrito, tipo_delito=tipo_delito
+    )
 
     return {
         "jurisdiccion": {
@@ -706,5 +849,6 @@ def build_panel(
         "resumen_ejecutivo": resumen_ejecutivo(kpis, tip, ranking),
         "radar": radar,
         "ranking_eficiencia": eficiencia,
+        "estado_partes": estado_partes,
         "actualizado_en": timezone.localtime().strftime("%H:%M"),
     }

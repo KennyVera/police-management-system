@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from accounts.permissions import EsJefeDeZona
 from roles.director_zona.reportes_service import (
     build_dashboard_snapshot_pdf,
+    build_estado_partes_pdf,
     build_mapa_calor_pdf,
     build_ranking_distritos_pdf,
     build_zone_report_excel,
@@ -150,11 +151,12 @@ def dashboard_exportar_pdf(request):
     Exporta un snapshot PDF del Dashboard según la pestaña activa.
 
     Body POST opcional:
-      - vista: "delitos" | "mapa" | "ranking" (default delitos)
-      - panel: snapshot del panel (vista delitos / ranking)
+      - vista: "delitos" | "mapa" | "ranking" | "estado" (default delitos)
+      - panel: snapshot del panel (vista delitos / ranking / estado)
       - mapa: { puntos, total_puntos } (vista mapa)
       - radar: reloj criminológico (vista mapa)
       - ranking: ranking_eficiencia (vista ranking)
+      - estado_partes: snapshot de tasa de resolución (vista estado)
       - filtros: fecha_desde, fecha_hasta, distrito, tipo_delito
     """
     try:
@@ -168,9 +170,11 @@ def dashboard_exportar_pdf(request):
         vista = "mapa"
     if vista in {"ranking_distritos", "ranking-distritos", "leaderboard"}:
         vista = "ranking"
-    if vista not in {"delitos", "mapa", "ranking"}:
+    if vista in {"estado_partes", "resolucion", "tasa", "tasa_resolucion"}:
+        vista = "estado"
+    if vista not in {"delitos", "mapa", "ranking", "estado"}:
         return Response(
-            {"detail": "vista debe ser 'delitos', 'mapa' o 'ranking'."},
+            {"detail": "vista debe ser 'delitos', 'mapa', 'ranking' o 'estado'."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -333,6 +337,76 @@ def dashboard_exportar_pdf(request):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         filename = f"ranking_distritos_{zona_slug}.pdf"
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        response["Content-Length"] = str(len(pdf_bytes))
+        return response
+
+    # ——— Estado de partes / tasa de resolución ———
+    if vista == "estado":
+        filtros = payload_in.get("filtros") if isinstance(payload_in.get("filtros"), dict) else {}
+        try:
+            fecha_desde = _parse_date(
+                filtros.get("fecha_desde") or request.query_params.get("fecha_desde"),
+                "fecha_desde",
+            )
+            fecha_hasta = _parse_date(
+                filtros.get("fecha_hasta") or request.query_params.get("fecha_hasta"),
+                "fecha_hasta",
+            )
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        if fecha_hasta is None:
+            fecha_hasta = date.today()
+        if fecha_desde is None:
+            from datetime import timedelta
+
+            fecha_desde = fecha_hasta - timedelta(days=30)
+
+        distrito = (filtros.get("distrito") or request.query_params.get("distrito") or "").strip()
+        tipo = (filtros.get("tipo_delito") or request.query_params.get("tipo_delito") or "").strip()
+        filtros_out = {
+            "fecha_desde": fecha_desde.isoformat(),
+            "fecha_hasta": fecha_hasta.isoformat(),
+            "distrito": distrito or None,
+            "tipo_delito": tipo or None,
+        }
+
+        estado_data = payload_in.get("estado_partes")
+        if not isinstance(estado_data, dict):
+            panel_snap = payload_in.get("panel") if isinstance(payload_in.get("panel"), dict) else {}
+            estado_data = panel_snap.get("estado_partes")
+        if not isinstance(estado_data, dict):
+            try:
+                panel_full = panel.build_panel(
+                    request.user,
+                    scope,
+                    fecha_desde=fecha_desde,
+                    fecha_hasta=fecha_hasta,
+                    distrito=distrito,
+                    tipo_delito=tipo,
+                )
+                estado_data = panel_full.get("estado_partes") or {}
+            except Exception as exc:  # noqa: BLE001
+                return Response(
+                    {"detail": f"Error consultando estado de partes: {exc}"},
+                    status=status.HTTP_502_BAD_GATEWAY,
+                )
+
+        try:
+            pdf_bytes = build_estado_partes_pdf(
+                emisor=emisor,
+                jurisdiccion=juris,
+                filtros=filtros_out,
+                estado_partes=estado_data,
+            )
+        except Exception as exc:  # noqa: BLE001
+            return Response(
+                {"detail": f"Error generando PDF de estado de partes: {exc}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        filename = f"estado_partes_{zona_slug}.pdf"
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         response["Content-Length"] = str(len(pdf_bytes))

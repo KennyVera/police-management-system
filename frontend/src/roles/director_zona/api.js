@@ -117,6 +117,14 @@ export const directorApi = {
         panel: panel || null,
       };
       filename = "ranking_distritos.pdf";
+    } else if (vista === "estado") {
+      body = {
+        vista: "estado",
+        filtros: params,
+        estado_partes: options.estado_partes || panel?.estado_partes || null,
+        panel: panel || null,
+      };
+      filename = "estado_partes.pdf";
     } else {
       body = {
         vista: "delitos",

@@ -6,6 +6,7 @@ import "./Dashboard.css";
 import DelitosLocales from "./DelitosLocales/Page";
 import MapaCalor from "./MapaCalor/Page";
 import RankingDistritos from "./RankingDistritos/Page";
+import EstadoPartes from "./EstadoPartes/Page";
 
 function defaultRange() {
   const hasta = new Date();
@@ -127,6 +128,11 @@ export default function DirectorDashboard() {
           vista: "ranking",
           ranking: panel.ranking_eficiencia || [],
         });
+      } else if (tab === "estado") {
+        await directorApi.descargarDashboardPdf(filters, panel, {
+          vista: "estado",
+          estado_partes: panel.estado_partes || null,
+        });
       } else {
         await directorApi.descargarDashboardPdf(filters, panel, { vista: "delitos" });
       }
@@ -168,7 +174,9 @@ export default function DirectorDashboard() {
                 ? "Exportar Mapa de Calor a PDF"
                 : tab === "ranking"
                   ? "Exportar Ranking Distritos a PDF"
-                  : "Exportar dashboard (Delitos Locales) a PDF"
+                  : tab === "estado"
+                    ? "Exportar Estado de Partes a PDF"
+                    : "Exportar dashboard (Delitos Locales) a PDF"
             }
           >
             <MaterialIcon name="picture_as_pdf" />
@@ -178,7 +186,9 @@ export default function DirectorDashboard() {
                 ? "Exportar PDF (Mapa)"
                 : tab === "ranking"
                   ? "Exportar PDF (Ranking)"
-                  : "Exportar PDF"}
+                  : tab === "estado"
+                    ? "Exportar PDF (Estado)"
+                    : "Exportar PDF"}
           </button>
           <button
             type="button"
@@ -254,6 +264,7 @@ export default function DirectorDashboard() {
           { id: "delitos", label: "Delitos Locales", icon: "monitoring" },
           { id: "mapa", label: "Mapa de Calor", icon: "map" },
           { id: "ranking", label: "Ranking Distritos", icon: "leaderboard" },
+          { id: "estado", label: "Estado de Partes", icon: "task_alt" },
         ].map((t) => (
           <button
             key={t.id}
@@ -371,6 +382,9 @@ export default function DirectorDashboard() {
           ranking={panel?.ranking_eficiencia || []}
           loading={loading}
         />
+      )}
+      {tab === "estado" && (
+        <EstadoPartes data={panel?.estado_partes} loading={loading} />
       )}
     </div>
   );
