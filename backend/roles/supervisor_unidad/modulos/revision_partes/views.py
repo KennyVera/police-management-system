@@ -237,4 +237,14 @@ def aprobar_parte(request, pk):
         parte=obj,
         enlace="/app/agente_operativo/registro_operativo/partes_aprehension",
     )
+
+    # Remisión automática a Fiscalía de Turno
+    try:
+        from operativo.fiscal_service import remitir_parte_a_fiscalia
+
+        remitir_parte_a_fiscalia(obj)
+    except Exception:  # noqa: BLE001
+        # No bloquear la aprobación si falla la remisión; el parte ya está APROBADO
+        pass
+
     return Response(ParteAprehensionSerializer(obj).data)

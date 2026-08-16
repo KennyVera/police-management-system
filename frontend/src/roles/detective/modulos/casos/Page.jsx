@@ -10,10 +10,7 @@ const emptyFilters = {
   q: "",
   estado: "",
   prioridad: "",
-  fecha_desde: "",
-  fecha_hasta: "",
   tipo_delito: "",
-  unidad: "",
 };
 
 const PAGE_SIZE = 6;
@@ -45,7 +42,6 @@ export default function CasosPage() {
     unidades: [],
   });
   const [items, setItems] = useState([]);
-  const [draft, setDraft] = useState(emptyFilters);
   const [filters, setFilters] = useState(emptyFilters);
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState(null);
@@ -55,8 +51,8 @@ export default function CasosPage() {
   const [ok, setOk] = useState("");
   const [busy, setBusy] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState(null);
-
-  const unidades = meta.unidades || [];
+  const selectedIdRef = useRef(null);
+  selectedIdRef.current = selected?.id ?? null;
 
   async function load(activeFilters = filters, { restoreSelected = true } = {}) {
     setLoading(true);
@@ -67,9 +63,6 @@ export default function CasosPage() {
       if (activeFilters.estado) params.estado = activeFilters.estado;
       if (activeFilters.prioridad) params.prioridad = activeFilters.prioridad;
       if (activeFilters.tipo_delito) params.tipo_delito = activeFilters.tipo_delito;
-      if (activeFilters.unidad) params.unidad = activeFilters.unidad;
-      if (activeFilters.fecha_desde) params.fecha_desde = activeFilters.fecha_desde;
-      if (activeFilters.fecha_hasta) params.fecha_hasta = activeFilters.fecha_hasta;
 
       const [m, list] = await Promise.all([
         detectiveApi.casosMeta(),
@@ -78,8 +71,8 @@ export default function CasosPage() {
       setMeta(m);
       setItems(list);
       setPage(1);
-      if (restoreSelected && selected) {
-        const still = list.find((x) => x.id === selected.id);
+      if (restoreSelected && selectedIdRef.current) {
+        const still = list.find((x) => x.id === selectedIdRef.current);
         if (still) setSelected(await detectiveApi.getExpediente(still.id));
         else setSelected(null);
       }
@@ -90,10 +83,14 @@ export default function CasosPage() {
     }
   }
 
+  // Filtro automático (debounce en palabra clave)
   useEffect(() => {
-    load();
+    const t = setTimeout(() => {
+      load(filters, { restoreSelected: true });
+    }, filters.q ? 350 : 0);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [filters.q, filters.estado, filters.prioridad, filters.tipo_delito]);
 
   // Abrir Mesa de Trabajo desde el Dashboard (?mesa=<id>)
   useEffect(() => {
@@ -162,16 +159,12 @@ export default function CasosPage() {
     }
   }
 
-  function handleBuscar(e) {
-    e.preventDefault();
-    setFilters(draft);
-    load(draft);
+  function patchFilter(patch) {
+    setFilters((prev) => ({ ...prev, ...patch }));
   }
 
   function handleLimpiar() {
-    setDraft(emptyFilters);
     setFilters(emptyFilters);
-    load(emptyFilters);
   }
 
   function notify(msg, isError = false) {
@@ -183,6 +176,9 @@ export default function CasosPage() {
   }
 
   const highlighted = items.find((c) => c.id === highlightId) || null;
+  const hasActiveFilters = Boolean(
+    filters.q?.trim() || filters.estado || filters.prioridad || filters.tipo_delito
+  );
 
   return (
     <div className="mod-page">
@@ -205,25 +201,25 @@ export default function CasosPage() {
         </button>
       </header>
 
-      <form className="panel-card casos-filters" onSubmit={handleBuscar}>
+      <div className="panel-card casos-filters">
         <p className="casos-filters-head">
           <MaterialIcon name="filter_alt" />
           Criterios de búsqueda
         </p>
-        <div className="casos-filters-grid">
+        <div className="casos-filters-grid casos-filters-grid--compact">
           <label>
             Buscar por palabra clave
             <input
               placeholder="Ej: robo, agresión, placa, nombre..."
-              value={draft.q}
-              onChange={(e) => setDraft({ ...draft, q: e.target.value })}
+              value={filters.q}
+              onChange={(e) => patchFilter({ q: e.target.value })}
             />
           </label>
           <label>
             Estado
             <select
-              value={draft.estado}
-              onChange={(e) => setDraft({ ...draft, estado: e.target.value })}
+              value={filters.estado}
+              onChange={(e) => patchFilter({ estado: e.target.value })}
             >
               <option value="">Todos los estados</option>
               {(meta.estados || []).map((e) => (
@@ -236,8 +232,8 @@ export default function CasosPage() {
           <label>
             Prioridad
             <select
-              value={draft.prioridad}
-              onChange={(e) => setDraft({ ...draft, prioridad: e.target.value })}
+              value={filters.prioridad}
+              onChange={(e) => patchFilter({ prioridad: e.target.value })}
             >
               <option value="">Todas las prioridades</option>
               {(meta.prioridades || []).map((p) => (
@@ -248,28 +244,10 @@ export default function CasosPage() {
             </select>
           </label>
           <label>
-            Fecha desde
-            <input
-              type="date"
-              value={draft.fecha_desde}
-              onChange={(e) => setDraft({ ...draft, fecha_desde: e.target.value })}
-            />
-          </label>
-          <label>
-            Fecha hasta
-            <input
-              type="date"
-              value={draft.fecha_hasta}
-              onChange={(e) => setDraft({ ...draft, fecha_hasta: e.target.value })}
-            />
-          </label>
-        </div>
-        <div className="casos-filters-grid-2">
-          <label>
             Tipo de delito
             <select
-              value={draft.tipo_delito}
-              onChange={(e) => setDraft({ ...draft, tipo_delito: e.target.value })}
+              value={filters.tipo_delito}
+              onChange={(e) => patchFilter({ tipo_delito: e.target.value })}
             >
               <option value="">Todos los tipos</option>
               {(meta.tipos_delito || []).map((d) => (
@@ -279,47 +257,19 @@ export default function CasosPage() {
               ))}
             </select>
           </label>
-          <label>
-            Unidad / Dependencia
-            <select
-              value={draft.unidad}
-              onChange={(e) => setDraft({ ...draft, unidad: e.target.value })}
-            >
-              <option value="">Todas las unidades</option>
-              {unidades.map((u) => (
-                <option key={u} value={u}>
-                  {u}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="casos-filters-actions">
-            <button type="submit" className="btn-accent">
-              <MaterialIcon name="search" />
-              Buscar
-            </button>
-            <button type="button" className="btn-ghost" onClick={handleLimpiar}>
-              <MaterialIcon name="refresh" />
-              Limpiar
-            </button>
-          </div>
+          {hasActiveFilters && (
+            <div className="casos-filters-actions">
+              <button type="button" className="btn-ghost" onClick={handleLimpiar}>
+                <MaterialIcon name="refresh" />
+                Limpiar
+              </button>
+            </div>
+          )}
         </div>
-      </form>
+      </div>
 
       {error && <p className="mod-error">{error}</p>}
-      {ok && (
-        <p
-          className="mod-muted"
-          style={{
-            background: "#eaf8ef",
-            padding: "0.7rem 0.9rem",
-            borderRadius: 10,
-            color: "#1f7a45",
-          }}
-        >
-          {ok}
-        </p>
-      )}
+      {ok && <p className="mod-ok">{ok}</p>}
 
       <div className="panel-card">
         {loading ? (
@@ -344,12 +294,10 @@ export default function CasosPage() {
                   {pageItems.map((c) => (
                     <tr
                       key={c.id}
+                      className={highlightId === c.id ? "casos-row-hl" : undefined}
                       onClick={() => setHighlightId(c.id)}
                       onDoubleClick={() => openExpediente(c)}
-                      style={{
-                        cursor: "pointer",
-                        background: highlightId === c.id ? "#f1ebff" : undefined,
-                      }}
+                      style={{ cursor: "pointer" }}
                     >
                       <td className="casos-codigo">
                         <strong>{c.codigo_caso || "—"}</strong>
@@ -409,20 +357,7 @@ export default function CasosPage() {
                             <MaterialIcon name="more_vert" />
                           </button>
                           {menuOpenId === c.id && (
-                            <div
-                              style={{
-                                position: "absolute",
-                                right: 0,
-                                top: "110%",
-                                zIndex: 5,
-                                background: "#fff",
-                                border: "1px solid #e5e9f2",
-                                borderRadius: 10,
-                                boxShadow: "0 8px 20px rgba(30,42,74,0.12)",
-                                minWidth: 160,
-                                padding: "0.35rem",
-                              }}
-                            >
+                            <div className="casos-row-menu">
                               <button
                                 type="button"
                                 className="btn-ghost"

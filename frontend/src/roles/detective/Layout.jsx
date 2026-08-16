@@ -2,6 +2,7 @@
 import RoleShell from "../../shared/components/RoleShell";
 import { getRoleConfig } from "../../shared/constants/roles";
 import { useAuth } from "../../auth/AuthContext";
+import "./DetectiveDark.css";
 
 export default function Layout() {
   const role = getRoleConfig("detective");

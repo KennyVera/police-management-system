@@ -1,4 +1,4 @@
-ï»¿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
 import { detectiveApi } from "../../api";
 import "../../../../shared/styles/ModuloPage.css";
@@ -126,7 +126,7 @@ export default function EvidenciasPage() {
         caracteristicas: "",
         ubicacion_actual: "Bodega de evidencias",
       });
-      setOk("Evidencia fÃ­sica registrada.");
+      setOk("Evidencia física registrada.");
       setTab("lista");
       await loadEvidencias();
     } catch (err) {
@@ -168,8 +168,8 @@ export default function EvidenciasPage() {
           <p className="mod-kicker">Evidencias y Cadena de Custodia</p>
           <h2>Registro estricto de evidencias</h2>
           <p className="mod-desc">
-            Carga digital en MinIO, inventario fÃ­sico y trazabilidad de entregas (laboratorio /
-            fiscalÃ­a).
+            Carga digital en MinIO, inventario físico y trazabilidad de entregas (laboratorio /
+            fiscalía).
           </p>
         </div>
       </header>
@@ -181,7 +181,7 @@ export default function EvidenciasPage() {
             <option value="">Seleccionar...</option>
             {expedientes.map((ex) => (
               <option key={ex.id} value={ex.id}>
-                {ex.numero_expediente} Â· {ex.titulo}
+                {ex.numero_expediente} · {ex.titulo}
               </option>
             ))}
           </select>
@@ -194,14 +194,14 @@ export default function EvidenciasPage() {
             Cargar digital
           </button>
           <button type="button" className={tab === "fisica" ? "active" : ""} onClick={() => setTab("fisica")}>
-            Registrar fÃ­sica
+            Registrar física
           </button>
         </div>
       </div>
 
       {error && <p className="mod-error">{error}</p>}
       {ok && (
-        <p className="mod-muted" style={{ background: "#eaf8ef", padding: "0.7rem 0.9rem", borderRadius: 10, color: "#1f7a45" }}>
+        <p className="mod-ok">
           {ok}
         </p>
       )}
@@ -211,7 +211,7 @@ export default function EvidenciasPage() {
       ) : tab === "digital" ? (
         <form className="panel-card form-grid" onSubmit={submitDigital}>
           <label className="full">
-            DescripciÃ³n
+            Descripción
             <input
               required
               value={digital.descripcion}
@@ -237,7 +237,7 @@ export default function EvidenciasPage() {
       ) : tab === "fisica" ? (
         <form className="panel-card form-grid" onSubmit={submitFisica}>
           <label>
-            CategorÃ­a
+            Categoría
             <select
               value={fisica.categoria_fisica}
               onChange={(e) => setFisica({ ...fisica, categoria_fisica: e.target.value })}
@@ -250,7 +250,7 @@ export default function EvidenciasPage() {
             </select>
           </label>
           <label>
-            NÂº serie
+            Nº serie
             <input
               value={fisica.numero_serie}
               onChange={(e) => setFisica({ ...fisica, numero_serie: e.target.value })}
@@ -265,14 +265,14 @@ export default function EvidenciasPage() {
             />
           </label>
           <label>
-            UbicaciÃ³n
+            Ubicación
             <input
               value={fisica.ubicacion_actual}
               onChange={(e) => setFisica({ ...fisica, ubicacion_actual: e.target.value })}
             />
           </label>
           <label className="full">
-            DescripciÃ³n
+            Descripción
             <input
               required
               value={fisica.descripcion}
@@ -280,18 +280,18 @@ export default function EvidenciasPage() {
             />
           </label>
           <label className="full">
-            CaracterÃ­sticas
+            Características
             <textarea
               rows={2}
               value={fisica.caracteristicas}
               onChange={(e) => setFisica({ ...fisica, caracteristicas: e.target.value })}
-              style={{ border: "1px solid #e5e9f2", borderRadius: 10, padding: "0.6rem", font: "inherit" }}
+              className="det-file-input"
             />
           </label>
           <div className="full">
             <button type="submit" className="btn-accent" disabled={busy}>
               <MaterialIcon name="inventory" />
-              Registrar evidencia fÃ­sica
+              Registrar evidencia física
             </button>
           </div>
         </form>
@@ -301,11 +301,11 @@ export default function EvidenciasPage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>CÃ³digo</th>
+                  <th>Código</th>
                   <th>Tipo</th>
-                  <th>DescripciÃ³n</th>
+                  <th>Descripción</th>
                   <th>Custodio</th>
-                  <th>UbicaciÃ³n</th>
+                  <th>Ubicación</th>
                 </tr>
               </thead>
               <tbody>
@@ -321,8 +321,8 @@ export default function EvidenciasPage() {
                     <td>{ev.codigo}</td>
                     <td>{ev.tipo_label}</td>
                     <td>{ev.descripcion}</td>
-                    <td>{ev.custodio_actual || "â€”"}</td>
-                    <td>{ev.ubicacion_actual || "â€”"}</td>
+                    <td>{ev.custodio_actual || "—"}</td>
+                    <td>{ev.ubicacion_actual || "—"}</td>
                   </tr>
                 ))}
                 {!items.length && (
@@ -357,8 +357,8 @@ export default function EvidenciasPage() {
                 {selected.tipo === "FISICA" && (
                   <p className="mod-muted" style={{ margin: 0 }}>
                     {selected.categoria_fisica_label}
-                    {selected.numero_serie ? ` Â· Serie ${selected.numero_serie}` : ""}
-                    {selected.peso ? ` Â· ${selected.peso}` : ""}
+                    {selected.numero_serie ? ` · Serie ${selected.numero_serie}` : ""}
+                    {selected.peso ? ` · ${selected.peso}` : ""}
                   </p>
                 )}
 
@@ -366,10 +366,10 @@ export default function EvidenciasPage() {
                   <p className="mod-kicker">Cadena de custodia</p>
                   <div style={{ display: "grid", gap: "0.4rem", maxHeight: 180, overflow: "auto" }}>
                     {(selected.movimientos || []).map((m) => (
-                      <div key={m.id} style={{ background: "#f7f8fc", borderRadius: 10, padding: "0.55rem 0.7rem" }}>
+                      <div key={m.id} className="det-soft-block">
                         <strong>{m.destino}</strong>
                         <div className="mod-muted" style={{ fontSize: "0.82rem" }}>
-                          {m.entregado_por} â†’ {m.recibido_por}
+                          {m.entregado_por} ? {m.recibido_por}
                           <br />
                           {m.motivo}
                         </div>
@@ -406,7 +406,7 @@ export default function EvidenciasPage() {
                       required
                       value={custodia.destino}
                       onChange={(e) => setCustodia({ ...custodia, destino: e.target.value })}
-                      placeholder="Lab. CriminalÃ­stica / FiscalÃ­a..."
+                      placeholder="Lab. Criminalística / Fiscalía..."
                     />
                   </label>
                   <label className="full">

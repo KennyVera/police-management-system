@@ -6,5 +6,6 @@ urlpatterns = [
     path("director_zona/", include("roles.director_zona.urls")),
     path("supervisor_unidad/", include("roles.supervisor_unidad.urls")),
     path("detective/", include("roles.detective.urls")),
+    path("fiscal/", include("roles.fiscal.urls")),
     path("agente_operativo/", include("roles.agente_operativo.urls")),
 ]

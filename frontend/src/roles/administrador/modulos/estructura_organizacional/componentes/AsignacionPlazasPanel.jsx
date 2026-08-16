@@ -7,6 +7,7 @@ import "./AsignacionZonas.css";
 const ROLE_ZONE = new Set([
   "DIRECTOR_ZONA",
   "SUPERVISOR_UNIDAD",
+  "FISCAL",
   "DETECTIVE",
   "AGENTE_OPERATIVO",
 ]);

@@ -1,0 +1,331 @@
+/* Dark mode — Director / Jefe de Zona */
+
+/* —— Dashboard shell —— */
+html[data-theme="dark"] .dz-dash {
+  --dz-purple: #a78bfa;
+  --dz-navy: #93c5fd;
+  --dz-muted: var(--ct-muted);
+  --dz-border: var(--ct-border);
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .dz-head h2,
+html[data-theme="dark"] .dz-kpi-main,
+html[data-theme="dark"] .dz-card-head h3,
+html[data-theme="dark"] .dz-donut-hole strong,
+html[data-theme="dark"] .dz-board-main strong,
+html[data-theme="dark"] .dz-pico strong,
+html[data-theme="dark"] .dz-picos h4 {
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .dz-sub,
+html[data-theme="dark"] .dz-refresh small,
+html[data-theme="dark"] .dz-kpi-label,
+html[data-theme="dark"] .dz-empty-inline,
+html[data-theme="dark"] .dz-radar-hint,
+html[data-theme="dark"] .dz-heat-legend,
+html[data-theme="dark"] .dz-nivel-legend,
+html[data-theme="dark"] .dz-cuad-legend,
+html[data-theme="dark"] .dz-mapa .dz-card-head small,
+html[data-theme="dark"] .dz-donut-legend strong em,
+html[data-theme="dark"] .dz-donut-legend small,
+html[data-theme="dark"] .dz-donut-hole span,
+html[data-theme="dark"] .dz-board-main small,
+html[data-theme="dark"] .dz-pico span,
+html[data-theme="dark"] .dz-trend-mini {
+  color: var(--ct-muted);
+}
+
+html[data-theme="dark"] .dz-kpi-main span,
+html[data-theme="dark"] .dz-hbar-label,
+html[data-theme="dark"] .dz-hbar-val {
+  color: var(--ct-text-2);
+}
+
+html[data-theme="dark"] .dz-refresh,
+html[data-theme="dark"] .dz-btn-ghost,
+html[data-theme="dark"] .dz-tabs button:not(.active),
+html[data-theme="dark"] .dz-filters,
+html[data-theme="dark"] .dz-kpi,
+html[data-theme="dark"] .dz-card,
+html[data-theme="dark"] .dz-mapa .dz-card,
+html[data-theme="dark"] .dz-ranking .dz-card {
+  background: var(--ct-surface);
+  border-color: var(--ct-border);
+  color: var(--ct-text);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .dz-filters input,
+html[data-theme="dark"] .dz-filters select {
+  background: var(--ct-input-bg);
+  border-color: var(--ct-border);
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .dz-btn-export,
+html[data-theme="dark"] .dz-btn-primary,
+html[data-theme="dark"] .dz-tabs button.active {
+  background: var(--ct-accent);
+  border-color: var(--ct-accent);
+  color: #fff;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .dz-export-error,
+html[data-theme="dark"] .dz-error,
+html[data-theme="dark"] .dz-map-error {
+  background: var(--ct-danger-bg);
+  border-color: #7f1d1d;
+  color: var(--ct-danger-text);
+}
+
+html[data-theme="dark"] .dz-kpi.tone-purple .dz-kpi-icon {
+  background: #2a2438;
+  color: #c4b5fd;
+}
+html[data-theme="dark"] .dz-kpi.tone-green .dz-kpi-icon {
+  background: #14301f;
+  color: #86efac;
+}
+html[data-theme="dark"] .dz-kpi.tone-orange .dz-kpi-icon {
+  background: #3a2a12;
+  color: #fdba74;
+}
+html[data-theme="dark"] .dz-kpi.tone-red .dz-kpi-icon {
+  background: #3a1515;
+  color: #fca5a5;
+}
+html[data-theme="dark"] .dz-kpi.tone-blue .dz-kpi-icon {
+  background: #1e293b;
+  color: #93c5fd;
+}
+
+html[data-theme="dark"] .dz-trend.up {
+  color: #86efac;
+}
+html[data-theme="dark"] .dz-trend.down,
+html[data-theme="dark"] .dz-kpi-link {
+  color: #fca5a5;
+}
+
+html[data-theme="dark"] .dz-chip,
+html[data-theme="dark"] .dz-ranking .dz-chip {
+  background: var(--ct-accent-soft);
+  color: #c4b5fd;
+}
+
+html[data-theme="dark"] .dz-donut-hole {
+  background: var(--ct-surface);
+}
+
+html[data-theme="dark"] .dz-hbar-track {
+  background: #2a2a2a;
+}
+
+html[data-theme="dark"] .dz-axis {
+  fill: var(--ct-muted);
+}
+
+html[data-theme="dark"] .dz-tick,
+html[data-theme="dark"] .dz-scatter-meta {
+  fill: var(--ct-muted);
+}
+
+html[data-theme="dark"] .dz-scatter-label {
+  fill: var(--ct-text);
+}
+
+html[data-theme="dark"] .dz-exec .tone-warn {
+  background: #3a2a12;
+  color: #fdba74;
+}
+html[data-theme="dark"] .dz-exec .tone-danger {
+  background: #3a1515;
+  color: #fca5a5;
+}
+html[data-theme="dark"] .dz-exec .tone-ok {
+  background: #14301f;
+  color: #86efac;
+}
+html[data-theme="dark"] .dz-exec .tone-info {
+  background: var(--ct-accent-soft);
+  color: #c4b5fd;
+}
+
+html[data-theme="dark"] .dz-exec-link {
+  color: var(--ct-accent);
+}
+
+html[data-theme="dark"] .dz-map-wrap,
+html[data-theme="dark"] .dir-map-wrap {
+  border-color: var(--ct-border);
+}
+
+html[data-theme="dark"] .dz-clear-filter {
+  background: #3a1515;
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+html[data-theme="dark"] .dz-radar-label {
+  fill: var(--ct-muted);
+}
+
+html[data-theme="dark"] .dz-pico {
+  background: var(--ct-surface-2);
+  border-color: var(--ct-border);
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .dz-pico.active {
+  background: var(--ct-accent-soft);
+  border-color: var(--ct-accent);
+}
+
+html[data-theme="dark"] .dz-board-row {
+  background: var(--ct-surface-2);
+  border-color: var(--ct-border);
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .dz-board-row.tone-rojo {
+  background: #2a1515;
+  border-color: #7f1d1d;
+}
+
+html[data-theme="dark"] .dz-board-row.tone-verde {
+  background: #14301f;
+  border-color: #166534;
+}
+
+html[data-theme="dark"] .dz-pos {
+  color: var(--ct-accent);
+}
+
+/* —— Módulos generales (dir-*) —— */
+html[data-theme="dark"] .dir-filters label,
+html[data-theme="dark"] .dir-page .form-grid label {
+  color: var(--ct-text-2);
+}
+
+html[data-theme="dark"] .dir-filters input,
+html[data-theme="dark"] .dir-filters select,
+html[data-theme="dark"] .dir-page .form-grid input,
+html[data-theme="dark"] .dir-page .form-grid select,
+html[data-theme="dark"] .dir-page .form-grid textarea {
+  background: var(--ct-input-bg);
+  border-color: var(--ct-border);
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .dir-tabs button:not(.active) {
+  background: var(--ct-surface);
+  border-color: var(--ct-border);
+  color: var(--ct-text-2);
+}
+
+html[data-theme="dark"] .dir-tabs button.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+}
+
+html[data-theme="dark"] .dir-kpi span {
+  color: var(--ct-muted);
+}
+
+html[data-theme="dark"] .dir-kpi strong {
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .dir-kpi.accent strong,
+html[data-theme="dark"] .dir-kpi.tone-ok strong {
+  color: #93c5fd;
+}
+
+html[data-theme="dark"] .dir-kpi.tone-warn strong {
+  color: #fdba74;
+}
+
+html[data-theme="dark"] .dir-kpi.tone-danger strong {
+  color: #fca5a5;
+}
+
+html[data-theme="dark"] .dir-kpi.tone-info strong {
+  color: #93c5fd;
+}
+
+html[data-theme="dark"] .dir-kpi.tone-muted strong {
+  color: var(--ct-muted);
+}
+
+html[data-theme="dark"] .dir-badge {
+  background: #1e293b;
+  color: #93c5fd;
+}
+
+html[data-theme="dark"] .dir-badge.CRITICA,
+html[data-theme="dark"] .dir-badge.tone-danger {
+  background: #3a1515;
+  color: #fca5a5;
+}
+
+html[data-theme="dark"] .dir-badge.ALTA,
+html[data-theme="dark"] .dir-badge.tone-warn {
+  background: #3a2a12;
+  color: #fdba74;
+}
+
+html[data-theme="dark"] .dir-badge.tone-ok {
+  background: #14301f;
+  color: #86efac;
+}
+
+html[data-theme="dark"] .dir-badge.tone-info {
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+
+html[data-theme="dark"] .dir-badge.tone-muted {
+  background: #2a2a2a;
+  color: #d4d4d4;
+}
+
+html[data-theme="dark"] .dir-page .data-table tr.is-selected {
+  background: #1e293b;
+}
+
+html[data-theme="dark"] .dir-informe,
+html[data-theme="dark"] .dir-feed li,
+html[data-theme="dark"] .dir-eval-card {
+  background: var(--ct-surface-2);
+  border-color: var(--ct-border);
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .dir-feed small {
+  color: var(--ct-muted);
+}
+
+html[data-theme="dark"] .dir-feed p,
+html[data-theme="dark"] .dir-caso-detail h4 {
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .mod-success {
+  background: var(--ct-ok-bg);
+  color: var(--ct-ok-text);
+}
+
+html[data-theme="dark"] .notif-type.DISPOSICION_ZONA {
+  background: #3a1515;
+  color: #fca5a5;
+}
+
+/* Leaflet map tiles stay as-is; soften map chrome borders */
+html[data-theme="dark"] .dz-map .leaflet-container,
+html[data-theme="dark"] .dir-map .leaflet-container {
+  background: #1a1a1a;
+}

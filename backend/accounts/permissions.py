@@ -32,6 +32,7 @@ DirectorOnly = role_permission(SystemRole.DIRECTOR_ZONA)
 SupervisorOnly = role_permission(SystemRole.SUPERVISOR_UNIDAD)
 DetectiveOnly = role_permission(SystemRole.DETECTIVE)
 AgenteOnly = role_permission(SystemRole.AGENTE_OPERATIVO)
+FiscalOnly = role_permission(SystemRole.FISCAL)
 
 
 class EsJefeDeZona(DirectorOnly):

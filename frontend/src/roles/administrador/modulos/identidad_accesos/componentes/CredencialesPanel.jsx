@@ -5,6 +5,7 @@ import { identidadApi } from "../../../api";
 export default function CredencialesPanel({ usuarios, selectedUser, onSelect, onChanged }) {
   const user = selectedUser || usuarios[0] || null;
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
 
@@ -74,13 +75,25 @@ export default function CredencialesPanel({ usuarios, selectedUser, onSelect, on
       <form onSubmit={resetPassword} style={{ display: "grid", gap: "0.75rem" }}>
         <label>
           Nueva contraseña
-          <input
-            type="password"
-            minLength={8}
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <div className="password-field">
+            <input
+              type={showPassword ? "text" : "password"}
+              minLength={8}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+            >
+              <MaterialIcon name={showPassword ? "visibility_off" : "visibility"} />
+            </button>
+          </div>
         </label>
         <button type="submit" className="btn-accent">
           <MaterialIcon name="lock_reset" />

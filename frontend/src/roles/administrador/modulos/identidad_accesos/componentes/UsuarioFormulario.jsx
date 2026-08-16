@@ -28,6 +28,7 @@ export default function UsuarioFormulario({ roles, initial, onClose, onSaved }) 
       : EMPTY
   );
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
 
@@ -185,15 +186,26 @@ export default function UsuarioFormulario({ roles, initial, onClose, onSaved }) 
           {!isEdit && (
             <label className="full">
               Contraseña inicial
-              <input
-                type="password"
-                required
-                minLength={8}
-                value={form.password}
-                onChange={(e) => setField("password", e.target.value)}
-                autoComplete="new-password"
-                name="password_inicial"
-              />
+              <div className="password-field">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={8}
+                  value={form.password}
+                  onChange={(e) => setField("password", e.target.value)}
+                  autoComplete="new-password"
+                  name="password_inicial"
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                >
+                  <MaterialIcon name={showPassword ? "visibility_off" : "visibility"} />
+                </button>
+              </div>
             </label>
           )}
         </div>

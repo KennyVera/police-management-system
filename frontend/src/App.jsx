@@ -63,6 +63,10 @@ import DetectiveDashboard from "./roles/detective/modulos/dashboard/Page";
 import DetectiveCasos from "./roles/detective/modulos/casos/Page";
 import DetectiveActividades from "./roles/detective/modulos/actividades/Page";
 
+import FiscalLayout from "./roles/fiscal/Layout";
+import FiscalDashboard from "./roles/fiscal/modulos/dashboard/Page";
+import FiscalBandeja from "./roles/fiscal/modulos/bandeja/BandejaPage";
+
 import AgenteLayout from "./roles/agente_operativo/Layout";
 import AgenteDashboard from "./roles/agente_operativo/modulos/dashboard/Page";
 import AgentePartes from "./roles/agente_operativo/modulos/registro_operativo/PartesAprehensionPage";
@@ -263,6 +267,20 @@ export default function App() {
         <Route path="dashboard" element={<DetectiveDashboard />} />
         <Route path="casos" element={<DetectiveCasos />} />
         <Route path="actividades" element={<DetectiveActividades />} />
+      </Route>
+
+      <Route
+        path="/app/fiscal"
+        element={
+          <Protected>
+            <FiscalLayout />
+          </Protected>
+        }
+      >
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<FiscalDashboard />} />
+        <Route path="bandeja" element={<FiscalBandeja />} />
+        <Route path="historial" element={<FiscalBandeja historial />} />
       </Route>
 
       <Route

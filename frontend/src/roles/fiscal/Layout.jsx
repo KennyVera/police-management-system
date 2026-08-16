@@ -1,11 +1,10 @@
-﻿import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import RoleShell from "../../shared/components/RoleShell";
 import { getRoleConfig } from "../../shared/constants/roles";
 import { useAuth } from "../../auth/AuthContext";
-import "./DirectorZonaDark.css";
 
 export default function Layout() {
-  const role = getRoleConfig("director_zona");
+  const role = getRoleConfig("fiscal");
   const { user } = useAuth();
 
   if (!role) return <Navigate to="/login" replace />;

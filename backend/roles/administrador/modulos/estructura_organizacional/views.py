@@ -17,6 +17,7 @@ from tactico.services.geo_scope import _collect_descendant_ids
 ZONE_ROLES = {
     SystemRole.DIRECTOR_ZONA,
     SystemRole.SUPERVISOR_UNIDAD,
+    SystemRole.FISCAL,
     SystemRole.DETECTIVE,
     SystemRole.AGENTE_OPERATIVO,
 }

@@ -22,6 +22,7 @@ const ROLES = [
   { value: "", label: "Todos los roles" },
   { value: "AGENTE_OPERATIVO", label: "Agente Operativo" },
   { value: "SUPERVISOR_UNIDAD", label: "Supervisor de Unidad" },
+  { value: "FISCAL", label: "Fiscal de Turno" },
   { value: "DETECTIVE", label: "Detective / Investigador" },
 ];
 

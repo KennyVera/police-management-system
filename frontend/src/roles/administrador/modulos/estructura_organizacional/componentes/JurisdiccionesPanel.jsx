@@ -24,6 +24,11 @@ const PERSONAL_GROUPS = [
     roles: ["SUPERVISOR_UNIDAD"],
   },
   {
+    key: "FISCAL",
+    title: "Fiscalía",
+    roles: ["FISCAL"],
+  },
+  {
     key: "DETECTIVE",
     title: "Detectives",
     roles: ["DETECTIVE"],

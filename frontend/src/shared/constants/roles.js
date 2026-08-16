@@ -408,6 +408,36 @@ export const ROLES = {
       },
     ],
   },
+  fiscal: {
+    slug: "fiscal",
+    code: "FISCAL",
+    title: "Fiscal de Turno",
+    subtitle: "Ministerio Público / Fiscalía",
+    icon: "balance",
+    accent: "#1e3a5f",
+    modules: [
+      { slug: "dashboard", label: "Dashboard", icon: "dashboard", path: "dashboard" },
+      {
+        slug: "fiscalia",
+        label: "Fiscalía de Turno",
+        icon: "gavel",
+        children: [
+          {
+            slug: "bandeja",
+            label: "Bandeja de partes",
+            icon: "inbox",
+            path: "bandeja",
+          },
+          {
+            slug: "historial",
+            label: "Historial de decisiones",
+            icon: "history",
+            path: "historial",
+          },
+        ],
+      },
+    ],
+  },
   agente_operativo: {
     slug: "agente_operativo",
     code: "AGENTE_OPERATIVO",

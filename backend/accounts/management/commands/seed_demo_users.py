@@ -98,6 +98,17 @@ DEMO_USERS = [
         "unidad": "Investigaciones",
     },
     {
+        "username": "fiscal.turno",
+        "email": "fiscal@sgp.gob",
+        "password": "Fiscal123!",
+        "first_name": "Andrea",
+        "last_name": "Fiscal",
+        "role": SystemRole.FISCAL,
+        "rango_tipico": "Fiscal de Turno / Ministerio Público",
+        "unidad": "Fiscalía de Turno",
+        "zona": "Zona Norte",
+    },
+    {
         "username": "agente.urbano",
         "email": "agente@sgp.gob",
         "password": "Agente123!",
@@ -146,6 +157,9 @@ class Command(BaseCommand):
                 defaults["jurisdiccion"] = zona_norte
                 defaults["zona"] = "Sector 12"
             if item["role"] == SystemRole.DETECTIVE:
+                defaults["jurisdiccion"] = zona_norte
+                defaults["zona"] = "Zona Norte"
+            if item["role"] == SystemRole.FISCAL:
                 defaults["jurisdiccion"] = zona_norte
                 defaults["zona"] = "Zona Norte"
 

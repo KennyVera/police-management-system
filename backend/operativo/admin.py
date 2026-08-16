@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from operativo.models import (
     AlertaDespacho,
+    AsignacionCaso,
     AsignacionDiaria,
     BienInvestigado,
     BitacoraInvestigacion,
@@ -129,6 +130,13 @@ class BienInvestigadoAdmin(admin.ModelAdmin):
 class SolicitudFiscalAdmin(admin.ModelAdmin):
     list_display = ("numero", "tipo", "estado", "expediente", "creado_en")
     list_filter = ("tipo", "estado")
+
+
+@admin.register(AsignacionCaso)
+class AsignacionCasoAdmin(admin.ModelAdmin):
+    list_display = ("id", "parte", "estado", "fiscal", "detective", "creado_en")
+    list_filter = ("estado",)
+    search_fields = ("parte__numero_caso", "parte__titulo")
 
 
 @admin.register(InformeInvestigativo)

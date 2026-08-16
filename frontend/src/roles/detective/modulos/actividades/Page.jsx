@@ -266,7 +266,7 @@ export default function ActividadesPage() {
       {ok && (
         <p
           className="mod-muted"
-          style={{ background: "#eaf8ef", padding: "0.7rem 0.9rem", borderRadius: 10, color: "#1f7a45" }}
+          className="mod-ok"
         >
           {ok}
         </p>
@@ -298,7 +298,7 @@ export default function ActividadesPage() {
                 <p className="mod-kicker">Acciones registradas</p>
                 <div style={{ display: "grid", gap: "0.55rem" }}>
                   {bitacora.map((b) => (
-                    <div key={b.id} style={{ padding: "0.65rem", background: "#f7f8fc", borderRadius: 10 }}>
+                    <div key={b.id} className="det-soft-block">
                       <strong>{b.tipo_label}</strong>
                       <div className="mod-muted" style={{ fontSize: "0.8rem" }}>
                         {b.fecha_hora ? new Date(b.fecha_hora).toLocaleString() : ""}
@@ -366,7 +366,7 @@ export default function ActividadesPage() {
                     disabled={locked || busy}
                     value={bitForm.relato}
                     onChange={(e) => setBitForm({ ...bitForm, relato: e.target.value })}
-                    style={{ border: "1px solid #e5e9f2", borderRadius: 10, padding: "0.6rem", font: "inherit" }}
+                    className="det-file-input"
                     placeholder='Ej. "Se entrevistó al testigo Y..."'
                   />
                 </label>
@@ -384,7 +384,7 @@ export default function ActividadesPage() {
                 <p className="mod-kicker">Vehículos / inmuebles investigados</p>
                 <div style={{ display: "grid", gap: "0.55rem" }}>
                   {bienes.map((b) => (
-                    <div key={b.id} style={{ padding: "0.65rem", background: "#f7f8fc", borderRadius: 10 }}>
+                    <div key={b.id} className="det-soft-block">
                       <strong>
                         {b.tipo_label}: {b.identificador}
                       </strong>
@@ -442,7 +442,7 @@ export default function ActividadesPage() {
                     disabled={locked || busy}
                     value={bienForm.descripcion}
                     onChange={(e) => setBienForm({ ...bienForm, descripcion: e.target.value })}
-                    style={{ border: "1px solid #e5e9f2", borderRadius: 10, padding: "0.6rem", font: "inherit" }}
+                    className="det-file-input"
                   />
                 </label>
                 <button type="submit" className="btn-accent full" disabled={locked || busy}>
@@ -458,7 +458,7 @@ export default function ActividadesPage() {
                 <p className="mod-kicker">Solicitudes generadas</p>
                 <div style={{ display: "grid", gap: "0.55rem" }}>
                   {solicitudes.map((s) => (
-                    <div key={s.id} style={{ padding: "0.65rem", background: "#f7f8fc", borderRadius: 10 }}>
+                    <div key={s.id} className="det-soft-block">
                       <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem" }}>
                         <strong>
                           {s.numero || `SF-${s.id}`} · {s.tipo_label}
@@ -513,7 +513,7 @@ export default function ActividadesPage() {
                     disabled={locked || busy}
                     value={solForm.fundamento}
                     onChange={(e) => setSolForm({ ...solForm, fundamento: e.target.value })}
-                    style={{ border: "1px solid #e5e9f2", borderRadius: 10, padding: "0.6rem", font: "inherit" }}
+                    className="det-file-input"
                     placeholder="Hechos y bases legales..."
                   />
                 </label>
@@ -525,7 +525,7 @@ export default function ActividadesPage() {
                     disabled={locked || busy}
                     value={solForm.pedimento}
                     onChange={(e) => setSolForm({ ...solForm, pedimento: e.target.value })}
-                    style={{ border: "1px solid #e5e9f2", borderRadius: 10, padding: "0.6rem", font: "inherit" }}
+                    className="det-file-input"
                     placeholder="Se solicita al juez/fiscal..."
                   />
                 </label>
@@ -578,7 +578,7 @@ export default function ActividadesPage() {
                       rows={8}
                       value={infForm.contenido}
                       onChange={(e) => setInfForm({ ...infForm, contenido: e.target.value })}
-                      style={{ border: "1px solid #e5e9f2", borderRadius: 10, padding: "0.6rem", font: "inherit" }}
+                      className="det-file-input"
                       placeholder="Redacte el Informe Investigativo (no un Parte de Novedad)..."
                     />
                   </label>
@@ -588,7 +588,7 @@ export default function ActividadesPage() {
                       rows={3}
                       value={infForm.conclusiones}
                       onChange={(e) => setInfForm({ ...infForm, conclusiones: e.target.value })}
-                      style={{ border: "1px solid #e5e9f2", borderRadius: 10, padding: "0.6rem", font: "inherit" }}
+                      className="det-file-input"
                     />
                   </label>
                   <button type="submit" className="btn-accent full" disabled={busy}>

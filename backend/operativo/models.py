@@ -475,6 +475,8 @@ class Notificacion(models.Model):
         DISPOSICION_ZONA = "DISPOSICION_ZONA", "Disposición de zona"
         ALERTA = "ALERTA", "Alerta"
         SISTEMA = "SISTEMA", "Sistema"
+        PARTE_FISCAL = "PARTE_FISCAL", "Parte remitido a Fiscalía"
+        CASO_FISCAL = "CASO_FISCAL", "Caso asignado por Fiscal"
 
     destinatario = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="notificaciones"
@@ -1094,3 +1096,66 @@ class DisposicionZona(models.Model):
 
     def __str__(self) -> str:
         return f"{self.get_tipo_display()}: {self.titulo}"
+
+
+class AsignacionCaso(models.Model):
+    """
+    Puente jurídico Parte → Fiscal → Detective.
+    Se crea al aprobar el parte; el Fiscal decide despacho admin o indagación previa.
+    """
+
+    class Estado(models.TextChoices):
+        PENDIENTE_FISCAL = "PENDIENTE_FISCAL", "Pendiente de revisión fiscal"
+        DESPACHO_ADMIN = "DESPACHO_ADMIN", "Despacho administrativo"
+        EN_INVESTIGACION = "EN_INVESTIGACION", "Indagación previa (detective asignado)"
+        CERRADO = "CERRADO", "Cerrado"
+
+    parte = models.OneToOneField(
+        "ParteAprehension",
+        on_delete=models.CASCADE,
+        related_name="asignacion_caso",
+        help_text="Parte policial aprobado que ingresa a Fiscalía.",
+    )
+    fiscal = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="casos_como_fiscal",
+        help_text="Fiscal de turno que toma la decisión.",
+    )
+    detective = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="casos_como_detective",
+        help_text="Detective asignado si se abre indagación previa.",
+    )
+    expediente = models.ForeignKey(
+        "ExpedienteCaso",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="asignaciones_fiscales",
+    )
+    estado = models.CharField(
+        max_length=30,
+        choices=Estado.choices,
+        default=Estado.PENDIENTE_FISCAL,
+    )
+    decision_notas = models.TextField(
+        blank=True,
+        help_text="Fundamento jurídico / observaciones del Fiscal.",
+    )
+    decidido_en = models.DateTimeField(null=True, blank=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-creado_en"]
+        verbose_name = "Asignación de caso (Fiscalía)"
+        verbose_name_plural = "Asignaciones de caso (Fiscalía)"
+
+    def __str__(self) -> str:
+        return f"Caso parte#{self.parte_id} · {self.get_estado_display()}"

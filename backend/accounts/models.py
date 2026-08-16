@@ -9,6 +9,7 @@ class SystemRole(models.TextChoices):
     VISOR_EJECUTIVO = "VISOR_EJECUTIVO", "Visor Ejecutivo (Alto Mando)"
     DIRECTOR_ZONA = "DIRECTOR_ZONA", "Director / Jefe de Zona"
     SUPERVISOR_UNIDAD = "SUPERVISOR_UNIDAD", "Supervisor de Unidad"
+    FISCAL = "FISCAL", "Fiscal de Turno"
     DETECTIVE = "DETECTIVE", "Detective / Investigador"
     AGENTE_OPERATIVO = "AGENTE_OPERATIVO", "Agente Operativo"
 
@@ -18,6 +19,7 @@ ASSIGNABLE_ROLES = (
     SystemRole.VISOR_EJECUTIVO,
     SystemRole.DIRECTOR_ZONA,
     SystemRole.SUPERVISOR_UNIDAD,
+    SystemRole.FISCAL,
     SystemRole.DETECTIVE,
     SystemRole.AGENTE_OPERATIVO,
 )
@@ -29,6 +31,7 @@ ROLE_ROUTE_MAP = {
     SystemRole.VISOR_EJECUTIVO: "visor_ejecutivo",
     SystemRole.DIRECTOR_ZONA: "director_zona",
     SystemRole.SUPERVISOR_UNIDAD: "supervisor_unidad",
+    SystemRole.FISCAL: "fiscal",
     SystemRole.DETECTIVE: "detective",
     SystemRole.AGENTE_OPERATIVO: "agente_operativo",
 }

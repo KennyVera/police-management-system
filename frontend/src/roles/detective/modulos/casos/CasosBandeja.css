@@ -25,6 +25,10 @@
   align-items: end;
 }
 
+.casos-filters-grid--compact {
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr auto;
+}
+
 .casos-filters-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
@@ -189,6 +193,23 @@
   border-color: #7c5cbf;
   color: #fff;
   font-weight: 700;
+}
+
+.casos-row-hl {
+  background: #f1ebff;
+}
+
+.casos-row-menu {
+  position: absolute;
+  right: 0;
+  top: 110%;
+  z-index: 5;
+  background: #fff;
+  border: 1px solid #e5e9f2;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(30, 42, 74, 0.12);
+  min-width: 160px;
+  padding: 0.35rem;
 }
 
 .casos-detail-modal {

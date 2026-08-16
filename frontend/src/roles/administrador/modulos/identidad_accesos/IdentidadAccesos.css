@@ -248,6 +248,52 @@
   grid-column: 1 / -1;
 }
 
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 2.6rem;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: #8b95a8;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 8px;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.password-toggle:hover {
+  color: #6f4fb8;
+  background: #f1ebff;
+}
+
+.password-toggle .material-symbols-outlined {
+  font-size: 1.2rem;
+}
+
+html[data-theme="dark"] .password-toggle {
+  color: var(--ct-muted);
+}
+
+html[data-theme="dark"] .password-toggle:hover {
+  color: var(--ct-accent);
+  background: var(--ct-accent-soft);
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;

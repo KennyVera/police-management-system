@@ -1,0 +1,575 @@
+/* Dark mode — rol Detective / Investigador */
+
+/* —— Dashboard —— */
+html[data-theme="dark"] .det-dash {
+  --det-purple: #a78bfa;
+  --det-purple-deep: #8b6fd4;
+  --det-muted: var(--ct-muted);
+  --det-border: var(--ct-border);
+  --det-text: var(--ct-text);
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .det-toolbar h2,
+html[data-theme="dark"] .det-card h3,
+html[data-theme="dark"] .det-kpi-main,
+html[data-theme="dark"] .det-donut-hole strong,
+html[data-theme="dark"] .det-table .mono,
+html[data-theme="dark"] .det-legend strong {
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .det-kpi-main span,
+html[data-theme="dark"] .det-bar-label,
+html[data-theme="dark"] .det-table td,
+html[data-theme="dark"] .det-range {
+  color: var(--ct-text-2);
+}
+
+html[data-theme="dark"] .det-kpi,
+html[data-theme="dark"] .det-card,
+html[data-theme="dark"] .det-field select,
+html[data-theme="dark"] .det-table-actions select,
+html[data-theme="dark"] .det-range,
+html[data-theme="dark"] .det-export,
+html[data-theme="dark"] .btn-mesa {
+  background: var(--ct-surface);
+  border-color: var(--ct-border);
+  color: var(--ct-text);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .det-export {
+  color: var(--ct-accent);
+  border-color: var(--ct-accent);
+}
+
+html[data-theme="dark"] .det-export:not(:disabled):hover {
+  background: var(--ct-accent-soft);
+}
+
+html[data-theme="dark"] .det-kpi.tone-purple .det-kpi-icon {
+  background: #2a2438;
+  color: #c4b5fd;
+}
+html[data-theme="dark"] .det-kpi.tone-green .det-kpi-icon {
+  background: #14301f;
+  color: #86efac;
+}
+html[data-theme="dark"] .det-kpi.tone-blue .det-kpi-icon {
+  background: #1e293b;
+  color: #93c5fd;
+}
+html[data-theme="dark"] .det-kpi.tone-red .det-kpi-icon {
+  background: #3a1515;
+  color: #fca5a5;
+}
+
+html[data-theme="dark"] .det-delta.up {
+  background: #14301f;
+  color: #86efac;
+}
+html[data-theme="dark"] .det-delta.down,
+html[data-theme="dark"] .det-error {
+  background: #3a1515;
+  color: #fca5a5;
+}
+
+html[data-theme="dark"] .det-donut-hole {
+  background: var(--ct-surface);
+}
+
+html[data-theme="dark"] .det-bar-track {
+  background: #2a2a2a;
+}
+
+html[data-theme="dark"] .det-table th {
+  color: var(--ct-muted);
+  border-bottom-color: var(--ct-border);
+}
+
+html[data-theme="dark"] .det-table td {
+  border-bottom-color: var(--ct-border);
+}
+
+html[data-theme="dark"] .det-table tr.is-critico {
+  background: #2a1515;
+}
+
+html[data-theme="dark"] .badge-estado.tone-blue {
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+html[data-theme="dark"] .badge-estado.tone-orange {
+  background: #3a2a12;
+  color: #fdba74;
+}
+html[data-theme="dark"] .badge-estado.tone-gray {
+  background: #2a2a2a;
+  color: #d4d4d4;
+}
+html[data-theme="dark"] .badge-estado.tone-green {
+  background: #14301f;
+  color: #86efac;
+}
+
+html[data-theme="dark"] .btn-mesa {
+  color: var(--ct-accent);
+  border-color: var(--ct-accent);
+  background: transparent;
+}
+
+html[data-theme="dark"] .btn-mesa:hover {
+  background: var(--ct-accent);
+  color: #fff;
+}
+
+html[data-theme="dark"] .det-banner.warn {
+  background: #3a1515;
+  color: #fca5a5;
+  border-color: #7f1d1d;
+}
+
+/* —— Bandeja de casos —— */
+html[data-theme="dark"] .casos-filters-head {
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .casos-filters label {
+  color: var(--ct-text-2);
+}
+
+html[data-theme="dark"] .casos-filters input,
+html[data-theme="dark"] .casos-filters select {
+  background: var(--ct-input-bg);
+  border-color: var(--ct-border);
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .casos-codigo strong {
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .casos-codigo span,
+html[data-theme="dark"] .casos-delito span,
+html[data-theme="dark"] .casos-persona span,
+html[data-theme="dark"] .casos-footer {
+  color: var(--ct-muted);
+}
+
+html[data-theme="dark"] .badge-prioridad.ALTA,
+html[data-theme="dark"] .badge-prioridad.CRITICA {
+  background: #3a1515;
+  color: #fca5a5;
+}
+html[data-theme="dark"] .badge-prioridad.CRITICA {
+  background: #4a1010;
+  color: #fecaca;
+}
+html[data-theme="dark"] .badge-prioridad.MEDIA {
+  background: #3a2a12;
+  color: #fdba74;
+}
+html[data-theme="dark"] .badge-prioridad.BAJA {
+  background: #14301f;
+  color: #86efac;
+}
+
+html[data-theme="dark"] .badge-estado.INDAGACION_PREVIA {
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+html[data-theme="dark"] .badge-estado.INSTRUCCION_FISCAL {
+  background: #3a2a12;
+  color: #fdba74;
+}
+html[data-theme="dark"] .badge-estado.CERRADO {
+  background: #14301f;
+  color: #86efac;
+}
+html[data-theme="dark"] .badge-estado.SUSPENDIDO {
+  background: #2a2a2a;
+  color: #d4d4d4;
+}
+
+html[data-theme="dark"] .casos-pager button {
+  background: var(--ct-surface);
+  border-color: var(--ct-border);
+  color: var(--ct-text-2);
+}
+
+html[data-theme="dark"] .casos-pager button.active {
+  background: var(--ct-accent);
+  border-color: var(--ct-accent);
+  color: #fff;
+}
+
+html[data-theme="dark"] .casos-row-menu {
+  background: var(--ct-surface) !important;
+  border-color: var(--ct-border) !important;
+  box-shadow: 0 8px 24px var(--ct-shadow) !important;
+}
+
+html[data-theme="dark"] tr.casos-row-hl {
+  background: var(--ct-accent-soft) !important;
+}
+
+/* —— Expediente (modal) —— */
+html[data-theme="dark"] .exp-overlay {
+  background: var(--ct-overlay);
+}
+
+html[data-theme="dark"] .exp-shell {
+  background: var(--ct-page);
+  border-color: var(--ct-border);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="dark"] .exp-top,
+html[data-theme="dark"] .exp-tabs {
+  background: var(--ct-surface);
+  border-bottom-color: var(--ct-border);
+}
+
+html[data-theme="dark"] .exp-breadcrumb {
+  color: var(--ct-muted);
+}
+
+html[data-theme="dark"] .exp-crumb-link,
+html[data-theme="dark"] .exp-link,
+html[data-theme="dark"] .exp-meta-line .material-symbols-outlined,
+html[data-theme="dark"] .exp-tabs button.active {
+  color: var(--ct-accent);
+}
+
+html[data-theme="dark"] .exp-tabs button.active {
+  border-bottom-color: var(--ct-accent);
+}
+
+html[data-theme="dark"] .exp-title-row h2,
+html[data-theme="dark"] .exp-card h3,
+html[data-theme="dark"] .exp-timeline strong,
+html[data-theme="dark"] .exp-inv-modal-title h3 {
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .exp-meta-line,
+html[data-theme="dark"] .exp-tabs button,
+html[data-theme="dark"] .exp-label,
+html[data-theme="dark"] .exp-info-grid small,
+html[data-theme="dark"] .exp-person-mini small,
+html[data-theme="dark"] .exp-officer small,
+html[data-theme="dark"] .exp-inv-meta,
+html[data-theme="dark"] .exp-timeline small,
+html[data-theme="dark"] .exp-feed small {
+  color: var(--ct-muted);
+}
+
+html[data-theme="dark"] .exp-card {
+  background: var(--ct-surface);
+  border-color: var(--ct-border);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .exp-desc-block,
+html[data-theme="dark"] .exp-status-row,
+html[data-theme="dark"] .exp-informe {
+  border-top-color: var(--ct-border);
+}
+
+html[data-theme="dark"] .exp-desc-block p,
+html[data-theme="dark"] .exp-doc,
+html[data-theme="dark"] .exp-sol p,
+html[data-theme="dark"] .exp-feed p,
+html[data-theme="dark"] .exp-quick button {
+  color: var(--ct-text-2);
+}
+
+html[data-theme="dark"] .exp-avatar {
+  background: var(--ct-accent-soft);
+  color: var(--ct-accent);
+}
+
+html[data-theme="dark"] .exp-officer,
+html[data-theme="dark"] .exp-inv-row,
+html[data-theme="dark"] .exp-feed article,
+html[data-theme="dark"] .exp-doc,
+html[data-theme="dark"] .exp-sol {
+  background: var(--ct-surface-2);
+}
+
+html[data-theme="dark"] .exp-subtabs {
+  background: #161616;
+}
+
+html[data-theme="dark"] .exp-subtabs button {
+  color: var(--ct-muted);
+}
+
+html[data-theme="dark"] .exp-subtabs button.active {
+  background: var(--ct-surface);
+  color: var(--ct-accent);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .exp-chip.danger {
+  background: #3a1515;
+  color: #fca5a5;
+}
+html[data-theme="dark"] .exp-chip.info {
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+
+html[data-theme="dark"] .exp-notes {
+  background: #2a2410;
+  border-color: #5c4a1a;
+}
+
+html[data-theme="dark"] .exp-notes textarea {
+  background: #1a160c;
+  border-color: #5c4a1a;
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .exp-notes p {
+  color: #fcd34d;
+}
+
+html[data-theme="dark"] .exp-timeline li:not(:last-child)::before {
+  background: var(--ct-border);
+}
+
+html[data-theme="dark"] .exp-tl-dot {
+  background: #525252;
+}
+
+html[data-theme="dark"] .exp-timeline li.current .exp-tl-dot {
+  background: var(--ct-accent);
+  box-shadow: 0 0 0 4px var(--ct-accent-soft);
+}
+
+html[data-theme="dark"] .exp-quick button {
+  background: var(--ct-surface-2);
+  border-color: var(--ct-border);
+}
+
+html[data-theme="dark"] .exp-quick .material-symbols-outlined {
+  color: var(--ct-accent);
+}
+
+html[data-theme="dark"] .exp-perfil-backdrop {
+  background: var(--ct-overlay);
+}
+
+html[data-theme="dark"] .exp-perfil-card,
+html[data-theme="dark"] .exp-inv-modal-card {
+  background: var(--ct-surface);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .exp-inv-modal-title .material-symbols-outlined {
+  color: var(--ct-accent);
+}
+
+html[data-theme="dark"] .exp-foto-box {
+  background: var(--ct-surface-2);
+  border-color: var(--ct-border-strong);
+}
+
+html[data-theme="dark"] .exp-foto-box .material-symbols-outlined {
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .exp-inv-fields label {
+  color: var(--ct-text-2);
+}
+
+html[data-theme="dark"] .exp-inv-fields input,
+html[data-theme="dark"] .exp-inv-fields select,
+html[data-theme="dark"] .exp-inv-fields textarea {
+  background: var(--ct-input-bg);
+  border-color: var(--ct-border);
+  color: var(--ct-text);
+}
+
+/* —— Evidencias (dentro del expediente) —— */
+html[data-theme="dark"] .ev-section-title,
+html[data-theme="dark"] .ev-file-name {
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .ev-card,
+html[data-theme="dark"] .ev-upload-card,
+html[data-theme="dark"] .ev-empty,
+html[data-theme="dark"] .ev-preview-modal,
+html[data-theme="dark"] .ev-audio-box {
+  background: var(--ct-surface);
+  border-color: var(--ct-border);
+  box-shadow: none;
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .ev-empty,
+html[data-theme="dark"] .ev-path,
+html[data-theme="dark"] .ev-meta,
+html[data-theme="dark"] .ev-hint,
+html[data-theme="dark"] .ev-audio-box p {
+  color: var(--ct-muted);
+}
+
+html[data-theme="dark"] .ev-badge-ok {
+  background: #14301f;
+  color: #86efac;
+}
+
+html[data-theme="dark"] .ev-hash {
+  background: var(--ct-surface-2);
+}
+
+html[data-theme="dark"] .ev-hash span {
+  color: var(--ct-accent);
+}
+
+html[data-theme="dark"] .ev-hash code {
+  color: var(--ct-text-2);
+}
+
+html[data-theme="dark"] .ev-status-row {
+  border-top-color: var(--ct-border);
+}
+
+html[data-theme="dark"] .ev-status-row label,
+html[data-theme="dark"] .ev-upload-label {
+  color: var(--ct-text-2);
+}
+
+html[data-theme="dark"] .ev-status-row select,
+html[data-theme="dark"] .ev-status-row input {
+  background: var(--ct-input-bg);
+  border-color: var(--ct-border);
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .ev-drop {
+  background: var(--ct-surface-2);
+  border-color: var(--ct-border-strong);
+}
+
+html[data-theme="dark"] .ev-preview-head {
+  border-bottom-color: var(--ct-border);
+}
+
+html[data-theme="dark"] .ev-preview-body {
+  background: #0a0a0a;
+}
+
+html[data-theme="dark"] .ev-preview-body iframe {
+  background: var(--ct-surface);
+}
+
+html[data-theme="dark"] .ev-audio-box .material-symbols-outlined {
+  color: var(--ct-accent);
+}
+
+/* —— Perfil involucrado —— */
+html[data-theme="dark"] .ip-backdrop {
+  background: var(--ct-overlay);
+}
+
+html[data-theme="dark"] .ip-shell {
+  background: var(--ct-page);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="dark"] .ip-top-title h2,
+html[data-theme="dark"] .ip-hero-info h3,
+html[data-theme="dark"] .ip-stat strong,
+html[data-theme="dark"] .ip-historial h4 {
+  color: var(--ct-text);
+}
+
+html[data-theme="dark"] .ip-top-title .material-symbols-outlined,
+html[data-theme="dark"] .ip-info-row .material-symbols-outlined,
+html[data-theme="dark"] .ip-historial h4 .material-symbols-outlined,
+html[data-theme="dark"] .ip-hist-tipo,
+html[data-theme="dark"] .ip-hist-link {
+  color: var(--ct-accent);
+}
+
+html[data-theme="dark"] .ip-card,
+html[data-theme="dark"] .ip-stat,
+html[data-theme="dark"] .ip-hist-card {
+  background: var(--ct-surface);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .ip-photo {
+  background: var(--ct-accent-soft);
+}
+
+html[data-theme="dark"] .ip-photo-fallback {
+  color: var(--ct-accent);
+}
+
+html[data-theme="dark"] .ip-alias,
+html[data-theme="dark"] .ip-stat span,
+html[data-theme="dark"] .ip-hist-estado,
+html[data-theme="dark"] .ip-hist-fecha,
+html[data-theme="dark"] .ip-hist-nota {
+  color: var(--ct-muted);
+}
+
+html[data-theme="dark"] .ip-badge.gray {
+  background: #2a2a2a;
+  color: #d4d4d4;
+}
+html[data-theme="dark"] .ip-badge.purple {
+  background: var(--ct-accent-soft);
+  color: #c4b5fd;
+}
+html[data-theme="dark"] .ip-badge.orange {
+  background: #3a2a12;
+  color: #fdba74;
+}
+
+html[data-theme="dark"] .ip-info-label {
+  color: var(--ct-muted);
+}
+
+html[data-theme="dark"] .ip-notes {
+  border-top-color: var(--ct-border);
+}
+
+html[data-theme="dark"] .ip-notes p,
+html[data-theme="dark"] .ip-hist-delito {
+  color: var(--ct-text-2);
+}
+
+/* —— Bloques suaves (actividades / evidencias globales) —— */
+.det-soft-block {
+  padding: 0.65rem;
+  background: #f7f8fc;
+  border-radius: 10px;
+}
+
+html[data-theme="dark"] .det-soft-block {
+  background: var(--ct-surface-2);
+  color: var(--ct-text);
+}
+
+.det-file-input {
+  border: 1px solid #e5e9f2;
+  border-radius: 10px;
+  padding: 0.6rem;
+  font: inherit;
+  background: #fff;
+  color: #1a2338;
+}
+
+html[data-theme="dark"] .det-file-input {
+  border-color: var(--ct-border);
+  background: var(--ct-input-bg);
+  color: var(--ct-text);
+}
