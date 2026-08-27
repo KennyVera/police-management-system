@@ -76,19 +76,17 @@
   box-shadow: 0 8px 18px rgba(124, 92, 191, 0.28);
 }
 
-/* —— KPI cards —— */
-.sup-kpi-row {
+/* Layout: Tailwind (grid-cols-1 → md:2 → xl:4) */
+.sup-kpi-row,
+.sup-mid-row,
+.sup-bot-row {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.9rem;
 }
 
 .sup-kpi,
 .sup-card {
-  background: var(--sup-bg-card);
-  border: 1px solid var(--sup-border);
   border-radius: 16px;
-  box-shadow: 0 10px 28px rgba(28, 39, 68, 0.04);
 }
 
 .sup-kpi {
@@ -237,17 +235,6 @@
 }
 
 /* —— Mid / bot cards —— */
-.sup-mid-row,
-.sup-bot-row {
-  display: grid;
-  grid-template-columns: 1fr 1.15fr;
-  gap: 0.9rem;
-}
-
-.sup-bot-row {
-  grid-template-columns: 1fr 1fr;
-}
-
 .sup-card {
   padding: 1.1rem 1.15rem 1rem;
   display: flex;
@@ -591,20 +578,7 @@
   background: #ef4444;
 }
 
-@media (max-width: 1200px) {
-  .sup-kpi-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .sup-mid-row,
-  .sup-bot-row {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 720px) {
-  .sup-kpi-row {
-    grid-template-columns: 1fr;
-  }
   .sup-calidad {
     grid-template-columns: 1fr;
     justify-items: center;

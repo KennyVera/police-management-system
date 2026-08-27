@@ -7,7 +7,6 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from accounts.models import SystemRole
 from accounts.permissions import SupervisorOnly
 from operativo.models import (
     AlertaDespacho,
@@ -22,6 +21,11 @@ from operativo.serializers import (
     OrdenAdicionalSerializer,
     _user_label,
 )
+from roles.supervisor_unidad.cuadrantes_geo import (
+    build_cuadrantes_for_supervisor,
+    point_in_supervisor_zone,
+)
+from roles.supervisor_unidad.scope import agentes_en_zona_qs
 
 
 def _haversine_km(lat1, lon1, lat2, lon2):
@@ -170,16 +174,8 @@ def meta(request):
     else:
         candidatos = _candidatos_escuadras(request.user)
 
-    agentes = [
-        _user_label(u)
-        for u in User.objects.filter(
-            profile__role=SystemRole.AGENTE_OPERATIVO,
-            profile__estado="ACTIVO",
-            is_active=True,
-        )
-        .select_related("profile")
-        .order_by("first_name", "last_name")
-    ]
+    agentes = [_user_label(u) for u in agentes_en_zona_qs(request.user)]
+    zona_mapa = build_cuadrantes_for_supervisor(request.user)
 
     return Response(
         {
@@ -187,6 +183,7 @@ def meta(request):
             # alias legacy (ahora son escuadras)
             "unidades_turno": candidatos,
             "agentes": agentes,
+            "zona_mapa": zona_mapa,
             "prioridades": [
                 {"value": c.value, "label": c.label} for c in AlertaDespacho.Prioridad
             ],
@@ -228,6 +225,20 @@ def alertas_collection(request):
 
     ser = AlertaDespachoWriteSerializer(data=request.data)
     ser.is_valid(raise_exception=True)
+    lat = ser.validated_data.get("latitud")
+    lng = ser.validated_data.get("longitud")
+    if lat is not None and lng is not None and not point_in_supervisor_zone(
+        request.user, lat, lng
+    ):
+        return Response(
+            {
+                "detail": (
+                    "La ubicación está fuera de su zona operativa. "
+                    "Solo puede registrar incidentes dentro del territorio asignado."
+                )
+            },
+            status=400,
+        )
     agente = ser.validated_data.get("agente")
     escuadra = ser.validated_data.get("escuadra")
     estado = (

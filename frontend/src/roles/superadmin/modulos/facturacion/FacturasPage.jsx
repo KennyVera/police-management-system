@@ -61,14 +61,7 @@ export default function FacturasPage() {
 
   async function exportar(f) {
     try {
-      const data = await facturacionApi.exportarFactura(f.id);
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${f.numero || "factura"}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+      await facturacionApi.exportarFactura(f.id, `${f.numero || "factura"}.pdf`);
     } catch (e) {
       setError(e.message);
     }

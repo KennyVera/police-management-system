@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import MaterialIcon from "../shared/components/MaterialIcon";
 import loginArt from "../assets/imagenParaelInicioSesion.png";
 import { registrarYPersistir, saasApi } from "./api";
+import { clearSession } from "../auth/api";
+import { useAuth } from "../auth/AuthContext";
 import "./CommercialSuite.css";
 
 const FALLBACK_PLANS = [
@@ -43,6 +45,27 @@ const FALLBACK_PLANS = [
     descripcion: "Despliegue institucional, cuotas amplias y soporte dedicado.",
   },
 ];
+
+function LoginCta({ className, children = "Iniciar sesión" }) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  async function go(event) {
+    event.preventDefault();
+    try {
+      await logout();
+    } catch {
+      clearSession();
+    }
+    navigate("/login");
+  }
+
+  return (
+    <Link to="/login" className={className} onClick={go}>
+      {children}
+    </Link>
+  );
+}
 
 function money(v) {
   const n = Number(v || 0);
@@ -179,9 +202,7 @@ function LandingView({ planes, onAffiliate, onPickPlan }) {
           <a href="#contacto">Contacto</a>
         </nav>
         <div className="ct-nav-actions">
-          <Link to="/login" className="ct-btn ghost">
-            Iniciar sesión
-          </Link>
+          <LoginCta className="ct-btn ghost">Iniciar sesión</LoginCta>
           <button type="button" className="ct-btn primary" onClick={onAffiliate}>
             Afiliar institución
           </button>
@@ -202,9 +223,7 @@ function LandingView({ planes, onAffiliate, onPickPlan }) {
             <button type="button" className="ct-btn primary lg" onClick={onAffiliate}>
               Afiliar institución
             </button>
-            <Link to="/login" className="ct-btn ghost lg">
-              Iniciar sesión
-            </Link>
+            <LoginCta className="ct-btn ghost lg">Iniciar sesión</LoginCta>
           </div>
           <ul className="ct-pills">
             <li>
@@ -394,7 +413,7 @@ function LandingView({ planes, onAffiliate, onPickPlan }) {
             <div>
               <span>Empresa</span>
               <a href="#planes">Planes</a>
-              <Link to="/login">Acceso</Link>
+              <LoginCta>Acceso</LoginCta>
             </div>
             <div>
               <span>Soporte</span>

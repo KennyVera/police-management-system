@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { visorIndicadoresApi } from "../../api";
 import "./FichaTecnica.css";
 import "./FichaTecnicaDark.css";
@@ -136,7 +136,7 @@ function FichaDetalle({ ficha, onBack, loading }) {
             </div>
           </div>
           <p className="ft-hint">
-            Periodo {carga.desde} → {carga.hasta}
+            Periodo {carga.desde} ? {carga.hasta}
           </p>
         </article>
 
@@ -200,7 +200,7 @@ function FichaDetalle({ ficha, onBack, loading }) {
             <span>Promedio aprobación de partes</span>
           </div>
           {sla.cuello_botella && (
-            <p className="ft-alert">Cuello de botella detectado (≥ 3 días)</p>
+            <p className="ft-alert">Cuello de botella detectado (= 3 días)</p>
           )}
           <p className="ft-hint">{sla.mensaje}</p>
           <small className="ft-hint">Muestra: {sla.muestra} partes</small>

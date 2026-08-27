@@ -124,6 +124,12 @@ class ParteAprehensionSerializer(serializers.ModelSerializer):
             "pdf_url",
             "evidencias",
         ]
+        extra_kwargs = {
+            # El modelo exige fecha_hora, pero el alta operacional envía
+            # fecha_hecho + hora_hecho; validate() (y ParteAprehension.save)
+            # completan el datetime. Si required=True, DRF corta antes.
+            "fecha_hora": {"required": False, "allow_null": True},
+        }
 
     def get_agente(self, obj):
         u = obj.creado_por

@@ -13,5 +13,6 @@ urlpatterns = [
     ),
     path("jurisdicciones/<int:pk>/inactivar/", views.jurisdiccion_inactivar),
     path("plazas/", views.plazas),
+    # GET catalogos/?jurisdiccion_id=5 — eco para preselección en el dual-listbox
     path("catalogos/", views.catalogos),
 ]

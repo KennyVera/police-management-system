@@ -47,9 +47,9 @@ class Command(BaseCommand):
         zona = (
             Jurisdiction.objects.filter(activo=True).order_by("id").first()
             or Jurisdiction.objects.create(
-                tipo=JurisdictionType.CIRCUITO,
-                nombre="Circuito Centro Urbano",
-                codigo="CIR-DEMO-01",
+                tipo=JurisdictionType.DISTRITO,
+                nombre="Distrito Centro Urbano",
+                codigo="DT-DEMO-01",
             )
         )
 

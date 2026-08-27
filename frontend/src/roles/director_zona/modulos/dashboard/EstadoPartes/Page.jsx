@@ -1,5 +1,6 @@
 import "./EstadoPartes.css";
 import MaterialIcon from "../../../../../shared/components/MaterialIcon";
+import { glassCard, kpiCard } from "../../../../../shared/ui/saas";
 
 const TONE_COLORS = {
   ok: "#22c55e",
@@ -116,29 +117,29 @@ export default function EstadoPartes({ data, loading }) {
 
   return (
     <div className="dz-estado">
-      <div className="dz-estado-kpis">
-        <article className="dz-card dz-ep-kpi tone-purple">
+      <div className="dz-estado-kpis grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <article className={`dz-card dz-ep-kpi tone-purple ${kpiCard}`}>
           <p className="dz-kpi-label">Tasa de resolución</p>
           <p className="dz-kpi-main">
             {data.tasa_resolucion ?? 0}%
             <span>Aprobados / flujo de revisión</span>
           </p>
         </article>
-        <article className="dz-card dz-ep-kpi tone-green">
+        <article className={`dz-card dz-ep-kpi tone-green ${kpiCard}`}>
           <p className="dz-kpi-label">Aprobados</p>
           <p className="dz-kpi-main">
             {(data.aprobado ?? 0).toLocaleString("es-EC")}
             <span>Control de calidad OK</span>
           </p>
         </article>
-        <article className="dz-card dz-ep-kpi tone-orange">
+        <article className={`dz-card dz-ep-kpi tone-orange ${kpiCard}`}>
           <p className="dz-kpi-label">Pendientes</p>
           <p className="dz-kpi-main">
             {(data.pendiente ?? 0).toLocaleString("es-EC")}
             <span>En bandeja de supervisor</span>
           </p>
         </article>
-        <article className="dz-card dz-ep-kpi tone-red">
+        <article className={`dz-card dz-ep-kpi tone-red ${kpiCard}`}>
           <p className="dz-kpi-label">Devueltos</p>
           <p className="dz-kpi-main">
             {(data.observado ?? 0).toLocaleString("es-EC")}
@@ -147,8 +148,8 @@ export default function EstadoPartes({ data, loading }) {
         </article>
       </div>
 
-      <div className="dz-estado-grid">
-        <article className="dz-card">
+      <div className="dz-estado-grid grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article className={`dz-card ${glassCard}`}>
           <div className="dz-card-head">
             <h3>Estado de partes</h3>
             <span className="dz-chip">Postgres · zona</span>
@@ -160,7 +161,7 @@ export default function EstadoPartes({ data, loading }) {
           />
         </article>
 
-        <article className="dz-card">
+        <article className={`dz-card ${glassCard}`}>
           <div className="dz-card-head">
             <h3>Flujo diario (sin borradores)</h3>
             <span className="dz-chip">Ap · Pe · De</span>

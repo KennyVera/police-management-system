@@ -73,6 +73,7 @@ export default function RoleShell({ role }) {
   const { branding, assetUrl } = useBranding();
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem(COLLAPSE_KEY) === "1";
@@ -80,6 +81,8 @@ export default function RoleShell({ role }) {
       return false;
     }
   });
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [logoOpen, setLogoOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -88,6 +91,19 @@ export default function RoleShell({ role }) {
       /* ignore */
     }
   }, [collapsed]);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!logoOpen) return undefined;
+    function onKey(e) {
+      if (e.key === "Escape") setLogoOpen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [logoOpen]);
 
   async function handleLogout() {
     await logout();
@@ -100,21 +116,35 @@ export default function RoleShell({ role }) {
 
   return (
     <div
-      className={`role-shell${collapsed ? " is-collapsed" : ""}`}
+      className={`role-shell${collapsed ? " is-collapsed" : ""}${mobileOpen ? " is-mobile-open" : ""}`}
       style={{ "--role-accent": accent }}
     >
+      {mobileOpen && (
+        <button
+          type="button"
+          className="sidebar-backdrop"
+          aria-label="Cerrar menú"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
       <aside className="role-sidebar">
         <div className="role-brand">
-          <div className={`brand-icon${logoSrc ? " has-logo" : ""}`} aria-hidden="true">
-            {logoSrc ? (
+          {logoSrc ? (
+            <button
+              type="button"
+              className="brand-icon has-logo is-clickable"
+              onClick={() => setLogoOpen(true)}
+              title="Ver logotipo"
+              aria-label={`Ver logotipo de ${brandName}`}
+            >
               <img src={logoSrc} alt="" className="brand-logo-img" />
-            ) : (
-              <>
-                <MaterialIcon name="shield" filled />
-                <MaterialIcon name="schedule" className="brand-icon-clock" />
-              </>
-            )}
-          </div>
+            </button>
+          ) : (
+            <div className="brand-icon" aria-hidden="true">
+              <MaterialIcon name="shield" filled />
+              <MaterialIcon name="schedule" className="brand-icon-clock" />
+            </div>
+          )}
           <div className="brand-text">
             <strong>{brandName}</strong>
             <span>{role.title}</span>
@@ -178,9 +208,9 @@ export default function RoleShell({ role }) {
           <div className="topbar-title">
             <button
               type="button"
-              className="collapse-btn mobile-toggle"
-              onClick={() => setCollapsed((v) => !v)}
-              aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
+              className="collapse-btn mobile-toggle transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              onClick={() => setMobileOpen((v) => !v)}
+              aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
             >
               <MaterialIcon name="menu" />
             </button>
@@ -208,6 +238,31 @@ export default function RoleShell({ role }) {
           <Outlet />
         </section>
       </div>
+
+      {logoOpen && logoSrc && (
+        <div
+          className="logo-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Logotipo de ${brandName}`}
+          onClick={() => setLogoOpen(false)}
+        >
+          <button
+            type="button"
+            className="logo-lightbox-close"
+            aria-label="Cerrar"
+            onClick={() => setLogoOpen(false)}
+          >
+            <MaterialIcon name="close" />
+          </button>
+          <img
+            src={logoSrc}
+            alt={brandName}
+            className="logo-lightbox-img"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

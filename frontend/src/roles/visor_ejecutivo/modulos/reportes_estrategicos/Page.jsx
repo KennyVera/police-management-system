@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { descargarReporteArchivo, visorReportesApi } from "../../api";
 import "./ReportesEstrategicos.css";
 import "./ReportesEstrategicosDark.css";
@@ -8,29 +8,29 @@ const FALLBACK = [
     slug: "dossier-presidencial",
     titulo: "Dossier Presidencial",
     descripcion:
-      "Resumen ejecutivo nacional, mapas de calor macro y tasa de criminalidad global para toma de decisión de gobierno.",
+      "Resumen ejecutivo nacional, mapas de calor macro y tasa de criminalidad global para toma de decisi?n de gobierno.",
     icono: "account_balance",
-    fuentes: ["ClickHouse", "PostgreSQL"],
+    fuentes: ["ClickHouse", "MinIO"],
     endpoint: "dossier-presidencial/",
     filename_stub: "dossier_presidencial.pdf",
   },
   {
     slug: "auditoria-comandantes",
-    titulo: "Auditoría de Desempeño de Comandantes",
+    titulo: "Auditor?a de Desempe?o de Comandantes",
     descripcion:
-      "Ranking de eficiencia cruzando fuerza logística (Postgres) vs. resolución de delitos (ClickHouse).",
+      "Ranking de eficiencia cruzando fuerza log?stica (MinIO) vs. resoluci?n de delitos (ClickHouse).",
     icono: "military_tech",
-    fuentes: ["PostgreSQL", "ClickHouse"],
+    fuentes: ["MinIO", "ClickHouse"],
     endpoint: "auditoria-comandantes/",
     filename_stub: "auditoria_comandantes.pdf",
   },
   {
     slug: "impacto-presupuestario",
-    titulo: "Análisis de Impacto Presupuestario",
+    titulo: "An?lisis de Impacto Presupuestario",
     descripcion:
-      "Relación costo-beneficio entre inversión logística y reducción porcentual de la criminalidad.",
+      "Relaci?n costo-beneficio entre inversi?n log?stica y reducci?n porcentual de la criminalidad.",
     icono: "payments",
-    fuentes: ["PostgreSQL", "ClickHouse"],
+    fuentes: ["MinIO", "ClickHouse"],
     endpoint: "impacto-presupuestario/",
     filename_stub: "impacto_presupuestario.pdf",
   },
@@ -38,9 +38,9 @@ const FALLBACK = [
     slug: "cuellos-botella",
     titulo: "Informe de Cuellos de Botella (Impunidad)",
     descripcion:
-      "Trazabilidad de tiempos muertos entre la creación del parte y su aprobación final.",
+      "Trazabilidad de tiempos muertos entre la creaci?n del parte y su aprobaci?n final.",
     icono: "hourglass_top",
-    fuentes: ["PostgreSQL"],
+    fuentes: ["MinIO"],
     endpoint: "cuellos-botella/",
     filename_stub: "cuellos_botella_impunidad.pdf",
   },
@@ -48,7 +48,7 @@ const FALLBACK = [
     slug: "desplazamiento-criminal",
     titulo: "Reporte de Desplazamiento Criminal",
     descripcion:
-      "Análisis macro-espacial para detectar migración delictiva entre zonas colindantes.",
+      "An?lisis macro-espacial para detectar migraci?n delictiva entre zonas colindantes.",
     icono: "moving",
     fuentes: ["ClickHouse"],
     endpoint: "desplazamiento-criminal/",
@@ -88,7 +88,7 @@ export default function Page() {
       );
       setFlash({
         tone: "info",
-        text: `PDF «${reporte.titulo}» descargado con contenido ejecutivo (datos demo).`,
+        text: `PDF ?${reporte.titulo}? descargado con contenido ejecutivo (datos demo).`,
       });
     } catch (err) {
       setError(err.message || "No se pudo descargar el reporte");
@@ -103,8 +103,8 @@ export default function Page() {
         <div>
           <h2>Reportes Estratégicos</h2>
           <p className="re-sub">
-            Documentos de alto nivel para Gobierno. Cada botón descarga un PDF
-            (stub ReportLab) listo para conectar ClickHouse / PostgreSQL.
+            Documentos de alto nivel para Gobierno. Cada bot?n descarga un PDF
+            (stub ReportLab) listo para conectar ClickHouse / MinIO.
           </p>
         </div>
       </header>
@@ -141,14 +141,14 @@ export default function Page() {
               onClick={() => onDescargar(r)}
             >
               <span className="material-symbols-outlined">picture_as_pdf</span>
-              {busy === r.slug ? "Generando PDF…" : "Descargar PDF"}
+              {busy === r.slug ? "Generando PDF?" : "Descargar PDF"}
             </button>
           </article>
         ))}
       </div>
 
       <p className="re-foot">
-        Uso exclusivo del Alto Mando · CrimeTrack · Clasificado
+        Uso exclusivo del Alto Mando ? CrimeTrack ? Clasificado
       </p>
     </div>
   );

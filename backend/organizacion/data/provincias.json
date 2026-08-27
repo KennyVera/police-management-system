@@ -1,0 +1,1094 @@
+{
+  "zonas": [
+    {
+      "codigo": "ZN-01",
+      "nombre": "Zona 1 — Esmeraldas, Carchi, Imbabura y Sucumbíos"
+    },
+    {
+      "codigo": "ZN-02",
+      "nombre": "Zona 2 — Napo y Orellana"
+    },
+    {
+      "codigo": "ZN-03",
+      "nombre": "Zona 3 — Centro (Cotopaxi, Tungurahua, Chimborazo, Pastaza)"
+    },
+    {
+      "codigo": "ZN-04",
+      "nombre": "Zona 4 — Manabí y Santo Domingo"
+    },
+    {
+      "codigo": "ZN-05",
+      "nombre": "Zona 5 — Los Ríos, Santa Elena, Bolívar y Galápagos"
+    },
+    {
+      "codigo": "ZN-06",
+      "nombre": "Zona 6 — Austro (Azuay, Cañar, Morona Santiago)"
+    },
+    {
+      "codigo": "ZN-07",
+      "nombre": "Zona 7 — Sur (El Oro, Loja, Zamora Chinchipe)"
+    },
+    {
+      "codigo": "ZN-08",
+      "nombre": "Zona 8 — Guayaquil (Guayas)"
+    },
+    {
+      "codigo": "ZN-09",
+      "nombre": "Zona 9 — Quito (Pichincha)"
+    }
+  ],
+  "provincias": [
+    {
+      "dpa": "01",
+      "nombre": "Azuay",
+      "zona": "ZN-06",
+      "cantones": [
+        {
+          "dpa": "0101",
+          "nombre": "Cuenca"
+        },
+        {
+          "dpa": "0102",
+          "nombre": "Girón"
+        },
+        {
+          "dpa": "0103",
+          "nombre": "Gualaceo"
+        },
+        {
+          "dpa": "0104",
+          "nombre": "Nabón"
+        },
+        {
+          "dpa": "0105",
+          "nombre": "Paute"
+        },
+        {
+          "dpa": "0106",
+          "nombre": "Pucará"
+        },
+        {
+          "dpa": "0107",
+          "nombre": "San Fernando"
+        },
+        {
+          "dpa": "0108",
+          "nombre": "Santa Isabel"
+        },
+        {
+          "dpa": "0109",
+          "nombre": "Sígsig"
+        },
+        {
+          "dpa": "0110",
+          "nombre": "Oña"
+        },
+        {
+          "dpa": "0111",
+          "nombre": "Chordeleg"
+        },
+        {
+          "dpa": "0112",
+          "nombre": "El Pan"
+        },
+        {
+          "dpa": "0113",
+          "nombre": "Sevilla de Oro"
+        },
+        {
+          "dpa": "0114",
+          "nombre": "Guachapala"
+        },
+        {
+          "dpa": "0115",
+          "nombre": "Camilo Ponce Enríquez"
+        }
+      ]
+    },
+    {
+      "dpa": "02",
+      "nombre": "Bolívar",
+      "zona": "ZN-05",
+      "cantones": [
+        {
+          "dpa": "0201",
+          "nombre": "Guaranda"
+        },
+        {
+          "dpa": "0202",
+          "nombre": "Chillanes"
+        },
+        {
+          "dpa": "0203",
+          "nombre": "Chimbo"
+        },
+        {
+          "dpa": "0204",
+          "nombre": "Echeandía"
+        },
+        {
+          "dpa": "0205",
+          "nombre": "San Miguel"
+        },
+        {
+          "dpa": "0206",
+          "nombre": "Caluma"
+        },
+        {
+          "dpa": "0207",
+          "nombre": "Las Naves"
+        }
+      ]
+    },
+    {
+      "dpa": "03",
+      "nombre": "Cañar",
+      "zona": "ZN-06",
+      "cantones": [
+        {
+          "dpa": "0301",
+          "nombre": "Azogues"
+        },
+        {
+          "dpa": "0302",
+          "nombre": "Biblián"
+        },
+        {
+          "dpa": "0303",
+          "nombre": "Cañar"
+        },
+        {
+          "dpa": "0304",
+          "nombre": "La Troncal"
+        },
+        {
+          "dpa": "0305",
+          "nombre": "El Tambo"
+        },
+        {
+          "dpa": "0306",
+          "nombre": "Déleg"
+        },
+        {
+          "dpa": "0307",
+          "nombre": "Suscal"
+        }
+      ]
+    },
+    {
+      "dpa": "04",
+      "nombre": "Carchi",
+      "zona": "ZN-01",
+      "cantones": [
+        {
+          "dpa": "0401",
+          "nombre": "Tulcán"
+        },
+        {
+          "dpa": "0402",
+          "nombre": "Bolívar"
+        },
+        {
+          "dpa": "0403",
+          "nombre": "Espejo"
+        },
+        {
+          "dpa": "0404",
+          "nombre": "Mira"
+        },
+        {
+          "dpa": "0405",
+          "nombre": "Montúfar"
+        },
+        {
+          "dpa": "0406",
+          "nombre": "San Pedro de Huaca"
+        }
+      ]
+    },
+    {
+      "dpa": "05",
+      "nombre": "Cotopaxi",
+      "zona": "ZN-03",
+      "cantones": [
+        {
+          "dpa": "0501",
+          "nombre": "Latacunga"
+        },
+        {
+          "dpa": "0502",
+          "nombre": "La Maná"
+        },
+        {
+          "dpa": "0503",
+          "nombre": "Pangua"
+        },
+        {
+          "dpa": "0504",
+          "nombre": "Pujilí"
+        },
+        {
+          "dpa": "0505",
+          "nombre": "Salcedo"
+        },
+        {
+          "dpa": "0506",
+          "nombre": "Saquisilí"
+        },
+        {
+          "dpa": "0507",
+          "nombre": "Sigchos"
+        }
+      ]
+    },
+    {
+      "dpa": "06",
+      "nombre": "Chimborazo",
+      "zona": "ZN-03",
+      "cantones": [
+        {
+          "dpa": "0601",
+          "nombre": "Riobamba"
+        },
+        {
+          "dpa": "0602",
+          "nombre": "Alausí"
+        },
+        {
+          "dpa": "0603",
+          "nombre": "Colta"
+        },
+        {
+          "dpa": "0604",
+          "nombre": "Chambo"
+        },
+        {
+          "dpa": "0605",
+          "nombre": "Chunchi"
+        },
+        {
+          "dpa": "0606",
+          "nombre": "Guamote"
+        },
+        {
+          "dpa": "0607",
+          "nombre": "Guano"
+        },
+        {
+          "dpa": "0608",
+          "nombre": "Pallatanga"
+        },
+        {
+          "dpa": "0609",
+          "nombre": "Penipe"
+        },
+        {
+          "dpa": "0610",
+          "nombre": "Cumandá"
+        }
+      ]
+    },
+    {
+      "dpa": "07",
+      "nombre": "El Oro",
+      "zona": "ZN-07",
+      "cantones": [
+        {
+          "dpa": "0701",
+          "nombre": "Machala"
+        },
+        {
+          "dpa": "0702",
+          "nombre": "Arenillas"
+        },
+        {
+          "dpa": "0703",
+          "nombre": "Atahualpa"
+        },
+        {
+          "dpa": "0704",
+          "nombre": "Balsas"
+        },
+        {
+          "dpa": "0705",
+          "nombre": "Chilla"
+        },
+        {
+          "dpa": "0706",
+          "nombre": "El Guabo"
+        },
+        {
+          "dpa": "0707",
+          "nombre": "Huaquillas"
+        },
+        {
+          "dpa": "0708",
+          "nombre": "Marcabelí"
+        },
+        {
+          "dpa": "0709",
+          "nombre": "Pasaje"
+        },
+        {
+          "dpa": "0710",
+          "nombre": "Piñas"
+        },
+        {
+          "dpa": "0711",
+          "nombre": "Portovelo"
+        },
+        {
+          "dpa": "0712",
+          "nombre": "Santa Rosa"
+        },
+        {
+          "dpa": "0713",
+          "nombre": "Zaruma"
+        },
+        {
+          "dpa": "0714",
+          "nombre": "Las Lajas"
+        }
+      ]
+    },
+    {
+      "dpa": "08",
+      "nombre": "Esmeraldas",
+      "zona": "ZN-01",
+      "cantones": [
+        {
+          "dpa": "0801",
+          "nombre": "Esmeraldas"
+        },
+        {
+          "dpa": "0802",
+          "nombre": "Eloy Alfaro"
+        },
+        {
+          "dpa": "0803",
+          "nombre": "Muisne"
+        },
+        {
+          "dpa": "0804",
+          "nombre": "Quinindé"
+        },
+        {
+          "dpa": "0805",
+          "nombre": "San Lorenzo"
+        },
+        {
+          "dpa": "0806",
+          "nombre": "Atacames"
+        },
+        {
+          "dpa": "0807",
+          "nombre": "Rioverde"
+        }
+      ]
+    },
+    {
+      "dpa": "09",
+      "nombre": "Guayas",
+      "zona": "ZN-08",
+      "cantones": [
+        {
+          "dpa": "0901",
+          "nombre": "Guayaquil"
+        },
+        {
+          "dpa": "0902",
+          "nombre": "Alfredo Baquerizo Moreno"
+        },
+        {
+          "dpa": "0903",
+          "nombre": "Balao"
+        },
+        {
+          "dpa": "0904",
+          "nombre": "Balzar"
+        },
+        {
+          "dpa": "0905",
+          "nombre": "Colimes"
+        },
+        {
+          "dpa": "0906",
+          "nombre": "Daule"
+        },
+        {
+          "dpa": "0907",
+          "nombre": "Durán"
+        },
+        {
+          "dpa": "0908",
+          "nombre": "El Empalme"
+        },
+        {
+          "dpa": "0909",
+          "nombre": "El Triunfo"
+        },
+        {
+          "dpa": "0910",
+          "nombre": "Milagro"
+        },
+        {
+          "dpa": "0911",
+          "nombre": "Naranjal"
+        },
+        {
+          "dpa": "0912",
+          "nombre": "Naranjito"
+        },
+        {
+          "dpa": "0913",
+          "nombre": "Palestina"
+        },
+        {
+          "dpa": "0914",
+          "nombre": "Pedro Carbo"
+        },
+        {
+          "dpa": "0916",
+          "nombre": "Samborondón"
+        },
+        {
+          "dpa": "0918",
+          "nombre": "Santa Lucía"
+        },
+        {
+          "dpa": "0919",
+          "nombre": "Salitre"
+        },
+        {
+          "dpa": "0920",
+          "nombre": "San Jacinto de Yaguachi"
+        },
+        {
+          "dpa": "0921",
+          "nombre": "Playas"
+        },
+        {
+          "dpa": "0922",
+          "nombre": "Simón Bolívar"
+        },
+        {
+          "dpa": "0923",
+          "nombre": "Coronel Marcelino Maridueña"
+        },
+        {
+          "dpa": "0924",
+          "nombre": "Lomas de Sargentillo"
+        },
+        {
+          "dpa": "0925",
+          "nombre": "Nobol"
+        },
+        {
+          "dpa": "0927",
+          "nombre": "General Antonio Elizalde"
+        },
+        {
+          "dpa": "0928",
+          "nombre": "Isidro Ayora"
+        }
+      ]
+    },
+    {
+      "dpa": "10",
+      "nombre": "Imbabura",
+      "zona": "ZN-01",
+      "cantones": [
+        {
+          "dpa": "1001",
+          "nombre": "Ibarra"
+        },
+        {
+          "dpa": "1002",
+          "nombre": "Antonio Ante"
+        },
+        {
+          "dpa": "1003",
+          "nombre": "Cotacachi"
+        },
+        {
+          "dpa": "1004",
+          "nombre": "Otavalo"
+        },
+        {
+          "dpa": "1005",
+          "nombre": "Pimampiro"
+        },
+        {
+          "dpa": "1006",
+          "nombre": "San Miguel de Urcuquí"
+        }
+      ]
+    },
+    {
+      "dpa": "11",
+      "nombre": "Loja",
+      "zona": "ZN-07",
+      "cantones": [
+        {
+          "dpa": "1101",
+          "nombre": "Loja"
+        },
+        {
+          "dpa": "1102",
+          "nombre": "Calvas"
+        },
+        {
+          "dpa": "1103",
+          "nombre": "Catamayo"
+        },
+        {
+          "dpa": "1104",
+          "nombre": "Celica"
+        },
+        {
+          "dpa": "1105",
+          "nombre": "Chaguarpamba"
+        },
+        {
+          "dpa": "1106",
+          "nombre": "Espíndola"
+        },
+        {
+          "dpa": "1107",
+          "nombre": "Gonzanamá"
+        },
+        {
+          "dpa": "1108",
+          "nombre": "Macará"
+        },
+        {
+          "dpa": "1109",
+          "nombre": "Paltas"
+        },
+        {
+          "dpa": "1110",
+          "nombre": "Puyango"
+        },
+        {
+          "dpa": "1111",
+          "nombre": "Saraguro"
+        },
+        {
+          "dpa": "1112",
+          "nombre": "Sozoranga"
+        },
+        {
+          "dpa": "1113",
+          "nombre": "Zapotillo"
+        },
+        {
+          "dpa": "1114",
+          "nombre": "Pindal"
+        },
+        {
+          "dpa": "1115",
+          "nombre": "Quilanga"
+        },
+        {
+          "dpa": "1116",
+          "nombre": "Olmedo"
+        }
+      ]
+    },
+    {
+      "dpa": "12",
+      "nombre": "Los Ríos",
+      "zona": "ZN-05",
+      "cantones": [
+        {
+          "dpa": "1201",
+          "nombre": "Babahoyo"
+        },
+        {
+          "dpa": "1202",
+          "nombre": "Baba"
+        },
+        {
+          "dpa": "1203",
+          "nombre": "Montalvo"
+        },
+        {
+          "dpa": "1204",
+          "nombre": "Puebloviejo"
+        },
+        {
+          "dpa": "1205",
+          "nombre": "Quevedo"
+        },
+        {
+          "dpa": "1206",
+          "nombre": "Urdaneta"
+        },
+        {
+          "dpa": "1207",
+          "nombre": "Ventanas"
+        },
+        {
+          "dpa": "1208",
+          "nombre": "Vínces"
+        },
+        {
+          "dpa": "1209",
+          "nombre": "Palenque"
+        },
+        {
+          "dpa": "1210",
+          "nombre": "Buena Fe"
+        },
+        {
+          "dpa": "1211",
+          "nombre": "Valencia"
+        },
+        {
+          "dpa": "1212",
+          "nombre": "Mocache"
+        },
+        {
+          "dpa": "1213",
+          "nombre": "Quinsaloma"
+        }
+      ]
+    },
+    {
+      "dpa": "13",
+      "nombre": "Manabí",
+      "zona": "ZN-04",
+      "cantones": [
+        {
+          "dpa": "1301",
+          "nombre": "Portoviejo"
+        },
+        {
+          "dpa": "1302",
+          "nombre": "Bolívar"
+        },
+        {
+          "dpa": "1303",
+          "nombre": "Chone"
+        },
+        {
+          "dpa": "1304",
+          "nombre": "El Carmen"
+        },
+        {
+          "dpa": "1305",
+          "nombre": "Flavio Alfaro"
+        },
+        {
+          "dpa": "1306",
+          "nombre": "Jipijapa"
+        },
+        {
+          "dpa": "1307",
+          "nombre": "Junín"
+        },
+        {
+          "dpa": "1308",
+          "nombre": "Manta"
+        },
+        {
+          "dpa": "1309",
+          "nombre": "Montecristi"
+        },
+        {
+          "dpa": "1310",
+          "nombre": "Paján"
+        },
+        {
+          "dpa": "1311",
+          "nombre": "Pichincha"
+        },
+        {
+          "dpa": "1312",
+          "nombre": "Rocafuerte"
+        },
+        {
+          "dpa": "1313",
+          "nombre": "Santa Ana"
+        },
+        {
+          "dpa": "1314",
+          "nombre": "Sucre"
+        },
+        {
+          "dpa": "1315",
+          "nombre": "Tosagua"
+        },
+        {
+          "dpa": "1316",
+          "nombre": "24 de Mayo"
+        },
+        {
+          "dpa": "1317",
+          "nombre": "Pedernales"
+        },
+        {
+          "dpa": "1318",
+          "nombre": "Olmedo"
+        },
+        {
+          "dpa": "1319",
+          "nombre": "Puerto López"
+        },
+        {
+          "dpa": "1320",
+          "nombre": "Jama"
+        },
+        {
+          "dpa": "1321",
+          "nombre": "Jaramijó"
+        },
+        {
+          "dpa": "1322",
+          "nombre": "San Vicente"
+        }
+      ]
+    },
+    {
+      "dpa": "14",
+      "nombre": "Morona Santiago",
+      "zona": "ZN-06",
+      "cantones": [
+        {
+          "dpa": "1401",
+          "nombre": "Morona"
+        },
+        {
+          "dpa": "1402",
+          "nombre": "Gualaquiza"
+        },
+        {
+          "dpa": "1403",
+          "nombre": "Limón Indanza"
+        },
+        {
+          "dpa": "1404",
+          "nombre": "Palora"
+        },
+        {
+          "dpa": "1405",
+          "nombre": "Santiago"
+        },
+        {
+          "dpa": "1406",
+          "nombre": "Sucúa"
+        },
+        {
+          "dpa": "1407",
+          "nombre": "Huamboya"
+        },
+        {
+          "dpa": "1408",
+          "nombre": "San Juan Bosco"
+        },
+        {
+          "dpa": "1409",
+          "nombre": "Taisha"
+        },
+        {
+          "dpa": "1410",
+          "nombre": "Logroño"
+        },
+        {
+          "dpa": "1411",
+          "nombre": "Pablo Sexto"
+        },
+        {
+          "dpa": "1412",
+          "nombre": "Tiwintza"
+        }
+      ]
+    },
+    {
+      "dpa": "15",
+      "nombre": "Napo",
+      "zona": "ZN-02",
+      "cantones": [
+        {
+          "dpa": "1501",
+          "nombre": "Tena"
+        },
+        {
+          "dpa": "1503",
+          "nombre": "Archidona"
+        },
+        {
+          "dpa": "1504",
+          "nombre": "El Chaco"
+        },
+        {
+          "dpa": "1507",
+          "nombre": "Quijos"
+        },
+        {
+          "dpa": "1509",
+          "nombre": "Carlos Julio Arosemena Tola"
+        }
+      ]
+    },
+    {
+      "dpa": "16",
+      "nombre": "Pastaza",
+      "zona": "ZN-03",
+      "cantones": [
+        {
+          "dpa": "1601",
+          "nombre": "Pastaza"
+        },
+        {
+          "dpa": "1602",
+          "nombre": "Mera"
+        },
+        {
+          "dpa": "1603",
+          "nombre": "Santa Clara"
+        },
+        {
+          "dpa": "1604",
+          "nombre": "Arajuno"
+        }
+      ]
+    },
+    {
+      "dpa": "17",
+      "nombre": "Pichincha",
+      "zona": "ZN-09",
+      "cantones": [
+        {
+          "dpa": "1701",
+          "nombre": "Quito"
+        },
+        {
+          "dpa": "1702",
+          "nombre": "Cayambe"
+        },
+        {
+          "dpa": "1703",
+          "nombre": "Mejía"
+        },
+        {
+          "dpa": "1704",
+          "nombre": "Pedro Moncayo"
+        },
+        {
+          "dpa": "1705",
+          "nombre": "Rumiñahui"
+        },
+        {
+          "dpa": "1707",
+          "nombre": "San Miguel de los Bancos"
+        },
+        {
+          "dpa": "1708",
+          "nombre": "Pedro Vicente Maldonado"
+        },
+        {
+          "dpa": "1709",
+          "nombre": "Puerto Quito"
+        }
+      ]
+    },
+    {
+      "dpa": "18",
+      "nombre": "Tungurahua",
+      "zona": "ZN-03",
+      "cantones": [
+        {
+          "dpa": "1801",
+          "nombre": "Ambato"
+        },
+        {
+          "dpa": "1802",
+          "nombre": "Baños de Agua Santa"
+        },
+        {
+          "dpa": "1803",
+          "nombre": "Cevallos"
+        },
+        {
+          "dpa": "1804",
+          "nombre": "Mocha"
+        },
+        {
+          "dpa": "1805",
+          "nombre": "Patate"
+        },
+        {
+          "dpa": "1806",
+          "nombre": "Quero"
+        },
+        {
+          "dpa": "1807",
+          "nombre": "San Pedro de Pelileo"
+        },
+        {
+          "dpa": "1808",
+          "nombre": "Santiago de Píllaro"
+        },
+        {
+          "dpa": "1809",
+          "nombre": "Tisaleo"
+        }
+      ]
+    },
+    {
+      "dpa": "19",
+      "nombre": "Zamora Chinchipe",
+      "zona": "ZN-07",
+      "cantones": [
+        {
+          "dpa": "1901",
+          "nombre": "Zamora"
+        },
+        {
+          "dpa": "1902",
+          "nombre": "Chinchipe"
+        },
+        {
+          "dpa": "1903",
+          "nombre": "Nangaritza"
+        },
+        {
+          "dpa": "1904",
+          "nombre": "Yacuambi"
+        },
+        {
+          "dpa": "1905",
+          "nombre": "Yantzaza"
+        },
+        {
+          "dpa": "1906",
+          "nombre": "El Pangui"
+        },
+        {
+          "dpa": "1907",
+          "nombre": "Centinela del Cóndor"
+        },
+        {
+          "dpa": "1908",
+          "nombre": "Palanda"
+        },
+        {
+          "dpa": "1909",
+          "nombre": "Paquisha"
+        }
+      ]
+    },
+    {
+      "dpa": "20",
+      "nombre": "Galápagos",
+      "zona": "ZN-05",
+      "cantones": [
+        {
+          "dpa": "2001",
+          "nombre": "San Cristóbal"
+        },
+        {
+          "dpa": "2002",
+          "nombre": "Isabela"
+        },
+        {
+          "dpa": "2003",
+          "nombre": "Santa Cruz"
+        }
+      ]
+    },
+    {
+      "dpa": "21",
+      "nombre": "Sucumbíos",
+      "zona": "ZN-01",
+      "cantones": [
+        {
+          "dpa": "2101",
+          "nombre": "Lago Agrio"
+        },
+        {
+          "dpa": "2102",
+          "nombre": "Gonzalo Pizarro"
+        },
+        {
+          "dpa": "2103",
+          "nombre": "Putumayo"
+        },
+        {
+          "dpa": "2104",
+          "nombre": "Shushufindi"
+        },
+        {
+          "dpa": "2105",
+          "nombre": "Sucumbíos"
+        },
+        {
+          "dpa": "2106",
+          "nombre": "Cascales"
+        },
+        {
+          "dpa": "2107",
+          "nombre": "Cuyabeno"
+        }
+      ]
+    },
+    {
+      "dpa": "22",
+      "nombre": "Orellana",
+      "zona": "ZN-02",
+      "cantones": [
+        {
+          "dpa": "2201",
+          "nombre": "Orellana"
+        },
+        {
+          "dpa": "2202",
+          "nombre": "Aguarico"
+        },
+        {
+          "dpa": "2203",
+          "nombre": "La Joya de los Sachas"
+        },
+        {
+          "dpa": "2204",
+          "nombre": "Loreto"
+        }
+      ]
+    },
+    {
+      "dpa": "23",
+      "nombre": "Santo Domingo de los Tsáchilas",
+      "zona": "ZN-04",
+      "cantones": [
+        {
+          "dpa": "2301",
+          "nombre": "Santo Domingo"
+        },
+        {
+          "dpa": "2302",
+          "nombre": "La Concordia"
+        }
+      ]
+    },
+    {
+      "dpa": "24",
+      "nombre": "Santa Elena",
+      "zona": "ZN-05",
+      "cantones": [
+        {
+          "dpa": "2401",
+          "nombre": "Santa Elena"
+        },
+        {
+          "dpa": "2402",
+          "nombre": "La Libertad"
+        },
+        {
+          "dpa": "2403",
+          "nombre": "Salinas"
+        }
+      ]
+    }
+  ]
+}

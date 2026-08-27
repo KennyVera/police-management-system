@@ -53,6 +53,17 @@ export default function AuxiliosPage() {
     load();
   }, []);
 
+  useEffect(() => {
+    const centro = meta?.zona_mapa?.centro;
+    if (centro?.lat != null && centro?.lng != null) {
+      setForm((prev) => ({
+        ...prev,
+        latitud: String(centro.lat),
+        longitud: String(centro.lng),
+      }));
+    }
+  }, [meta?.zona_mapa]);
+
   async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
@@ -115,14 +126,9 @@ export default function AuxiliosPage() {
         <AuxilioMapaSelector
           latitud={form.latitud}
           longitud={form.longitud}
-          onLocationSelect={({ latitud, longitud, direccion, referencia }) => {
-            setForm((prev) => ({
-              ...prev,
-              latitud,
-              longitud,
-              direccion: direccion || prev.direccion,
-              referencia: referencia || "",
-            }));
+          zonaMapa={meta.zona_mapa}
+          onLocationSelect={(payload) => {
+            setForm((prev) => ({ ...prev, ...payload }));
           }}
         />
       </section>

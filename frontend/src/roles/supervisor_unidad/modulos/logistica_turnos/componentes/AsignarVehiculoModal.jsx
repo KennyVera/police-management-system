@@ -24,10 +24,26 @@ export default function AsignarVehiculoModal({
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const vehiculosDisponibles = useMemo(() => {
+    const ocupados = new Set(
+      escuadras
+        .filter((e) => e.vehiculo && String(e.id) !== String(escuadraId))
+        .map((e) => e.vehiculo)
+    );
+    return (vehiculos || []).filter((v) => !ocupados.has(v.id));
+  }, [vehiculos, escuadras, escuadraId]);
+
   function onChangeEscuadra(id) {
     setEscuadraId(id);
     const next = opciones.find((e) => String(e.id) === String(id));
-    setVehiculo(next?.vehiculo ? String(next.vehiculo) : "");
+    const ocupados = new Set(
+      escuadras
+        .filter((e) => e.vehiculo && String(e.id) !== String(id))
+        .map((e) => e.vehiculo)
+    );
+    const disp = (vehiculos || []).filter((v) => !ocupados.has(v.id));
+    const nextVeh = next?.vehiculo ? String(next.vehiculo) : "";
+    setVehiculo(disp.some((v) => String(v.id) === nextVeh) ? nextVeh : "");
   }
 
   async function submit(e) {
@@ -37,7 +53,7 @@ export default function AsignarVehiculoModal({
       return;
     }
     if (!vehiculo) {
-      setError("Selecciona un vehículo.");
+      setError("Selecciona un vehículo disponible.");
       return;
     }
     setSaving(true);
@@ -88,12 +104,15 @@ export default function AsignarVehiculoModal({
               onChange={(e) => setVehiculo(e.target.value)}
             >
               <option value="">Seleccione...</option>
-              {(vehiculos || []).map((v) => (
+              {vehiculosDisponibles.map((v) => (
                 <option key={v.id} value={v.id}>
                   {v.placa} · {v.tipo_label}
                 </option>
               ))}
             </select>
+            {!vehiculosDisponibles.length && (
+              <small className="mod-muted">No hay vehículos disponibles para esta fecha.</small>
+            )}
           </label>
           <label>
             Inicio turno
@@ -112,7 +131,11 @@ export default function AsignarVehiculoModal({
           <button type="button" className="btn-ghost" onClick={onClose}>
             Cancelar
           </button>
-          <button type="submit" className="btn-accent" disabled={saving || !opciones.length}>
+          <button
+            type="submit"
+            className="btn-accent"
+            disabled={saving || !opciones.length || !vehiculosDisponibles.length}
+          >
             {saving ? "Guardando..." : "Asignar vehículo"}
           </button>
         </div>

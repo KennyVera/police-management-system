@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from django.contrib.auth.models import User
-from django.db.models import Q, QuerySet
+from django.db.models import QuerySet
 
 from accounts.models import AccountStatus, SystemRole
 from operativo.models import ParteAprehension
@@ -30,28 +30,22 @@ def supervisor_zone_scope(user) -> tuple[list[int], list[str]]:
 
 
 def agentes_en_zona_qs(user) -> QuerySet[User]:
-    """Agentes operativos activos de la misma zona del supervisor."""
-    qs = (
+    """Agentes operativos activos con jurisdicción en la zona del supervisor."""
+    tree, _labels = supervisor_zone_scope(user)
+    if not tree:
+        return User.objects.none()
+    return (
         User.objects.filter(
             profile__role=SystemRole.AGENTE_OPERATIVO,
             profile__estado=AccountStatus.ACTIVO,
+            profile__jurisdiccion_id__isnull=False,
+            profile__jurisdiccion_id__in=tree,
             is_active=True,
         )
         .select_related("profile", "profile__jurisdiccion")
         .order_by("first_name", "last_name")
+        .distinct()
     )
-    tree, labels = supervisor_zone_scope(user)
-    if not tree and not labels:
-        return qs.none()
-    if tree:
-        return qs.filter(
-            Q(profile__jurisdiccion_id__in=tree)
-            | Q(profile__zona__in=labels)
-            | Q(profile__jurisdiccion__nombre__in=labels)
-        ).distinct()
-    return qs.filter(
-        Q(profile__zona__in=labels) | Q(profile__jurisdiccion__nombre__in=labels)
-    ).distinct()
 
 
 def agente_ids_en_zona(user) -> set[int]:

@@ -1,5 +1,6 @@
 import "./RankingDistritos.css";
 import MaterialIcon from "../../../../../shared/components/MaterialIcon";
+import { glassCard } from "../../../../../shared/ui/saas";
 
 function Sparkline({ values = [] }) {
   const w = 88;
@@ -240,8 +241,8 @@ export default function RankingDistritos({ ranking, loading }) {
   }
 
   return (
-    <div className="dz-ranking">
-      <article className="dz-card">
+    <div className="dz-ranking grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <article className={`dz-card ${glassCard}`}>
         <div className="dz-card-head">
           <h3>Matriz de Eficiencia (Delitos × Arrestos)</h3>
           <div className="dz-cuad-legend">
@@ -253,14 +254,17 @@ export default function RankingDistritos({ ranking, loading }) {
         <ScatterPlot ranking={ranking} />
       </article>
 
-      <article className="dz-card">
+      <article className={`dz-card ${glassCard}`}>
         <div className="dz-card-head">
           <h3>Leaderboard · Top distritos</h3>
           <span className="dz-chip">Sparklines 7 días</span>
         </div>
         <div className="dz-board">
           {(ranking || []).map((r, idx) => (
-            <div key={r.distrito} className={`dz-board-row tone-${r.cuadrante || "neutro"}`}>
+            <div
+              key={r.distrito}
+              className={`dz-board-row tone-${r.cuadrante || "neutro"} transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700`}
+            >
               <span className="dz-pos">#{idx + 1}</span>
               <div className="dz-board-main">
                 <strong>{r.distrito}</strong>

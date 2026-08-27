@@ -83,6 +83,56 @@
   border: 0;
 }
 
+.auxilio-map-tip {
+  background: #1a1a1a;
+  color: #f3f4f6;
+  border: 0;
+  border-radius: 8px;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.78rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.auxilio-map-tip::before {
+  border-top-color: #1a1a1a;
+}
+
+.auxilio-prov-label-marker {
+  background: transparent;
+  border: 0;
+  pointer-events: none;
+}
+
+.auxilio-prov-label-marker span {
+  display: block;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: #374151;
+  text-shadow:
+    0 0 4px #fff,
+    0 0 6px #fff,
+    0 1px 2px rgba(255, 255, 255, 0.9);
+}
+
+.auxilio-prov-label-marker.is-dark span {
+  color: #f3f4f6;
+  text-shadow:
+    0 0 4px #0b0d12,
+    0 0 8px #0b0d12,
+    0 1px 3px rgba(0, 0, 0, 0.95);
+}
+
+html[data-theme="dark"] .auxilio-mapa-canvas .leaflet-container {
+  background: #0b0d12;
+}
+
+html[data-theme="dark"] .auxilio-mapa-canvas .leaflet-tile-pane {
+  opacity: 0.35;
+}
+
 @media (max-width: 980px) {
   .auxilio-registro {
     grid-template-columns: 1fr;

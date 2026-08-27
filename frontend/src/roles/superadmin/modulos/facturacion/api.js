@@ -58,7 +58,8 @@ export const facturacionApi = {
     apiFetch(`${B}/facturas/generar/`, { method: "POST", body: JSON.stringify(body) }),
   anularFactura: (id, body) =>
     apiFetch(`${B}/facturas/${id}/anular/`, { method: "POST", body: JSON.stringify(body) }),
-  exportarFactura: (id) => apiFetch(`${B}/facturas/${id}/exportar/`),
+  exportarFactura: (id, filename = "factura.pdf") =>
+    downloadPdf(`${B}/facturas/${id}/exportar/`, filename),
   facturaHistorial: (id) => apiFetch(`${B}/facturas/${id}/historial/`),
 
   vencProximos: () => apiFetch(`${B}/vencimientos/proximos/`),

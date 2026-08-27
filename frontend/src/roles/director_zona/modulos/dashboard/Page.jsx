@@ -1,6 +1,7 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
 import { directorApi } from "../../api";
+import { btnGhost, btnPrimary, glassCard, kpiCard } from "../../../../shared/ui/saas";
 import "../../../../shared/styles/ModuloPage.css";
 import "./Dashboard.css";
 import DelitosLocales from "./DelitosLocales/Page";
@@ -161,7 +162,7 @@ export default function DirectorDashboard() {
         <div className="dz-head-actions">
           <button
             type="button"
-            className="dz-btn-export"
+            className={`${btnPrimary} dz-btn-export`}
             onClick={exportarPdf}
             disabled={
               loading ||
@@ -192,7 +193,7 @@ export default function DirectorDashboard() {
           </button>
           <button
             type="button"
-            className="dz-refresh"
+            className={`${btnGhost} dz-refresh`}
             onClick={() => load()}
             disabled={loading || exporting}
           >
@@ -205,7 +206,10 @@ export default function DirectorDashboard() {
 
       {exportError && <p className="dz-export-error">{exportError}</p>}
 
-      <form className="dz-filters" onSubmit={aplicar}>
+      <form
+        className={`${glassCard} dz-filters grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-6`}
+        onSubmit={aplicar}
+      >
         <label>
           Desde
           <input
@@ -250,11 +254,11 @@ export default function DirectorDashboard() {
             ))}
           </select>
         </label>
-        <button type="submit" className="dz-btn-primary">
+        <button type="submit" className={`${btnPrimary} dz-btn-primary sm:col-span-1`}>
           <MaterialIcon name="filter_alt" />
           Aplicar filtros
         </button>
-        <button type="button" className="dz-btn-ghost" onClick={limpiar}>
+        <button type="button" className={`${btnGhost} dz-btn-ghost`} onClick={limpiar}>
           Limpiar filtros
         </button>
       </form>
@@ -269,7 +273,9 @@ export default function DirectorDashboard() {
           <button
             key={t.id}
             type="button"
-            className={tab === t.id ? "active" : ""}
+            className={`${
+              tab === t.id ? "active" : ""
+            } transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700`}
             onClick={() => setTab(t.id)}
           >
             <MaterialIcon name={t.icon} />
@@ -281,8 +287,8 @@ export default function DirectorDashboard() {
       {error && <p className="dz-error">{error}</p>}
 
       {k && (
-        <section className="dz-kpi-row">
-          <article className="dz-kpi tone-purple">
+        <section className="dz-kpi-row grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+          <article className={`dz-kpi tone-purple ${kpiCard}`}>
             <div className="dz-kpi-icon">
               <MaterialIcon name="bar_chart" />
             </div>
@@ -296,7 +302,7 @@ export default function DirectorDashboard() {
             </div>
           </article>
 
-          <article className="dz-kpi tone-green">
+          <article className={`dz-kpi tone-green ${kpiCard}`}>
             <div className="dz-kpi-icon">
               <MaterialIcon name="handshake" />
             </div>
@@ -310,7 +316,7 @@ export default function DirectorDashboard() {
             </div>
           </article>
 
-          <article className="dz-kpi tone-orange">
+          <article className={`dz-kpi tone-orange ${kpiCard}`}>
             <div className="dz-kpi-icon">
               <MaterialIcon name="crisis_alert" />
             </div>
@@ -324,7 +330,7 @@ export default function DirectorDashboard() {
             </div>
           </article>
 
-          <article className="dz-kpi tone-red">
+          <article className={`dz-kpi tone-red ${kpiCard}`}>
             <div className="dz-kpi-icon">
               <MaterialIcon name="notifications_active" />
             </div>
@@ -345,7 +351,7 @@ export default function DirectorDashboard() {
             </div>
           </article>
 
-          <article className="dz-kpi tone-blue">
+          <article className={`dz-kpi tone-blue ${kpiCard}`}>
             <div className="dz-kpi-icon">
               <MaterialIcon name="person_pin_circle" />
             </div>

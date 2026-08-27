@@ -3,10 +3,8 @@ from django.db import models
 
 class JurisdictionType(models.TextChoices):
     ZONA = "ZONA", "Zona"
-    SUBZONA = "SUBZONA", "Subzona"
-    DISTRITO = "DISTRITO", "Distrito"
-    CIRCUITO = "CIRCUITO", "Circuito"
-    SUBCIRCUITO = "SUBCIRCUITO", "Subcircuito"
+    SUBZONA = "SUBZONA", "Subzona (provincia)"
+    DISTRITO = "DISTRITO", "Distrito (cantón)"
 
 
 class Jurisdiction(models.Model):

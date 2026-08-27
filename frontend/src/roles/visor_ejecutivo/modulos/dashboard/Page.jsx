@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTheme } from "../../../../shared/theme/ThemeContext";
 import {
   FILTER_DEFAULTS,

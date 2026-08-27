@@ -473,6 +473,7 @@ class Notificacion(models.Model):
         PARTE_APROBADO = "PARTE_APROBADO", "Parte aprobado"
         EXPEDIENTE_ASIGNADO = "EXPEDIENTE_ASIGNADO", "Expediente asignado"
         DISPOSICION_ZONA = "DISPOSICION_ZONA", "Disposición de zona"
+        ASIGNACION_ZONA = "ASIGNACION_ZONA", "Asignación de zona"
         ALERTA = "ALERTA", "Alerta"
         SISTEMA = "SISTEMA", "Sistema"
         PARTE_FISCAL = "PARTE_FISCAL", "Parte remitido a Fiscalía"

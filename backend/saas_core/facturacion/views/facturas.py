@@ -1,7 +1,8 @@
-"""Facturas: listar, generar, anular, exportar, historial."""
+"""Facturas: listar, generar, anular, exportar PDF, historial."""
 
 from __future__ import annotations
 
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
@@ -14,6 +15,7 @@ from saas_core.facturacion.serializers import (
     FacturaSerializer,
 )
 from saas_core.facturacion.services.facturas_svc import generate_factura
+from saas_core.facturacion.services.pdf_svc import build_factura_pdf
 from saas_core.facturacion.utils import log_evento
 from saas_core.models import EventoFinanciero, Factura, Institucion
 from saas_core.permissions import IsSuperAdminGlobal
@@ -82,17 +84,21 @@ def anular_factura(request, pk):
 @api_view(["GET"])
 @permission_classes(PERMS)
 def exportar_factura(request, pk):
+    """Descarga la factura en PDF (ReportLab)."""
     factura = get_object_or_404(
         Factura.objects.select_related("institucion", "plan"), pk=pk
     )
-    data = FacturaSerializer(factura).data
-    data["export"] = {
-        "formato": "json",
-        "generado_en": timezone.now().isoformat(),
-        "institucion_ruc": factura.institucion.ruc,
-        "plan_codigo": factura.plan.codigo if factura.plan_id else None,
-    }
-    return Response(data)
+    emisor = (
+        f"{request.user.first_name} {request.user.last_name}".strip()
+        or request.user.get_username()
+    )
+    pdf = build_factura_pdf(factura, emisor=emisor)
+    filename = f"{factura.numero or f'factura_{pk}'}.pdf".replace(" ", "_")
+    resp = HttpResponse(pdf, content_type="application/pdf")
+    resp["Content-Disposition"] = f'attachment; filename="{filename}"'
+    resp["Content-Length"] = str(len(pdf))
+    resp["Cache-Control"] = "no-store"
+    return resp
 
 
 @api_view(["GET"])

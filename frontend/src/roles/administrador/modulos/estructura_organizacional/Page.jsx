@@ -1,50 +1,76 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { estructuraApi } from "../../api";
 import JurisdiccionesPanel from "./componentes/JurisdiccionesPanel";
 import AsignacionPlazasPanel from "./componentes/AsignacionPlazasPanel";
+import {
+  clearJurisdiccionesMapCache,
+  readJurisdiccionesMapCache,
+  refreshJurisdiccionesMapa,
+  writeJurisdiccionesMapCache,
+} from "../../../../shared/cache/jurisdiccionesMapCache";
+import { fetchProvinciasGeoJSON } from "../../../../shared/geo/ecuadorProvincias";
 import "../identidad_accesos/IdentidadAccesos.css";
 import "../../../../shared/components/PaginationBar.css";
 
 const META = {
   jurisdicciones: {
     title: "Jurisdicciones",
-    desc: "Gestionar zonas y ver el personal que trabaja en cada una.",
+    desc: "Mapa de mando territorial: haga clic en una provincia para administrar el personal de esa subzona.",
   },
   plazas: {
     title: "Asignación a zonas",
-    desc: "Selecciona una zona, pasa usuarios sin asignar y confirma. Supervisores, detectives y agentes quedan bajo el Jefe de esa zona.",
+    desc: "Centro de transferencias: mueva supervisores, detectives y agentes hacia el distrito o subzona pre-cargado.",
   },
 };
 
 export default function EstructuraOrganizacionalPage({ section = "jurisdicciones" }) {
   const meta = META[section] || META.jurisdicciones;
-  const [tipos, setTipos] = useState([]);
   const [zonas, setZonas] = useState([]);
-  const [jurisdicciones, setJurisdicciones] = useState([]);
+  const [jurisdicciones, setJurisdicciones] = useState(() =>
+    section === "jurisdicciones" ? readJurisdiccionesMapCache() || [] : []
+  );
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(section === "plazas");
+  const [refreshing, setRefreshing] = useState(false);
 
-  async function load() {
-    setLoading(true);
+  const load = useCallback(async ({ force = false } = {}) => {
     setError("");
+
+    if (section === "plazas") {
+      setLoading(true);
+      try {
+        const cat = await estructuraApi.catalogos();
+        setZonas(cat.zonas || []);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    const cached = !force ? readJurisdiccionesMapCache() : null;
+    if (cached?.length) setJurisdicciones(cached);
+    setRefreshing(true);
+
     try {
-      const [cat, jurs] = await Promise.all([
-        estructuraApi.catalogos(),
-        estructuraApi.listJurisdicciones(),
-      ]);
-      setTipos(cat.tipos_jurisdiccion || []);
-      setZonas(cat.zonas || []);
+      if (force) clearJurisdiccionesMapCache();
+      const jurs = await refreshJurisdiccionesMapa(() => estructuraApi.listJurisdiccionesMapa());
       setJurisdicciones(jurs);
+      writeJurisdiccionesMapCache(jurs);
     } catch (err) {
       setError(err.message);
     } finally {
-      setLoading(false);
+      setRefreshing(false);
     }
-  }
+  }, [section]);
 
   useEffect(() => {
+    if (section === "jurisdicciones") {
+      fetchProvinciasGeoJSON().catch(() => {});
+    }
     load();
-  }, [section]);
+  }, [load, section]);
 
   return (
     <div className="mod-page">
@@ -57,22 +83,22 @@ export default function EstructuraOrganizacionalPage({ section = "jurisdicciones
       </header>
 
       {error && <p className="mod-error">{error}</p>}
-      {loading ? (
-        <p className="mod-muted">Cargando...</p>
-      ) : (
-        <>
-          {section === "jurisdicciones" && (
-            <JurisdiccionesPanel
-              tipos={tipos}
-              items={jurisdicciones}
-              onChanged={load}
-            />
-          )}
-          {section === "plazas" && (
-            <AsignacionPlazasPanel zonas={zonas} onChanged={load} />
-          )}
-        </>
+      {section === "jurisdicciones" && (
+        <JurisdiccionesPanel
+          items={jurisdicciones}
+          refreshing={refreshing}
+          onChanged={() => load({ force: true })}
+        />
       )}
+      {section === "plazas" &&
+        (loading ? (
+          <p className="mod-muted">Cargando...</p>
+        ) : (
+          <AsignacionPlazasPanel
+            zonas={zonas}
+            onChanged={() => clearJurisdiccionesMapCache()}
+          />
+        ))}
     </div>
   );
 }

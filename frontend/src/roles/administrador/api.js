@@ -56,6 +56,8 @@ export const estructuraApi = {
     const q = new URLSearchParams(params).toString();
     return apiFetch(`${EO}/jurisdicciones/${q ? `?${q}` : ""}`);
   },
+  listJurisdiccionesMapa: () =>
+    apiFetch(`${EO}/jurisdicciones/?scope=mapa`),
   createJurisdiccion: (body) =>
     apiFetch(`${EO}/jurisdicciones/`, { method: "POST", body: JSON.stringify(body) }),
   updateJurisdiccion: (id, body) =>

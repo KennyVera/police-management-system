@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MaterialIcon from "./MaterialIcon";
 import { notificacionesApi } from "../api/notificaciones";
+import { API_URL, getToken } from "../../auth/api";
 import "./NotificationBell.css";
 
 function fmt(dt) {
@@ -18,18 +19,31 @@ function fmt(dt) {
   }
 }
 
+function iconForTipo(tipo) {
+  if (tipo === "PARTE_RECHAZADO") return "cancel";
+  if (tipo === "PARTE_APROBADO") return "check_circle";
+  if (tipo === "DISPOSICION_ZONA" || tipo === "ASIGNACION_ZONA") return "campaign";
+  if (tipo === "EXPEDIENTE_ASIGNADO") return "folder_open";
+  if (tipo === "ALERTA") return "emergency";
+  return "notifications";
+}
+
 export default function NotificationBell() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
   const [unread, setUnread] = useState(0);
   const rootRef = useRef(null);
+  const lastIdRef = useRef(0);
+  const streamRef = useRef(null);
 
   const load = useCallback(async () => {
     try {
       const data = await notificacionesApi.list();
       setItems(data.items || []);
       setUnread(data.unread || 0);
+      const maxId = (data.items || []).reduce((m, n) => Math.max(m, n.id || 0), 0);
+      if (maxId > lastIdRef.current) lastIdRef.current = maxId;
     } catch {
       /* sesión u otros roles sin impacto */
     }
@@ -37,9 +51,49 @@ export default function NotificationBell() {
 
   useEffect(() => {
     load();
-    const id = setInterval(load, 15000);
+    const id = setInterval(load, 5000);
     return () => clearInterval(id);
   }, [load]);
+
+  useEffect(() => {
+    const token = getToken();
+    if (!token || typeof EventSource === "undefined") return undefined;
+
+    let cancelled = false;
+
+    function connect() {
+      if (cancelled) return;
+      const url = `${API_URL}/api/notificaciones/stream/?token=${encodeURIComponent(token)}&since=${lastIdRef.current}`;
+      const es = new EventSource(url);
+      streamRef.current = es;
+
+      es.onmessage = () => {
+        load();
+      };
+
+      es.addEventListener("ping", (ev) => {
+        try {
+          const data = JSON.parse(ev.data);
+          if (typeof data.unread === "number") setUnread(data.unread);
+          if (data.last_id) lastIdRef.current = Math.max(lastIdRef.current, data.last_id);
+        } catch {
+          /* ignore */
+        }
+      });
+
+      es.onerror = () => {
+        es.close();
+        if (!cancelled) setTimeout(connect, 4000);
+      };
+    }
+
+    connect();
+
+    return () => {
+      cancelled = true;
+      streamRef.current?.close();
+    };
+  }, []);
 
   useEffect(() => {
     function onDoc(e) {
@@ -102,19 +156,7 @@ export default function NotificationBell() {
                     onClick={() => handleOpenItem(n)}
                   >
                     <span className={`notif-type ${n.tipo}`}>
-                      <MaterialIcon
-                        name={
-                          n.tipo === "PARTE_RECHAZADO"
-                            ? "cancel"
-                            : n.tipo === "PARTE_APROBADO"
-                              ? "check_circle"
-                              : n.tipo === "DISPOSICION_ZONA"
-                                ? "campaign"
-                                : n.tipo === "EXPEDIENTE_ASIGNADO"
-                                  ? "folder_open"
-                                  : "notifications"
-                        }
-                      />
+                      <MaterialIcon name={iconForTipo(n.tipo)} />
                     </span>
                     <span className="notif-body">
                       <strong>{n.titulo}</strong>

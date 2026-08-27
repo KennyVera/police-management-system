@@ -58,6 +58,22 @@
   padding: 4px;
 }
 
+button.brand-icon {
+  font: inherit;
+  cursor: pointer;
+  padding: 4px;
+  border: 0;
+}
+
+.brand-icon.is-clickable:hover {
+  transform: scale(1.06);
+  box-shadow: 0 8px 18px rgba(91, 61, 154, 0.22);
+}
+
+.brand-icon.is-clickable {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
 .brand-logo-img {
   width: 100%;
   height: 100%;
@@ -239,6 +255,7 @@
   cursor: pointer;
   font: inherit;
   font-weight: 700;
+  transition: all 0.3s ease;
   box-shadow: 0 10px 20px rgba(101, 68, 168, 0.22);
   white-space: nowrap;
 }
@@ -390,6 +407,9 @@
 
 .role-content {
   padding: 1.25rem 1.5rem 2rem;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
 }
 
 .module-card {
@@ -425,35 +445,100 @@
   font-weight: 700;
 }
 
-@media (max-width: 900px) {
-  .role-shell {
-    grid-template-columns: 1fr;
-  }
+.sidebar-backdrop {
+  display: none;
+}
 
+@media (max-width: 1023px) {
+  .role-shell,
   .role-shell.is-collapsed {
     grid-template-columns: 1fr;
   }
 
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 35;
+    border: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+    cursor: pointer;
+  }
+
   .role-sidebar {
-    position: sticky;
-    top: 0;
-    z-index: 5;
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 40;
+    width: min(86vw, 280px);
+    transform: translateX(-110%);
+    transition: transform 0.3s ease;
+    box-shadow: 12px 0 40px rgba(15, 23, 42, 0.28);
+  }
+
+  .role-shell.is-mobile-open .role-sidebar,
+  .role-shell.is-collapsed.is-mobile-open .role-sidebar {
+    display: flex;
+    transform: translateX(0);
   }
 
   .role-shell.is-collapsed .role-sidebar {
-    display: none;
+    display: flex;
   }
 
   .mobile-toggle {
     display: grid;
   }
 
-  .role-nav {
-    flex-direction: row;
-    overflow-x: auto;
-  }
-
   .sidebar-copy {
     display: none;
   }
+}
+
+.logo-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 2.5rem 1.25rem;
+  background: rgba(8, 10, 18, 0.82);
+  backdrop-filter: blur(6px);
+  cursor: zoom-out;
+}
+
+.logo-lightbox-img {
+  max-width: min(92vw, 560px);
+  max-height: min(82vh, 560px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 16px;
+  background: #fff;
+  padding: 1.25rem;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  cursor: default;
+}
+
+.logo-lightbox-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.logo-lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+html[data-theme="dark"] .logo-lightbox-img {
+  background: #1a1a1a;
 }

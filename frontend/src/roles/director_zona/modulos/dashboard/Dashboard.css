@@ -104,14 +104,14 @@
 
 .dz-filters {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) auto auto;
   gap: 0.65rem;
   align-items: end;
   padding: 0.95rem 1rem;
-  background: #fff;
-  border: 1px solid var(--dz-border);
-  border-radius: 14px;
-  box-shadow: 0 8px 22px rgba(28, 39, 68, 0.04);
+}
+
+.dz-kpi-row {
+  display: grid;
+  gap: 0.75rem;
 }
 
 .dz-filters label {
@@ -145,6 +145,7 @@
   cursor: pointer;
   border: 1px solid transparent;
   white-space: nowrap;
+  transition: all 0.3s ease;
 }
 
 .dz-btn-primary {
@@ -178,6 +179,7 @@
   font-weight: 600;
   color: #4b5563;
   cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .dz-tabs button.active {
@@ -199,22 +201,12 @@
   font-weight: 600;
 }
 
-/* KPI row */
-.dz-kpi-row {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
 .dz-kpi {
-  background: #fff;
-  border: 1px solid var(--dz-border);
   border-radius: 14px;
   padding: 0.9rem 0.95rem;
   display: flex;
   gap: 0.7rem;
   min-height: 118px;
-  box-shadow: 0 8px 22px rgba(28, 39, 68, 0.04);
 }
 
 .dz-kpi-icon {
@@ -309,20 +301,5 @@
   display: inline-flex;
   align-items: center;
   gap: 0.15rem;
-}
-
-@media (max-width: 1200px) {
-  .dz-filters {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .dz-kpi-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 720px) {
-  .dz-filters,
-  .dz-kpi-row {
-    grid-template-columns: 1fr;
-  }
+  transition: all 0.3s ease;
 }

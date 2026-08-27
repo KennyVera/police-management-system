@@ -2,6 +2,7 @@ import { Navigate } from "react-router-dom";
 import RoleShell from "../../shared/components/RoleShell";
 import { getRoleConfig } from "../../shared/constants/roles";
 import { useAuth } from "../../auth/AuthContext";
+import "./SuperAdminDark.css";
 
 export default function Layout() {
   const role = getRoleConfig("superadmin");

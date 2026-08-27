@@ -1,6 +1,6 @@
 """
 PDFs de Reportes Estratégicos (Visor Ejecutivo) con contenido demo rico.
-Sustituir bloques DEMO_* por consultas reales Postgres/ClickHouse cuando exista ETL.
+Sustituir bloques DEMO_* por consultas reales MinIO/ClickHouse cuando exista ETL.
 """
 
 from __future__ import annotations
@@ -131,7 +131,7 @@ def _header_table(titulo: str, username: str, periodo: str) -> Table:
                 s["muted"],
             ),
             Paragraph(
-                "Fuente mixta: PostgreSQL (operativo) + "
+                "Fuente mixta: MinIO (operativo) + "
                 "ClickHouse (analítica). Datos de demostración "
                 "para validación de producto.",
                 s["muted"],
@@ -345,7 +345,7 @@ def build_auditoria_comandantes(username: str) -> bytes:
     story.append(Spacer(1, 0.4 * cm))
     story.append(
         Paragraph(
-            "Este informe cruza <b>fuerza logística y personal (PostgreSQL)</b> con "
+            "Este informe cruza <b>fuerza logística y personal (MinIO)</b> con "
             "<b>resolución de delitos e incidentes (ClickHouse)</b> para rankear a los "
             "Jefes de Zona. El índice de eficiencia = (tasa de resolución × 0,5) + "
             "(ocupabilidad de flota × 0,2) + (inverso del SLA de aprobación × 0,3), "

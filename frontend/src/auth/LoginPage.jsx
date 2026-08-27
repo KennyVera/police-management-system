@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import loginArt from "../assets/imagenParaelInicioSesion.png";
 import MaterialIcon from "../shared/components/MaterialIcon";
 import { useBranding } from "../shared/branding/BrandingContext";
@@ -8,7 +8,7 @@ import { useAuth } from "./AuthContext";
 import "./LoginPage.css";
 
 export default function LoginPage() {
-  const { login, isAuthenticated, user, loading } = useAuth();
+  const { login } = useAuth();
   const { branding, assetUrl } = useBranding();
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -23,10 +23,6 @@ export default function LoginPage() {
   const brandName = branding?.nombre_sistema || "CrimeTrack";
   const brandCorp = branding?.empresa_nombre || branding?.nombre_comercial || "CrimeTrack Analytics Corp";
   const loginLogo = assetUrl(branding?.logo_login_url || branding?.logo_url);
-
-  if (!loading && isAuthenticated && user) {
-    return <Navigate to={`/app/${user.role_slug}/dashboard`} replace />;
-  }
 
   async function handleSubmit(event) {
     event.preventDefault();

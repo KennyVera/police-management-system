@@ -346,7 +346,7 @@ class Command(BaseCommand):
         if circuito is None:
             circuito = Jurisdiction.objects.create(
                 codigo=JUR_CODIGO,
-                tipo=JurisdictionType.CIRCUITO,
+                tipo=JurisdictionType.DISTRITO,
                 nombre=JUR_NOMBRE,
                 activo=True,
             )
@@ -356,8 +356,8 @@ class Command(BaseCommand):
             if circuito.nombre != JUR_NOMBRE:
                 circuito.nombre = JUR_NOMBRE
                 changed_fields.append("nombre")
-            if circuito.tipo != JurisdictionType.CIRCUITO:
-                circuito.tipo = JurisdictionType.CIRCUITO
+            if circuito.tipo != JurisdictionType.DISTRITO:
+                circuito.tipo = JurisdictionType.DISTRITO
                 changed_fields.append("tipo")
             if not circuito.activo:
                 circuito.activo = True

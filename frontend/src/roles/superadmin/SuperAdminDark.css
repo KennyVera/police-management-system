@@ -1,0 +1,342 @@
+/**
+ * SuperAdmin SaaS — modo oscuro
+ * Cubre dashboard (ct-sa-kpis), facturación, configuración y drawers.
+ */
+
+/* ── KPI overview (Dashboard tenants) ───────────────────────────── */
+html[data-theme="dark"] .ct-sa-kpis article {
+  background: #1a2332;
+  border-color: #2a3548;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .ct-sa-kpis span {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .ct-sa-kpis strong {
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] .ct-sa-kpis small {
+  color: #64748b;
+}
+
+/* ── Pills estado ───────────────────────────────────────────────── */
+html[data-theme="dark"] .pill.ok {
+  background: #14532d;
+  color: #86efac;
+}
+
+html[data-theme="dark"] .pill.bad {
+  background: #7f1d1d;
+  color: #fca5a5;
+}
+
+html[data-theme="dark"] .pill.warn,
+html[data-theme="dark"] .cfg-badge.warn {
+  background: #7c2d12;
+  color: #fdba74;
+}
+
+html[data-theme="dark"] .cfg-badge.ok {
+  background: #14532d;
+  color: #86efac;
+}
+
+/* ── Drawer tenant detalle ──────────────────────────────────────── */
+html[data-theme="dark"] .ct-drawer {
+  background: rgba(2, 6, 23, 0.72);
+}
+
+html[data-theme="dark"] .ct-drawer-card {
+  background: #1a2332;
+  border: 1px solid #2a3548;
+  color: #e8eef7;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="dark"] .ct-drawer-card header h3 {
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] .ct-drawer-card header button {
+  background: #243044;
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .ct-drawer-card dt {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .ct-drawer-card dd {
+  color: #e8eef7;
+}
+
+/* ── Facturación ────────────────────────────────────────────────── */
+html[data-theme="dark"] .fact-filters {
+  background: linear-gradient(180deg, #1e1830 0%, #1a2332 100%);
+  border-color: #2a3548;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .fact-filters label {
+  color: #a78bfa;
+}
+
+html[data-theme="dark"] .fact-filters select,
+html[data-theme="dark"] .fact-filters input[type="date"],
+html[data-theme="dark"] .fact-filters input[type="number"] {
+  background: #121a26;
+  border-color: #2a3548;
+  color: #e8eef7;
+}
+
+html[data-theme="dark"] .fact-filters select:focus,
+html[data-theme="dark"] .fact-filters input:focus {
+  outline-color: #7c5cbf;
+  border-color: #a78bfa;
+}
+
+html[data-theme="dark"] .fact-kpis article {
+  background: #1a2332;
+  border-color: #2a3548;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .fact-kpis span {
+  color: #a78bfa;
+}
+
+html[data-theme="dark"] .fact-kpis strong {
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] .fact-kpis small {
+  color: #64748b;
+}
+
+html[data-theme="dark"] .fact-section-title {
+  color: #c4b5fd;
+}
+
+html[data-theme="dark"] .fact-panel {
+  background: #1a2332;
+  border-color: #2a3548;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+  color: #e8eef7;
+}
+
+html[data-theme="dark"] .fact-accion-chip {
+  background: #2a2150;
+  color: #c4b5fd;
+}
+
+html[data-theme="dark"] .fact-detail-grid div {
+  background: #121a26;
+  border-color: #2a3548;
+}
+
+html[data-theme="dark"] .fact-detail-grid span {
+  color: #a78bfa;
+}
+
+html[data-theme="dark"] .fact-detail-grid strong {
+  color: #e8eef7;
+}
+
+/* ── Configuración global ───────────────────────────────────────── */
+html[data-theme="dark"] .cfg-form {
+  background: linear-gradient(180deg, #1e1830 0%, #1a2332 100%);
+  border-color: #2a3548;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .cfg-form label {
+  color: #a78bfa;
+}
+
+html[data-theme="dark"] .cfg-form input,
+html[data-theme="dark"] .cfg-form select,
+html[data-theme="dark"] .cfg-form textarea {
+  background: #121a26;
+  border-color: #2a3548;
+  color: #e8eef7;
+}
+
+html[data-theme="dark"] .cfg-check {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .cfg-hint {
+  background: #2a2150;
+  color: #ddd6fe;
+}
+
+html[data-theme="dark"] .cfg-hint code {
+  background: #121a26;
+  color: #c4b5fd;
+}
+
+html[data-theme="dark"] .cfg-upload-box {
+  background: #121a26;
+  border-color: #5b4a8a;
+}
+
+html[data-theme="dark"] .cfg-upload-preview {
+  background: #1a2332;
+  border-color: #2a3548;
+}
+
+/* ── Identidad Accesos (compartido Admin / SuperAdmin) ───────────── */
+html[data-theme="dark"] .mod-page .ia-stat,
+html[data-theme="dark"] .mod-page .ia-stats article,
+html[data-theme="dark"] .ia-stats article {
+  background: #1a2332;
+  border-color: #2a3548;
+  color: #e8eef7;
+}
+
+html[data-theme="dark"] .ia-stats span,
+html[data-theme="dark"] .ia-stats small {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .ia-stats strong {
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] .ia-search,
+html[data-theme="dark"] .ia-bar,
+html[data-theme="dark"] .ia-actions-bar {
+  background: #1a2332;
+  border-color: #2a3548;
+}
+
+html[data-theme="dark"] .ia-search input,
+html[data-theme="dark"] .ia-bar input,
+html[data-theme="dark"] .ia-bar select {
+  background: #121a26;
+  border-color: #2a3548;
+  color: #e8eef7;
+}
+
+
+/* ── Plan cards / reportes paneles si usan fondo blanco hardcode ─── */
+html[data-theme="dark"] .mod-page .plan-card,
+html[data-theme="dark"] .mod-page .rep-card,
+html[data-theme="dark"] .mod-page .sa-card {
+  background: #1a2332;
+  border-color: #2a3548;
+  color: #e8eef7;
+}
+
+html[data-theme="dark"] .modal-backdrop {
+  background: rgba(2, 6, 23, 0.72);
+}
+
+html[data-theme="dark"] .modal-card {
+  background: #1a2332;
+  border: 1px solid #2a3548;
+  color: #e8eef7;
+}
+
+html[data-theme="dark"] .modal-card h3,
+html[data-theme="dark"] .modal-card strong {
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] .modal-card label {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .modal-card input,
+html[data-theme="dark"] .modal-card select,
+html[data-theme="dark"] .modal-card textarea {
+  background: #121a26;
+  border-color: #2a3548;
+  color: #e8eef7;
+}
+
+/* ── Overrides IdentidadAccesos.css (importado en módulos SA) ───── */
+html[data-theme="dark"] .mod-page .btn-ghost,
+html[data-theme="dark"] .row-actions button {
+  background: #243044;
+  border-color: #2a3548;
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .mod-page .btn-ghost:hover,
+html[data-theme="dark"] .row-actions button:hover {
+  background: #2d3c52;
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] .mod-page .panel-card {
+  background: #1a2332;
+  border-color: #2a3548;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .mod-page .btn-danger {
+  background: #7f1d1d;
+  color: #fecaca;
+  border-color: #991b1b;
+}
+
+html[data-theme="dark"] .mod-page .btn-warn {
+  background: #7c2d12;
+  color: #fed7aa;
+  border-color: #9a3412;
+}
+
+html[data-theme="dark"] .badge-estado.ACTIVO {
+  background: #14532d;
+  color: #86efac;
+}
+
+html[data-theme="dark"] .badge-estado.SUSPENDIDO {
+  background: #7c2d12;
+  color: #fdba74;
+}
+
+html[data-theme="dark"] .badge-estado.BAJA {
+  background: #334155;
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .stack-form label,
+html[data-theme="dark"] .form-grid label {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .stack-form input,
+html[data-theme="dark"] .stack-form select,
+html[data-theme="dark"] .stack-form textarea,
+html[data-theme="dark"] .form-grid input,
+html[data-theme="dark"] .form-grid select,
+html[data-theme="dark"] .form-grid textarea {
+  background: #121a26;
+  border-color: #2a3548;
+  color: #e8eef7;
+}
+
+html[data-theme="dark"] .password-toggle:hover {
+  background: #2a2150;
+}
+
+html[data-theme="dark"] .mod-page .mod-error {
+  background: #7f1d1d;
+  color: #fecaca;
+  border-color: #991b1b;
+}
+
+html[data-theme="dark"] .mod-tabs {
+  border-bottom-color: #2a3548;
+}
+
+html[data-theme="dark"] .mod-tabs button.active {
+  background: #2a2150;
+  color: #c4b5fd;
+}
+

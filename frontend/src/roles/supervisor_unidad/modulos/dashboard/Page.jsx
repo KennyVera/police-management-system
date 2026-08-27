@@ -4,6 +4,7 @@ import MaterialIcon from "../../../../shared/components/MaterialIcon";
 import { useAuth } from "../../../../auth/AuthContext";
 import { useTheme } from "../../../../shared/theme/ThemeContext";
 import { supervisorApi } from "../../api";
+import { glassCard, kpiCard, tableBodyRow, tableHeadRow, tableWrap } from "../../../../shared/ui/saas";
 import "../../../../shared/styles/ModuloPage.css";
 import "./Dashboard.css";
 
@@ -249,8 +250,8 @@ export default function Page() {
         </div>
       </header>
 
-      <section className="sup-kpi-row">
-        <article className="sup-kpi tone-green">
+      <section className="sup-kpi-row grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <article className={`sup-kpi tone-green ${kpiCard}`}>
           <div className="sup-kpi-head">
             <div className="sup-kpi-icon">
               <MaterialIcon name="groups" />
@@ -277,7 +278,7 @@ export default function Page() {
           </p>
         </article>
 
-        <article className="sup-kpi tone-blue">
+        <article className={`sup-kpi tone-blue ${kpiCard}`}>
           <div className="sup-kpi-head">
             <div className="sup-kpi-icon">
               <MaterialIcon name="assignment" />
@@ -300,7 +301,7 @@ export default function Page() {
           </p>
         </article>
 
-        <article className="sup-kpi tone-teal">
+        <article className={`sup-kpi tone-teal ${kpiCard}`}>
           <div className="sup-kpi-head">
             <div className="sup-kpi-icon">
               <MaterialIcon name="local_taxi" />
@@ -320,7 +321,7 @@ export default function Page() {
           </p>
         </article>
 
-        <article className="sup-kpi tone-red">
+        <article className={`sup-kpi tone-red ${kpiCard}`}>
           <div className="sup-kpi-head">
             <div className="sup-kpi-icon">
               <MaterialIcon name="warning" />
@@ -334,15 +335,15 @@ export default function Page() {
           <div className="sup-kpi-accent-line" />
           <Link
             to="/app/supervisor_unidad/despacho_operativo/auxilios"
-            className="sup-kpi-link danger"
+            className="sup-kpi-link danger inline-flex items-center gap-1 transition-all duration-300 hover:gap-2"
           >
             Ver alertas <MaterialIcon name="arrow_forward" />
           </Link>
         </article>
       </section>
 
-      <section className="sup-mid-row">
-        <article className="sup-card">
+      <section className="sup-mid-row grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article className={`sup-card ${glassCard}`}>
           <h3>Control de Calidad de Partes (Hoy)</h3>
           <div className="sup-calidad">
             <div className="sup-donut-wrap">
@@ -397,12 +398,12 @@ export default function Page() {
           </div>
         </article>
 
-        <article className="sup-card">
+        <article className={`sup-card ${glassCard}`}>
           <h3>Últimos Partes para Revisión</h3>
-          <div className="sup-table-wrap">
-            <table className="sup-table">
+          <div className={`sup-table-wrap ${tableWrap}`}>
+            <table className="sup-table w-full text-left text-sm">
               <thead>
-                <tr>
+                <tr className={tableHeadRow}>
                   <th>Hora</th>
                   <th>Agente</th>
                   <th>Tipo de Delito</th>
@@ -420,7 +421,7 @@ export default function Page() {
                   </tr>
                 ) : (
                   data.partes_revision.map((row) => (
-                    <tr key={row.id}>
+                    <tr key={row.id} className={tableBodyRow}>
                       <td>{row.hora}</td>
                       <td>{row.agente}</td>
                       <td>{row.tipo_delito}</td>
@@ -431,7 +432,7 @@ export default function Page() {
                       <td>
                         <Link
                           to={`/app/supervisor_unidad/control_calidad/pendientes?parte=${row.id}`}
-                          className="btn-revisar"
+                          className="btn-revisar inline-flex rounded-lg px-3 py-1 text-sm font-semibold transition-all duration-300 hover:bg-gray-700 hover:text-white"
                         >
                           Revisar
                         </Link>
@@ -451,8 +452,8 @@ export default function Page() {
         </article>
       </section>
 
-      <section className="sup-bot-row">
-        <article className="sup-card">
+      <section className="sup-bot-row grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article className={`sup-card ${glassCard}`}>
           <h3>Actividad por Escuadra (Hoy)</h3>
           <div className="sup-bars">
             {bars.length === 0 ? (
@@ -492,7 +493,7 @@ export default function Page() {
           </div>
         </article>
 
-        <article className="sup-card">
+        <article className={`sup-card ${glassCard}`}>
           <h3>Distribución Operativa por Sector</h3>
           <SectorMap sectores={data.distribucion_sectores} isDark={isDark} />
         </article>

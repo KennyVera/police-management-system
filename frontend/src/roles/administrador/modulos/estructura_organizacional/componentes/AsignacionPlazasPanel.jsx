@@ -1,8 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import MaterialIcon from "../../../../../shared/components/MaterialIcon";
+import PaginationBar from "../../../../../shared/components/PaginationBar";
 import { useConfirm } from "../../../../../shared/components/ConfirmContext";
 import { estructuraApi } from "../../../api";
 import "./AsignacionZonas.css";
+import "../../../../../shared/components/PaginationBar.css";
+
+const TABLE_PAGE_SIZE = 15;
+
+const TABLE_TIPOS = [
+  { id: "", label: "Todos" },
+  { id: "ZONA", label: "Zona" },
+  { id: "SUBZONA", label: "Subzona" },
+  { id: "DISTRITO", label: "Distrito" },
+];
 
 const ROLE_ZONE = new Set([
   "DIRECTOR_ZONA",
@@ -22,6 +34,35 @@ function fullName(u) {
   return `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email;
 }
 
+function resolveDestino(zonas, { jurisdiccionId, provinciaId }) {
+  if (jurisdiccionId && zonas.some((z) => String(z.id) === String(jurisdiccionId))) {
+    return String(jurisdiccionId);
+  }
+  if (!provinciaId) return "";
+  const dpa = String(provinciaId).padStart(2, "0");
+  const hit =
+    zonas.find((z) => z.codigo === `SZ-${dpa}`) ||
+    zonas.find((z) => z.codigo === `SZ-${provinciaId}`);
+  return hit ? String(hit.id) : "";
+}
+
+function matchZona(z, q, tipo) {
+  if (tipo && z.tipo !== tipo) return false;
+  if (!q) return true;
+  const hay = [
+    z.nombre,
+    z.codigo,
+    z.tipo,
+    z.tipo_label,
+    z.parent_nombre,
+    z.jefe_zona?.nombre,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return hay.includes(q);
+}
+
 function matchQ(u, q) {
   if (!q) return true;
   const hay = [u.first_name, u.last_name, u.email, u.role_label, u.cedula, u.placa]
@@ -31,11 +72,45 @@ function matchQ(u, q) {
   return hay.includes(q.trim().toLowerCase());
 }
 
+function ZonaAcciones({ z, busyId, onActualizar, onPdf, onReset, variant = "row" }) {
+  return (
+    <div className={`az-row-actions is-${variant}`}>
+      <button type="button" className="btn-ghost" title="Actualizar asignaciones" onClick={() => onActualizar(z)}>
+        <MaterialIcon name="edit" />
+        <span>Actualizar</span>
+      </button>
+      <button
+        type="button"
+        className="btn-ghost"
+        title="Ver detalle en PDF"
+        disabled={busyId === `pdf-${z.id}`}
+        onClick={() => onPdf(z)}
+      >
+        <MaterialIcon name="picture_as_pdf" />
+        <span>{busyId === `pdf-${z.id}` ? "PDF…" : "Detalles"}</span>
+      </button>
+      <button
+        type="button"
+        className="btn-warn"
+        title="Restablecer usuarios de esta zona"
+        disabled={busyId === `reset-${z.id}`}
+        onClick={() => onReset(z)}
+      >
+        <MaterialIcon name="restart_alt" />
+        <span>{busyId === `reset-${z.id}` ? "…" : "Restablecer"}</span>
+      </button>
+    </div>
+  );
+}
+
 export default function AsignacionPlazasPanel({ zonas: zonasProp, onChanged }) {
+  const [searchParams] = useSearchParams();
+  const preselectId = searchParams.get("jurisdiccion_id") || "";
+  const provinciaId = searchParams.get("provincia_id") || "";
   const [zonas, setZonas] = useState(zonasProp || []);
   const [usuarios, setUsuarios] = useState([]);
   const [enZona, setEnZona] = useState([]);
-  const [zonaId, setZonaId] = useState("");
+  const [zonaId, setZonaId] = useState(preselectId);
   const [selectedLeft, setSelectedLeft] = useState(() => new Set());
   const [staged, setStaged] = useState([]); // usuarios pendientes de confirmar
   const [qLeft, setQLeft] = useState("");
@@ -48,6 +123,9 @@ export default function AsignacionPlazasPanel({ zonas: zonasProp, onChanged }) {
   const [showHist, setShowHist] = useState(false);
   const [historial, setHistorial] = useState([]);
   const [busyId, setBusyId] = useState(null);
+  const [tablePage, setTablePage] = useState(1);
+  const [tableQ, setTableQ] = useState("");
+  const [tableTipo, setTableTipo] = useState("");
   const transferRef = useRef(null);
   const zonaIdRef = useRef(zonaId);
   zonaIdRef.current = zonaId;
@@ -78,13 +156,20 @@ export default function AsignacionPlazasPanel({ zonas: zonasProp, onChanged }) {
     setLoading(true);
     setError("");
     try {
-      const [cat, list] = await Promise.all([
-        estructuraApi.catalogos(),
-        estructuraApi.listPlazas(),
-      ]);
-      setZonas(cat.zonas || []);
+      const list = await estructuraApi.listPlazas();
+      const source = (zonasProp && zonasProp.length ? zonasProp : zonas) || [];
+      let catZonas = source;
+      if (!catZonas.length) {
+        const cat = await estructuraApi.catalogos();
+        catZonas = cat.zonas || [];
+        setZonas(catZonas);
+      }
+      const wanted = resolveDestino(catZonas, {
+        jurisdiccionId: searchParams.get("jurisdiccion_id") || zonaIdRef.current,
+        provinciaId: searchParams.get("provincia_id"),
+      });
+      if (wanted) setZonaId(String(wanted));
       setUsuarios(list.filter((u) => ROLE_ZONE.has(u.role)));
-      if (zonaIdRef.current) await loadPersonalZona(zonaIdRef.current);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -95,7 +180,7 @@ export default function AsignacionPlazasPanel({ zonas: zonasProp, onChanged }) {
   useEffect(() => {
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [preselectId, provinciaId]);
 
   useEffect(() => {
     if (zonasProp?.length) setZonas(zonasProp);
@@ -110,6 +195,26 @@ export default function AsignacionPlazasPanel({ zonas: zonasProp, onChanged }) {
     () => zonas.find((z) => String(z.id) === String(zonaId)),
     [zonas, zonaId]
   );
+
+  const filteredZonas = useMemo(() => {
+    const q = tableQ.trim().toLowerCase();
+    return zonas.filter((z) => matchZona(z, q, tableTipo));
+  }, [zonas, tableQ, tableTipo]);
+
+  const tableTotalPages = Math.max(1, Math.ceil((filteredZonas.length || 0) / TABLE_PAGE_SIZE) || 1);
+  const safeTablePage = Math.min(tablePage, tableTotalPages);
+  const pagedZonas = useMemo(() => {
+    const start = (safeTablePage - 1) * TABLE_PAGE_SIZE;
+    return filteredZonas.slice(start, start + TABLE_PAGE_SIZE);
+  }, [filteredZonas, safeTablePage]);
+
+  useEffect(() => {
+    setTablePage(1);
+  }, [tableQ, tableTipo]);
+
+  useEffect(() => {
+    if (tablePage !== safeTablePage) setTablePage(safeTablePage);
+  }, [tablePage, safeTablePage]);
 
   const enZonaIds = useMemo(() => new Set(enZona.map((u) => u.id)), [enZona]);
 
@@ -351,7 +456,7 @@ export default function AsignacionPlazasPanel({ zonas: zonasProp, onChanged }) {
     <div className="az-page">
       <div className="az-toolbar" ref={transferRef}>
         <label className="az-zona-select">
-          <span>Zona de destino</span>
+          <span>Destino (Zona / Subzona / Distrito)</span>
           <select
             value={zonaId}
             onChange={(e) => {
@@ -362,7 +467,7 @@ export default function AsignacionPlazasPanel({ zonas: zonasProp, onChanged }) {
               setError("");
             }}
           >
-            <option value="">— Selecciona una zona —</option>
+            <option value="">— Selecciona distrito, subzona o zona —</option>
             {zonas.map((z) => (
               <option key={z.id} value={z.id}>
                 {z.tipo_label}: {z.nombre}
@@ -505,89 +610,157 @@ export default function AsignacionPlazasPanel({ zonas: zonasProp, onChanged }) {
       </div>
 
       <section className="panel-card az-zonas-table">
-        <h3>Zonas y líderes asignados</h3>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Zona de trabajo</th>
-              <th>Jefe / Líder de zona</th>
-              <th>Supervisores</th>
-              <th>Detectives</th>
-              <th>Agentes</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {zonas.map((z) => (
-              <tr key={z.id}>
-                <td>
+        <div className="az-table-head">
+          <h3>Zonas y líderes asignados</h3>
+          <p className="mod-muted az-table-hint">
+            Filtre al instante por tipo o escriba el nombre, código o jefe.
+          </p>
+        </div>
+        <div className="az-table-filters">
+          <label className="az-search az-table-q">
+            <MaterialIcon name="search" />
+            <input
+              type="search"
+              placeholder="Buscar zona, subzona o distrito…"
+              value={tableQ}
+              onChange={(e) => setTableQ(e.target.value)}
+              aria-label="Buscar jurisdicciones"
+            />
+          </label>
+          <div className="az-tipo-chips" role="group" aria-label="Filtrar por tipo">
+            {TABLE_TIPOS.map((t) => (
+              <button
+                key={t.id || "all"}
+                type="button"
+                className={`az-tipo-chip${tableTipo === t.id ? " is-active" : ""}`}
+                onClick={() => setTableTipo(t.id)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="az-table-scroll">
+          <table className="data-table az-desktop-table">
+            <thead>
+              <tr>
+                <th>Zona de trabajo</th>
+                <th>Jefe / Líder de zona</th>
+                <th>Supervisores</th>
+                <th>Detectives</th>
+                <th>Agentes</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pagedZonas.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="az-empty">
+                    No hay coincidencias con el filtro actual.
+                  </td>
+                </tr>
+              )}
+              {pagedZonas.map((z) => (
+                <tr key={z.id}>
+                  <td>
+                    <div className="az-zona-name">
+                      <strong>{z.nombre}</strong>
+                      <span className={`az-tipo-badge tipo-${z.tipo}`}>{z.tipo_label}</span>
+                    </div>
+                    <div className="mod-muted az-zona-code">{z.codigo}</div>
+                  </td>
+                  <td>
+                    {z.jefe_zona ? (
+                      <div className="az-jefe-cell">
+                        <span className="az-avatar sm">
+                          {(z.jefe_zona.nombre || "?")
+                            .split(" ")
+                            .map((p) => p[0])
+                            .slice(0, 2)
+                            .join("")
+                            .toUpperCase()}
+                        </span>
+                        <span>
+                          <strong>{z.jefe_zona.nombre}</strong>
+                          <div className="mod-muted">
+                            {z.jefe_zona.role_label || "Jefe de Zona"}
+                          </div>
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="az-empty-pill">Sin asignar</span>
+                    )}
+                  </td>
+                  <td>
+                    <span className="az-count-pill">{z.conteos?.supervisores ?? 0}</span>
+                  </td>
+                  <td>
+                    <span className="az-count-pill">{z.conteos?.detectives ?? 0}</span>
+                  </td>
+                  <td>
+                    <span className="az-count-pill">{z.conteos?.agentes ?? 0}</span>
+                  </td>
+                  <td>
+                    <ZonaAcciones
+                      z={z}
+                      busyId={busyId}
+                      onActualizar={actualizarZona}
+                      onPdf={verPdfZona}
+                      onReset={restablecerZona}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <ul className="az-zona-cards">
+          {pagedZonas.length === 0 && (
+            <li className="az-empty">No hay coincidencias con el filtro actual.</li>
+          )}
+          {pagedZonas.map((z) => (
+            <li key={z.id} className="az-zona-card">
+              <div className="az-zona-card-top">
+                <div>
                   <strong>{z.nombre}</strong>
                   <div className="mod-muted">
                     {z.tipo_label} · {z.codigo}
                   </div>
-                </td>
-                <td>
-                  {z.jefe_zona ? (
-                    <div className="az-jefe-cell">
-                      <span className="az-avatar sm">
-                        {(z.jefe_zona.nombre || "?")
-                          .split(" ")
-                          .map((p) => p[0])
-                          .slice(0, 2)
-                          .join("")
-                          .toUpperCase()}
-                      </span>
-                      <span>
-                        <strong>{z.jefe_zona.nombre}</strong>
-                        <div className="mod-muted">
-                          {z.jefe_zona.role_label || "Jefe de Zona"}
-                        </div>
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="mod-muted">— Sin asignar</span>
-                  )}
-                </td>
-                <td>{z.conteos?.supervisores ?? 0}</td>
-                <td>{z.conteos?.detectives ?? 0}</td>
-                <td>{z.conteos?.agentes ?? 0}</td>
-                <td>
-                  <div className="az-row-actions">
-                    <button
-                      type="button"
-                      className="btn-ghost"
-                      title="Actualizar asignaciones"
-                      onClick={() => actualizarZona(z)}
-                    >
-                      <MaterialIcon name="edit" />
-                      Actualizar
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-ghost"
-                      title="Ver detalle en PDF"
-                      disabled={busyId === `pdf-${z.id}`}
-                      onClick={() => verPdfZona(z)}
-                    >
-                      <MaterialIcon name="picture_as_pdf" />
-                      {busyId === `pdf-${z.id}` ? "PDF…" : "Ver detalles"}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-warn"
-                      title="Restablecer usuarios de esta zona"
-                      disabled={busyId === `reset-${z.id}`}
-                      onClick={() => restablecerZona(z)}
-                    >
-                      <MaterialIcon name="restart_alt" />
-                      {busyId === `reset-${z.id}` ? "…" : "Restablecer"}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+                <span className={`az-tipo-badge tipo-${z.tipo}`}>{z.tipo_label}</span>
+              </div>
+              <p className="az-zona-card-jefe">
+                {z.jefe_zona ? z.jefe_zona.nombre : "— Sin jefe asignado"}
+              </p>
+              <div className="az-zona-metrics">
+                <span>
+                  <b>{z.conteos?.supervisores ?? 0}</b> Supervisores
+                </span>
+                <span>
+                  <b>{z.conteos?.detectives ?? 0}</b> Detectives
+                </span>
+                <span>
+                  <b>{z.conteos?.agentes ?? 0}</b> Agentes
+                </span>
+              </div>
+              <ZonaAcciones
+                z={z}
+                variant="card"
+                busyId={busyId}
+                onActualizar={actualizarZona}
+                onPdf={verPdfZona}
+                onReset={restablecerZona}
+              />
+            </li>
+          ))}
+        </ul>
+        <PaginationBar
+          page={safeTablePage}
+          totalPages={tableTotalPages}
+          count={filteredZonas.length}
+          pageSize={TABLE_PAGE_SIZE}
+          onPageChange={setTablePage}
+        />
       </section>
 
       {showHist && (

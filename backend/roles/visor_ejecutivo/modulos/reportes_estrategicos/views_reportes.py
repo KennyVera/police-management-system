@@ -2,7 +2,7 @@
 Reportes Estratégicos — Visor Ejecutivo (Alto Mando).
 
 Stubs de generación PDF listos para conectar datos reales
-(PostgreSQL + ClickHouse) y ampliar el diseño ReportLab.
+(MinIO + ClickHouse) y ampliar el diseño ReportLab.
 """
 
 from __future__ import annotations
@@ -50,7 +50,7 @@ REPORTES_CATALOGO = [
             "criminalidad global para toma de decisión de gobierno."
         ),
         "icono": "account_balance",
-        "fuentes": ["ClickHouse", "PostgreSQL"],
+        "fuentes": ["ClickHouse", "MinIO"],
         "endpoint": "dossier-presidencial/",
         "filename_stub": "dossier_presidencial.pdf",
     },
@@ -58,11 +58,11 @@ REPORTES_CATALOGO = [
         "slug": "auditoria-comandantes",
         "titulo": "Auditoría de Desempeño de Comandantes",
         "descripcion": (
-            "Ranking de eficiencia cruzando fuerza logística (Postgres) vs. "
+            "Ranking de eficiencia cruzando fuerza logística (MinIO) vs. "
             "resolución de delitos (ClickHouse)."
         ),
         "icono": "military_tech",
-        "fuentes": ["PostgreSQL", "ClickHouse"],
+        "fuentes": ["MinIO", "ClickHouse"],
         "endpoint": "auditoria-comandantes/",
         "filename_stub": "auditoria_comandantes.pdf",
     },
@@ -74,7 +74,7 @@ REPORTES_CATALOGO = [
             "porcentual de la criminalidad."
         ),
         "icono": "payments",
-        "fuentes": ["PostgreSQL", "ClickHouse"],
+        "fuentes": ["MinIO", "ClickHouse"],
         "endpoint": "impacto-presupuestario/",
         "filename_stub": "impacto_presupuestario.pdf",
     },
@@ -86,7 +86,7 @@ REPORTES_CATALOGO = [
             "su aprobación final."
         ),
         "icono": "hourglass_top",
-        "fuentes": ["PostgreSQL"],
+        "fuentes": ["MinIO"],
         "endpoint": "cuellos-botella/",
         "filename_stub": "cuellos_botella_impunidad.pdf",
     },
@@ -129,7 +129,7 @@ def _stub_payload(reporte: dict, request) -> dict:
         "status": "ready",
         "message": (
             f"Reporte «{reporte['titulo']}» generado con contenido ejecutivo "
-            "(datos demo). Listo para conectar ClickHouse / PostgreSQL."
+            "(datos demo). Listo para conectar ClickHouse / MinIO."
         ),
         "reporte": reporte["slug"],
         "titulo": reporte["titulo"],

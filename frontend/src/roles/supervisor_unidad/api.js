@@ -40,7 +40,10 @@ export const supervisorApi = {
       body: JSON.stringify(body),
     }),
 
-  listVehiculos: () => apiFetch(`${LOG}/vehiculos/`),
+  listVehiculos: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return apiFetch(`${LOG}/vehiculos/${q ? `?${q}` : ""}`);
+  },
   createVehiculo: (body) =>
     apiFetch(`${LOG}/vehiculos/`, { method: "POST", body: JSON.stringify(body) }),
   updateVehiculo: (id, body) =>

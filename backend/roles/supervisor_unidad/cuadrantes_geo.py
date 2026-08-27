@@ -44,6 +44,25 @@ def _center_for_labels(labels: list[str]) -> tuple[float, float]:
     return ZONE_CENTERS["quito"]
 
 
+def _point_in_ring(lat: float, lng: float, ring: list[list[float]]) -> bool:
+    """Ray casting: ring en GeoJSON [lng, lat]."""
+    inside = False
+    n = len(ring)
+    if n < 3:
+        return False
+    j = n - 1
+    for i in range(n):
+        xi, yi = ring[i][0], ring[i][1]
+        xj, yj = ring[j][0], ring[j][1]
+        intersect = (yi > lat) != (yj > lat) and lng < (xj - xi) * (lat - yi) / (
+            (yj - yi) or 1e-12
+        ) + xi
+        if intersect:
+            inside = not inside
+        j = i
+    return inside
+
+
 def build_cuadrantes_for_supervisor(user, cols: int = 3, rows: int = 3) -> dict:
     """
     Genera una grilla de polígonos (GeoJSON) centrada en la zona del supervisor.
@@ -94,9 +113,35 @@ def build_cuadrantes_for_supervisor(user, cols: int = 3, rows: int = 3) -> dict:
                 }
             )
 
+    south_all = origin_lat
+    north_all = origin_lat + rows * d_lat
+    west_all = origin_lng
+    east_all = origin_lng + cols * d_lng
+
     return {
         "zona": labels[0] if labels else "Zona operativa",
         "centro": {"lat": lat0, "lng": lng0},
         "zoom": 14,
         "cuadrantes": features,
+        "bounds": {
+            "south": round(south_all, 6),
+            "north": round(north_all, 6),
+            "west": round(west_all, 6),
+            "east": round(east_all, 6),
+        },
     }
+
+
+def point_in_supervisor_zone(user, lat: float, lng: float) -> bool:
+    """True si las coordenadas caen dentro de algún cuadrante de la zona del supervisor."""
+    try:
+        lat_f = float(lat)
+        lng_f = float(lng)
+    except (TypeError, ValueError):
+        return False
+    data = build_cuadrantes_for_supervisor(user)
+    for cuad in data.get("cuadrantes") or []:
+        ring = (cuad.get("poligono") or {}).get("coordinates", [[]])[0]
+        if ring and _point_in_ring(lat_f, lng_f, ring):
+            return True
+    return False

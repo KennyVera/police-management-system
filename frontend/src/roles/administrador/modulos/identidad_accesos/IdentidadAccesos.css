@@ -1,6 +1,8 @@
 .mod-page {
   display: grid;
   gap: 1rem;
+  width: 100%;
+  max-width: none;
 }
 
 .mod-header {

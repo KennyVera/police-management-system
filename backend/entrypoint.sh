@@ -18,6 +18,7 @@ done
 
 echo "PostgreSQL is up. Applying migrations..."
 python manage.py migrate --noinput
+python manage.py load_ecuador_map
 python manage.py seed_demo_users
 python manage.py seed_catalogos
 python manage.py seed_despacho_demo

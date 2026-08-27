@@ -1,4 +1,6 @@
 from django.contrib.auth.models import User
+from datetime import date
+
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -159,6 +161,26 @@ def escuadra_asignar_vehiculo(request, pk):
     except VehiculoFlota.DoesNotExist:
         return Response({"detail": "Vehículo no encontrado."}, status=404)
 
+    ocupado = (
+        Escuadra.objects.filter(
+            activo=True,
+            fecha=escuadra.fecha,
+            vehiculo_id=vehiculo.id,
+        )
+        .exclude(pk=escuadra.pk)
+        .exists()
+    )
+    if ocupado:
+        return Response(
+            {
+                "detail": (
+                    f"El vehículo {vehiculo.placa} ya está asignado a otra escuadra "
+                    f"en la fecha {escuadra.fecha}."
+                )
+            },
+            status=400,
+        )
+
     turno_inicio = request.data.get("turno_inicio") or "07:00:00"
     turno_fin = request.data.get("turno_fin") or "19:00:00"
     if len(str(turno_inicio)) == 5:
@@ -206,6 +228,13 @@ def escuadra_asignar_vehiculo(request, pk):
     return Response(EscuadraSerializer(escuadra).data)
 
 
+def _vehiculos_ocupados_ids(fecha, *, excluir_escuadra_id=None):
+    qs = Escuadra.objects.filter(activo=True, fecha=fecha, vehiculo__isnull=False)
+    if excluir_escuadra_id:
+        qs = qs.exclude(pk=excluir_escuadra_id)
+    return set(qs.values_list("vehiculo_id", flat=True))
+
+
 @api_view(["GET", "POST"])
 @permission_classes([SupervisorOnly])
 def vehiculos_collection(request):
@@ -213,6 +242,15 @@ def vehiculos_collection(request):
         qs = VehiculoFlota.objects.all()
         if request.query_params.get("activo", "1") in ("1", "true", "yes"):
             qs = qs.filter(activo=True)
+        if request.query_params.get("disponibles") in ("1", "true", "yes"):
+            fecha = request.query_params.get("fecha") or date.today().isoformat()
+            excluir = request.query_params.get("excluir_escuadra")
+            ocupados = _vehiculos_ocupados_ids(
+                fecha,
+                excluir_escuadra_id=int(excluir) if excluir else None,
+            )
+            if ocupados:
+                qs = qs.exclude(pk__in=ocupados)
         return Response(VehiculoFlotaSerializer(qs, many=True).data)
 
     ser = VehiculoFlotaSerializer(data=request.data)
