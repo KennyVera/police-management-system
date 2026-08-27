@@ -110,6 +110,9 @@ class Institucion(models.Model):
         default="MENSUAL",
     )
     dias_gracia = models.PositiveSmallIntegerField(default=7)
+    # Cancelación solicitada por el admin institucional: acceso hasta fecha_renovacion.
+    cancelacion_solicitada = models.BooleanField(default=False)
+    cancelacion_solicitada_en = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-fecha_registro"]
@@ -174,5 +177,14 @@ class SuscripcionEvento(models.Model):
         return f"{self.institucion_id} · {self.accion}"
 
 
-from .models_facturacion import Factura, Pago, EventoFinanciero  # noqa: E402,F401
+from .models_facturacion import (  # noqa: E402,F401
+    EventoFinanciero,
+    Factura,
+    Pago,
+    UsageLog,
+)
 from .models_configuracion import ConfigAuditoria, ConfiguracionPlataforma  # noqa: E402,F401
+
+# Aliases de dominio (panel «Suscripción y Uso» del admin institucional)
+Subscription = Institucion  # plan_actual + estado_pago + fechas
+Invoice = Factura

@@ -4,6 +4,10 @@ import MaterialIcon from "../../../../shared/components/MaterialIcon";
 import PaginationBar from "../../../../shared/components/PaginationBar";
 import "../../../../shared/components/PaginationBar.css";
 import { identidadApi, unwrapPage } from "../../api";
+import {
+  ROLES_ASIGNABLES,
+  normalizeRoles,
+} from "./rangosPoliciales";
 import UsuariosTabla from "./componentes/UsuariosTabla";
 import UsuarioFormulario from "./componentes/UsuarioFormulario";
 import CredencialesPanel from "./componentes/CredencialesPanel";
@@ -39,7 +43,7 @@ export default function IdentidadAccesosPage({ section = "usuarios" }) {
   const navigate = useNavigate();
   const meta = META[section] || META.usuarios;
   const [usuarios, setUsuarios] = useState([]);
-  const [roles, setRoles] = useState([]);
+  const [roles, setRoles] = useState(ROLES_ASIGNABLES);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -67,7 +71,10 @@ export default function IdentidadAccesosPage({ section = "usuarios" }) {
   }, [q]);
 
   useEffect(() => {
-    identidadApi.rolesAsignables().then(setRoles).catch(() => setRoles([]));
+    identidadApi
+      .rolesAsignables()
+      .then((data) => setRoles(normalizeRoles(data)))
+      .catch(() => setRoles(ROLES_ASIGNABLES));
   }, []);
 
   async function loadUsuarios(opts = {}) {

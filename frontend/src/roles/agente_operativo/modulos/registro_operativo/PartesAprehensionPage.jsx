@@ -24,7 +24,7 @@ export default function PartesAprehensionPage() {
   const [meta, setMeta] = useState({ tipos_delito: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [mode, setMode] = useState(null); // consult | edit
+  const [mode, setMode] = useState(null); // edit
   const [selected, setSelected] = useState(null);
   const [q, setQ] = useState("");
   const [estado, setEstado] = useState("");
@@ -167,10 +167,6 @@ export default function PartesAprehensionPage() {
           <PartesLista
             items={items}
             busyId={busyId}
-            onConsult={(row) => {
-              setSelected(row);
-              setMode("consult");
-            }}
             onEdit={(row) => {
               setSelected(row);
               setMode("edit");
@@ -196,7 +192,6 @@ export default function PartesAprehensionPage() {
           delitos={meta.tipos_delito || []}
           meta={meta}
           initial={selected}
-          readOnly={mode === "consult"}
           onClose={() => {
             setMode(null);
             setSelected(null);

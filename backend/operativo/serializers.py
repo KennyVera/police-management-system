@@ -13,6 +13,7 @@ from operativo.models import (
     GestionHorario,
     InformeInvestigativo,
     InvolucradoExpediente,
+    InvolucradoParte,
     MultimediaEvidencia,
     MovimientoCustodia,
     Notificacion,
@@ -22,6 +23,29 @@ from operativo.models import (
     SolicitudFiscal,
     VehiculoFlota,
 )
+
+
+class InvolucradoParteSerializer(serializers.ModelSerializer):
+    tipo_label = serializers.CharField(source="get_tipo_display", read_only=True)
+    genero_label = serializers.CharField(source="get_genero_display", read_only=True)
+
+    class Meta:
+        model = InvolucradoParte
+        fields = [
+            "id",
+            "tipo",
+            "tipo_label",
+            "nombres",
+            "apellidos",
+            "cedula",
+            "alias",
+            "genero",
+            "genero_label",
+            "telefono",
+            "direccion",
+            "observaciones",
+        ]
+        read_only_fields = ["id", "tipo_label", "genero_label"]
 
 
 class ParteAprehensionSerializer(serializers.ModelSerializer):
@@ -44,6 +68,7 @@ class ParteAprehensionSerializer(serializers.ModelSerializer):
     puede_enviar = serializers.SerializerMethodField()
     pdf_url = serializers.SerializerMethodField()
     evidencias = serializers.SerializerMethodField()
+    involucrados = InvolucradoParteSerializer(many=True, required=False)
 
     class Meta:
         model = ParteAprehension
@@ -90,6 +115,7 @@ class ParteAprehensionSerializer(serializers.ModelSerializer):
             "bloqueado",
             "pdf_url",
             "evidencias",
+            "involucrados",
             "agente",
             "oficial_registra",
             "revisado_por_nombre",
@@ -199,6 +225,40 @@ class ParteAprehensionSerializer(serializers.ModelSerializer):
             attrs["fecha_hora"] = tz.now()
         return attrs
 
+    def _sync_involucrados(self, parte, items):
+        if items is None:
+            return
+        parte.involucrados.all().delete()
+        for raw in items:
+            nombres = (raw.get("nombres") or "").strip()
+            if not nombres:
+                continue
+            InvolucradoParte.objects.create(
+                parte=parte,
+                tipo=raw.get("tipo") or InvolucradoParte.Tipo.OTRO,
+                nombres=nombres,
+                apellidos=(raw.get("apellidos") or "").strip(),
+                cedula=(raw.get("cedula") or "").strip(),
+                alias=(raw.get("alias") or "").strip(),
+                genero=raw.get("genero") or InvolucradoParte.Genero.NO_ESPECIFICADO,
+                telefono=(raw.get("telefono") or "").strip(),
+                direccion=(raw.get("direccion") or "").strip(),
+                observaciones=(raw.get("observaciones") or "").strip(),
+            )
+
+    def create(self, validated_data):
+        involucrados = validated_data.pop("involucrados", None)
+        parte = super().create(validated_data)
+        self._sync_involucrados(parte, involucrados)
+        return parte
+
+    def update(self, instance, validated_data):
+        involucrados = validated_data.pop("involucrados", None)
+        parte = super().update(instance, validated_data)
+        if involucrados is not None:
+            self._sync_involucrados(parte, involucrados)
+        return parte
+
 
 class NovedadIncidenteSerializer(serializers.ModelSerializer):
     tipo_label = serializers.CharField(source="get_tipo_display", read_only=True)
@@ -229,14 +289,24 @@ class NovedadIncidenteSerializer(serializers.ModelSerializer):
 class MultimediaEvidenciaSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     agente = serializers.SerializerMethodField()
+    origen_label = serializers.SerializerMethodField()
+    parte_numero = serializers.SerializerMethodField()
+    parte_titulo = serializers.SerializerMethodField()
+    novedad_resumen = serializers.SerializerMethodField()
+    vinculado_a = serializers.SerializerMethodField()
 
     class Meta:
         model = MultimediaEvidencia
         fields = [
             "id",
             "origen",
+            "origen_label",
             "parte",
+            "parte_numero",
+            "parte_titulo",
             "novedad",
+            "novedad_resumen",
+            "vinculado_a",
             "descripcion",
             "nombre_archivo",
             "content_type",
@@ -260,6 +330,50 @@ class MultimediaEvidenciaSerializer(serializers.ModelSerializer):
     def get_agente(self, obj):
         u = obj.subido_por
         return f"{u.first_name} {u.last_name}".strip() or u.username
+
+    def get_origen_label(self, obj):
+        return obj.get_origen_display()
+
+    def get_parte_numero(self, obj):
+        if not obj.parte_id:
+            return None
+        return obj.parte.numero_caso or f"Parte #{obj.parte_id}"
+
+    def get_parte_titulo(self, obj):
+        if not obj.parte_id:
+            return None
+        return (obj.parte.titulo or "").strip() or None
+
+    def get_novedad_resumen(self, obj):
+        if not obj.novedad_id:
+            return None
+        n = obj.novedad
+        lugar = (n.lugar or "").strip()
+        return lugar or f"Novedad #{n.id}"
+
+    def get_vinculado_a(self, obj):
+        if obj.parte_id:
+            num = self.get_parte_numero(obj)
+            titulo = self.get_parte_titulo(obj)
+            return {
+                "tipo": "PARTE",
+                "label": "Parte",
+                "referencia": num,
+                "detalle": titulo,
+            }
+        if obj.novedad_id:
+            return {
+                "tipo": "NOVEDAD",
+                "label": "Novedad",
+                "referencia": self.get_novedad_resumen(obj),
+                "detalle": None,
+            }
+        return {
+            "tipo": "RAPIDA",
+            "label": "Captura rápida",
+            "referencia": "Sin parte vinculado",
+            "detalle": None,
+        }
 
 
 class TipoDelitoMiniSerializer(serializers.ModelSerializer):
@@ -1155,6 +1269,8 @@ class ExpedienteCasoSerializer(serializers.ModelSerializer):
             "observaciones",
             "bloqueado",
             "cerrado_en",
+            "investigacion_iniciada",
+            "investigacion_iniciada_en",
             "involucrados",
             "victima",
             "evidencias_count",
@@ -1176,6 +1292,8 @@ class ExpedienteCasoSerializer(serializers.ModelSerializer):
             "tipo_delito_articulo",
             "bloqueado",
             "cerrado_en",
+            "investigacion_iniciada",
+            "investigacion_iniciada_en",
             "involucrados",
             "victima",
             "evidencias_count",

@@ -15,4 +15,9 @@ urlpatterns = [
     path("novedades/", views.novedades_collection, name="agente-novedades"),
     path("novedades/<int:pk>/", views.novedad_detail, name="agente-novedad-detail"),
     path("multimedia/", views.multimedia_collection, name="agente-multimedia"),
+    path(
+        "multimedia/<int:pk>/archivo/",
+        views.multimedia_archivo,
+        name="agente-multimedia-archivo",
+    ),
 ]

@@ -7,8 +7,15 @@ from rest_framework.response import Response
 import hashlib
 
 from accounts.permissions import DetectiveOnly
+from operativo.bitacora_service import registrar_bitacora
+from operativo.expediente_gates import expediente_edit_blocked
 from operativo.minio_service import download_object, upload_evidencia
-from operativo.models import EvidenciaCaso, ExpedienteCaso, MovimientoCustodia
+from operativo.models import (
+    BitacoraInvestigacion,
+    EvidenciaCaso,
+    ExpedienteCaso,
+    MovimientoCustodia,
+)
 from operativo.serializers import EvidenciaCasoSerializer, MovimientoCustodiaSerializer
 
 
@@ -17,12 +24,7 @@ def _expediente_asignado(user, pk):
 
 
 def _locked(exp):
-    if exp.bloqueado:
-        return Response(
-            {"detail": "Expediente bloqueado (Cerrado / Enviado a Fiscalía)."},
-            status=status.HTTP_403_FORBIDDEN,
-        )
-    return None
+    return expediente_edit_blocked(exp, require_started=True)
 
 
 def _get_evidencia(user, pk):
@@ -182,6 +184,16 @@ def evidencia_digital(request):
         motivo="Ingreso inicial de evidencia multimedia",
         registrado_por=request.user,
     )
+    registrar_bitacora(
+        expediente=exp,
+        user=request.user,
+        tipo=BitacoraInvestigacion.TipoAccion.EVIDENCIA,
+        relato=(
+            f"Se agregó evidencia digital «{obj.nombre_archivo or obj.codigo}»"
+            + (f": {descripcion}" if descripcion else "")
+            + "."
+        ),
+    )
     return Response(EvidenciaCasoSerializer(obj).data, status=201)
 
 
@@ -227,6 +239,15 @@ def evidencia_fisica(request):
     )
     obj.ensure_codigo()
     obj.save()
+    registrar_bitacora(
+        expediente=exp,
+        user=request.user,
+        tipo=BitacoraInvestigacion.TipoAccion.EVIDENCIA,
+        relato=(
+            f"Se agregó evidencia física ({obj.get_categoria_fisica_display()}): "
+            f"{descripcion}."
+        ),
+    )
     return Response(EvidenciaCasoSerializer(obj).data, status=201)
 
 

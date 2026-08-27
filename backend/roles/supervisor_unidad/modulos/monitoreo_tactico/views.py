@@ -14,6 +14,7 @@ from operativo.models import (
     OrdenAdicional,
 )
 from operativo.serializers import _user_label
+from roles.supervisor_unidad.cuadrantes_geo import build_cuadrantes_for_supervisor
 from roles.supervisor_unidad.scope import agente_ids_en_zona, partes_en_zona_qs
 
 
@@ -214,6 +215,7 @@ def unidades_gps(request):
         {
             "fecha": str(hoy),
             "actualizado_en": timezone.now().isoformat(),
+            "zona_mapa": build_cuadrantes_for_supervisor(request.user),
             "unidades": items,
             "con_gps": sum(
                 1 for u in items if u["latitud"] is not None and u["longitud"] is not None

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, GeoJSON, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+
+const DEFAULT_CENTER = [-0.1807, -78.4678];
 
 const unitIcon = (activo, selected) =>
   L.divIcon({
@@ -44,22 +46,65 @@ function FocusController({ focus, focusToken, markerRefs }) {
   return null;
 }
 
-function FitBoundsOnce({ points, hasFocus }) {
+function FitZone({ zonaMapa, hasFocus }) {
   const map = useMap();
   const done = useRef(false);
   useEffect(() => {
-    if (hasFocus || done.current || !points?.length) return;
+    if (hasFocus || done.current) return;
+    const b = zonaMapa?.bounds;
+    if (!b) return;
+    const bounds = L.latLngBounds([b.south, b.west], [b.north, b.east]);
+    if (!bounds.isValid()) return;
+    done.current = true;
+    map.fitBounds(bounds, { padding: [28, 28] });
+    map.setMaxBounds(bounds.pad(0.08));
+  }, [zonaMapa, map, hasFocus]);
+  return null;
+}
+
+function FitBoundsOnce({ points, hasFocus, hasZona }) {
+  const map = useMap();
+  const done = useRef(false);
+  useEffect(() => {
+    if (hasFocus || hasZona || done.current || !points?.length) return;
     done.current = true;
     if (points.length === 1) {
       map.setView(points[0], 14);
       return;
     }
     map.fitBounds(points, { padding: [48, 48] });
-  }, [map, points, hasFocus]);
+  }, [map, points, hasFocus, hasZona]);
   return null;
 }
 
-export default function MonitoreoMapa({ unidades, focus, focusToken = 0 }) {
+function ZoneLayer({ zonaMapa }) {
+  const geojson = useMemo(() => {
+    const features = (zonaMapa?.cuadrantes || []).map((c) => ({
+      type: "Feature",
+      properties: { nombre: c.nombre },
+      geometry: c.poligono,
+    }));
+    if (!features.length) return null;
+    return { type: "FeatureCollection", features };
+  }, [zonaMapa]);
+
+  if (!geojson) return null;
+
+  return (
+    <GeoJSON
+      data={geojson}
+      style={() => ({
+        fillColor: "#7c5cbf",
+        fillOpacity: 0.1,
+        color: "#a78bfa",
+        weight: 2,
+        dashArray: "6 4",
+      })}
+    />
+  );
+}
+
+export default function MonitoreoMapa({ unidades, focus, focusToken = 0, zonaMapa = null }) {
   const markerRefs = useRef({});
 
   const unitMarkers = useMemo(
@@ -95,17 +140,36 @@ export default function MonitoreoMapa({ unidades, focus, focusToken = 0 }) {
     [unitMarkers, alertMarkers]
   );
 
-  const center = points[0] || [-2.1709, -79.9224];
+  const center = useMemo(() => {
+    const c = zonaMapa?.centro;
+    if (c?.lat != null && c?.lng != null) return [c.lat, c.lng];
+    return points[0] || DEFAULT_CENTER;
+  }, [zonaMapa, points]);
+
   const hasFocus = focus?.latitud != null && focus?.longitud != null;
+  const hasZona = Boolean(zonaMapa?.bounds);
+  const zoom = zonaMapa?.zoom || 13;
 
   return (
     <div className="monitoreo-mapa-wrap">
-      <MapContainer center={center} zoom={13} className="monitoreo-mapa" scrollWheelZoom>
+      {zonaMapa?.zona && (
+        <p className="monitoreo-zona-label">Zona operativa: {zonaMapa.zona}</p>
+      )}
+      <MapContainer
+        center={center}
+        zoom={zoom}
+        minZoom={11}
+        maxZoom={19}
+        className="monitoreo-mapa"
+        scrollWheelZoom
+      >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <FitBoundsOnce points={points} hasFocus={hasFocus} />
+        <FitZone zonaMapa={zonaMapa} hasFocus={hasFocus} />
+        <FitBoundsOnce points={points} hasFocus={hasFocus} hasZona={hasZona} />
+        <ZoneLayer zonaMapa={zonaMapa} />
         <FocusController focus={focus} focusToken={focusToken} markerRefs={markerRefs} />
         {unitMarkers.map((u) => (
           <Marker

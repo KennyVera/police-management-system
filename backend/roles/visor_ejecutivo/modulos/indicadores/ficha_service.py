@@ -56,10 +56,12 @@ def _tree_ids(jur: Jurisdiction) -> list[int]:
 
 def _profiles_in_zona(jur: Jurisdiction, institucion=None):
     tree = _tree_ids(jur)
-    qs = UserProfile.objects.filter(
-        Q(jurisdiccion_id__in=tree) | Q(zona=jur.nombre),
-        estado=AccountStatus.ACTIVO,
-    ).select_related("user", "jurisdiccion")
+    q = Q(jurisdiccion_id__in=tree) | Q(zona=jur.nombre)
+    if (jur.codigo or "").strip():
+        q |= Q(zona=jur.codigo)
+    qs = UserProfile.objects.filter(q, estado=AccountStatus.ACTIVO).select_related(
+        "user", "jurisdiccion"
+    )
     if institucion:
         qs = qs.filter(institucion=institucion)
     return qs
@@ -88,10 +90,19 @@ def _week_bounds(ref=None):
     return start, end, prev_start
 
 
+# Códigos oficiales de las 9 zonas policiales del Ecuador (provincias.json).
+ZONAS_OFICIALES_CODIGOS = frozenset(
+    {f"ZN-{i:02d}" for i in range(1, 10)}
+)
+
+
 def list_zonas(*, institucion=None) -> list[dict]:
     qs = (
-        Jurisdiction.objects.filter(tipo=JurisdictionType.ZONA, activo=True)
-        .order_by("nombre")
+        Jurisdiction.objects.filter(
+            tipo=JurisdictionType.ZONA,
+            activo=True,
+            codigo__in=ZONAS_OFICIALES_CODIGOS,
+        ).order_by("codigo", "nombre")
     )
     out = []
     for jur in qs:
@@ -161,17 +172,57 @@ def _cadena_mando(jur: Jurisdiction, institucion=None) -> dict:
     }
 
 
-def _partes_qs(scope: ZoneScope):
-    return ParteAprehension.objects.filter(
-        Q(sector_zona__in=scope.sectores) | Q(lugar__in=scope.sectores)
+def _partes_qs(jur: Jurisdiction, scope: ZoneScope, institucion=None):
+    """
+    Partes de la zona por:
+    1) agentes asignados al árbol jurisdiccional, y/o
+    2) coincidencia de sector_zona/lugar con nombres/códigos del árbol (exacta o parcial).
+    """
+    agent_ids = list(
+        _profiles_in_zona(jur, institucion)
+        .filter(role=SystemRole.AGENTE_OPERATIVO)
+        .values_list("user_id", flat=True)
     )
+    q = Q()
+    if agent_ids:
+        q |= Q(creado_por_id__in=agent_ids)
+
+    for s in scope.sectores or ():
+        label = (s or "").strip()
+        if not label:
+            continue
+        q |= Q(sector_zona__iexact=label) | Q(lugar__iexact=label)
+        # Textos compuestos: "Distrito 4 — Zona Norte · Sector A"
+        if len(label) >= 3:
+            q |= Q(sector_zona__icontains=label) | Q(lugar__icontains=label)
+
+    if not q:
+        return ParteAprehension.objects.none()
+
+    qs = ParteAprehension.objects.filter(q).distinct()
+    if institucion:
+        qs = qs.filter(institucion=institucion)
+    return qs
 
 
-def _carga_laboral(scope: ZoneScope) -> dict:
+def _carga_laboral(jur: Jurisdiction, scope: ZoneScope, institucion=None) -> dict:
     start, end, prev_start = _week_bounds()
-    qs = _partes_qs(scope)
+    qs = _partes_qs(jur, scope, institucion=institucion)
     esta = qs.filter(fecha_hora__gte=start, fecha_hora__lt=end).count()
     pasada = qs.filter(fecha_hora__gte=prev_start, fecha_hora__lt=start).count()
+
+    # Si la semana calendario está vacía, usar últimos 30 días como ventana operativa
+    ventana = "semana"
+    if esta == 0:
+        ult_30 = end - timedelta(days=30)
+        prev_30 = ult_30 - timedelta(days=30)
+        esta_30 = qs.filter(fecha_hora__gte=ult_30, fecha_hora__lt=end).count()
+        if esta_30:
+            esta = esta_30
+            pasada = qs.filter(fecha_hora__gte=prev_30, fecha_hora__lt=ult_30).count()
+            start = ult_30
+            ventana = "30d"
+
     delta = esta - pasada
     pct = round((delta / pasada) * 100, 1) if pasada else (100.0 if esta else 0.0)
     return {
@@ -181,37 +232,40 @@ def _carga_laboral(scope: ZoneScope) -> dict:
         "variacion_pct": pct,
         "desde": start.date().isoformat(),
         "hasta": (end - timedelta(seconds=1)).date().isoformat(),
+        "ventana": ventana,
     }
 
 
-def _tasa_resolucion_casos(jur: Jurisdiction, institucion=None) -> dict:
-    """Casos graves (ALTA/CRÍTICA) de detectives de la zona."""
+def _tasa_resolucion_casos(
+    jur: Jurisdiction, institucion=None, scope: ZoneScope | None = None
+) -> dict:
+    """
+    Preferencia: todos los expedientes de detectives de la zona.
+    Si no hay detectives/casos: tasa de partes enviados vs aprobados.
+    """
     detective_ids = list(
         _profiles_in_zona(jur, institucion)
         .filter(role=SystemRole.DETECTIVE)
         .values_list("user_id", flat=True)
     )
-    if not detective_ids:
-        return {
-            "asignados": 0,
-            "resueltos": 0,
-            "pendientes": 0,
-            "tasa_pct": 0.0,
-            "criterio": "prioridad ALTA/CRÍTICA · estado CERRADO",
-        }
-
-    qs = ExpedienteCaso.objects.filter(
-        detective_asignado_id__in=detective_ids,
-        prioridad__in=[
-            ExpedienteCaso.Prioridad.ALTA,
-            ExpedienteCaso.Prioridad.CRITICA,
-        ],
-    )
+    qs = ExpedienteCaso.objects.filter(detective_asignado_id__in=detective_ids)
     if institucion:
         qs = qs.filter(institucion=institucion)
 
     asignados = qs.count()
     resueltos = qs.filter(estado=ExpedienteCaso.Estado.CERRADO).count()
+    criterio = "expedientes del detective · estado CERRADO"
+
+    if asignados == 0 and scope is not None:
+        partes = _partes_qs(jur, scope, institucion=institucion).exclude(
+            estado_revision=ParteAprehension.EstadoRevision.BORRADOR
+        )
+        asignados = partes.count()
+        resueltos = partes.filter(
+            estado_revision=ParteAprehension.EstadoRevision.APROBADO
+        ).count()
+        criterio = "partes enviados · APROBADO (sin expedientes en zona)"
+
     pendientes = max(asignados - resueltos, 0)
     tasa = round((resueltos / asignados) * 100, 1) if asignados else 0.0
     return {
@@ -219,7 +273,7 @@ def _tasa_resolucion_casos(jur: Jurisdiction, institucion=None) -> dict:
         "resueltos": resueltos,
         "pendientes": pendientes,
         "tasa_pct": tasa,
-        "criterio": "prioridad ALTA/CRÍTICA · estado CERRADO",
+        "criterio": criterio,
     }
 
 
@@ -270,10 +324,10 @@ def _flota_zona(jur: Jurisdiction, institucion=None) -> dict:
     }
 
 
-def _sla_aprobacion(scope: ZoneScope) -> dict:
+def _sla_aprobacion(jur: Jurisdiction, scope: ZoneScope, institucion=None) -> dict:
     """Tiempo medio desde envío a revisión hasta aprobación (días)."""
     qs = (
-        _partes_qs(scope)
+        _partes_qs(jur, scope, institucion=institucion)
         .filter(
             estado_revision=ParteAprehension.EstadoRevision.APROBADO,
             aprobado_en__isnull=False,
@@ -362,10 +416,10 @@ def build_ficha(jur_id: int, *, institucion=None) -> dict | None:
 
     scope = _scope_from_jurisdiction(jur)
     cadena = _cadena_mando(jur, institucion)
-    carga = _carga_laboral(scope)
-    resolucion = _tasa_resolucion_casos(jur, institucion)
+    carga = _carga_laboral(jur, scope, institucion)
+    resolucion = _tasa_resolucion_casos(jur, institucion, scope=scope)
     flota = _flota_zona(jur, institucion)
-    sla = _sla_aprobacion(scope)
+    sla = _sla_aprobacion(jur, scope, institucion)
     agentes_op = cadena["conteos"]["agentes"]
     semaforo = _semaforo_estres(
         delitos_semana=carga["esta_semana"],

@@ -97,6 +97,7 @@ export default function RastreoGpsPage() {
           <div className="monitoreo-layout">
             <MonitoreoMapa
               unidades={data.unidades || []}
+              zonaMapa={data.zona_mapa}
               focus={selected}
               focusToken={focusToken}
             />

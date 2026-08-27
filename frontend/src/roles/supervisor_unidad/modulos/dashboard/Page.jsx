@@ -1,5 +1,5 @@
-﻿import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import MaterialIcon from "../../../../shared/components/MaterialIcon";
 import { useAuth } from "../../../../auth/AuthContext";
 import { useTheme } from "../../../../shared/theme/ThemeContext";
@@ -184,37 +184,55 @@ function SectorMap({ sectores, isDark }) {
 export default function Page() {
   const { user } = useAuth();
   const { isDark } = useTheme();
+  const location = useLocation();
   const name = user?.first_name || "Supervisor";
   const [data, setData] = useState(EMPTY);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const load = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
+    setError("");
+    try {
+      const d = await supervisorApi.dashboard();
+      setData({
+        ...EMPTY,
+        ...d,
+        kpis: { ...EMPTY.kpis, ...(d.kpis || {}) },
+        calidad_partes: { ...EMPTY.calidad_partes, ...(d.calidad_partes || {}) },
+        turno: { ...EMPTY.turno, ...(d.turno || {}) },
+        partes_revision: d.partes_revision || [],
+        actividad_escuadras: d.actividad_escuadras || [],
+        distribucion_sectores: d.distribucion_sectores || [],
+      });
+    } catch (err) {
+      setError(err.message || "No se pudo cargar el dashboard");
+      // No pisar datos previos con ceros si ya había información
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    let alive = true;
-    supervisorApi
-      .dashboard()
-      .then((d) => {
-        if (!alive) return;
-        setData({
-          ...EMPTY,
-          ...d,
-          kpis: { ...EMPTY.kpis, ...(d.kpis || {}) },
-          calidad_partes: { ...EMPTY.calidad_partes, ...(d.calidad_partes || {}) },
-          turno: { ...EMPTY.turno, ...(d.turno || {}) },
-          partes_revision: d.partes_revision || [],
-          actividad_escuadras: d.actividad_escuadras || [],
-          distribucion_sectores: d.distribucion_sectores || [],
-        });
-      })
-      .catch(() => {
-        if (alive) setData(EMPTY);
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
-      });
+    load();
+  }, [load, location.pathname, location.key]);
+
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === "visible") load({ silent: true });
+    }
+    function onFocus() {
+      load({ silent: true });
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onFocus);
+    const timer = setInterval(() => load({ silent: true }), 30000);
     return () => {
-      alive = false;
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onFocus);
+      clearInterval(timer);
     };
-  }, []);
+  }, [load]);
 
   const k = data.kpis;
   const calidad = data.calidad_partes;
@@ -238,8 +256,19 @@ export default function Page() {
             Hola, {name} <span aria-hidden="true">👋</span>
           </h2>
           <p>Aquí tienes el resumen operativo de tu unidad al día de hoy.</p>
+          {error ? <p className="mod-error" style={{ marginTop: 8 }}>{error}</p> : null}
         </div>
         <div className="sup-meta">
+          <button
+            type="button"
+            className="sup-chip muted"
+            onClick={() => load()}
+            title="Actualizar indicadores"
+            style={{ cursor: "pointer", border: "none" }}
+          >
+            <MaterialIcon name="refresh" />
+            Actualizar
+          </button>
           <span className="sup-chip muted">
             <MaterialIcon name="calendar_today" />
             {fechaLabel}

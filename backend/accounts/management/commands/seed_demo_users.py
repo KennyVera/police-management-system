@@ -5,44 +5,31 @@ from accounts.models import SystemRole, UserProfile
 from organizacion.models import Jurisdiction, JurisdictionType
 
 
-def ensure_zona_norte_scope():
-    """Árbol mínimo alineado con sector_zona del fact en ClickHouse (Sector 12)."""
-    zona, _ = Jurisdiction.objects.get_or_create(
-        codigo="ZN-NORTE",
-        defaults={
-            "tipo": JurisdictionType.ZONA,
-            "nombre": "Zona Norte",
-            "activo": True,
-        },
+def resolve_demo_zona():
+    """
+    Usa una zona oficial (ZN-09 Quito) si existe.
+    No crea zonas ficticias: Ecuador solo tiene ZN-01 … ZN-09.
+    """
+    zona = (
+        Jurisdiction.objects.filter(
+            tipo=JurisdictionType.ZONA,
+            codigo="ZN-09",
+            activo=True,
+        ).first()
+        or Jurisdiction.objects.filter(
+            tipo=JurisdictionType.ZONA,
+            codigo__in=[f"ZN-{i:02d}" for i in range(1, 10)],
+            activo=True,
+        )
+        .order_by("codigo")
+        .first()
     )
-    if zona.nombre != "Zona Norte":
-        zona.nombre = "Zona Norte"
-        zona.tipo = JurisdictionType.ZONA
-        zona.activo = True
-        zona.save(update_fields=["nombre", "tipo", "activo", "actualizado_en"])
-
-    sector, _ = Jurisdiction.objects.get_or_create(
-        codigo="SEC-12",
-        defaults={
-            "tipo": JurisdictionType.DISTRITO,
-            "nombre": "Sector 12",
-            "parent": zona,
-            "activo": True,
-        },
-    )
-    changed = False
-    if sector.parent_id != zona.id:
-        sector.parent = zona
-        changed = True
-    if sector.nombre != "Sector 12":
-        sector.nombre = "Sector 12"
-        changed = True
-    if not sector.activo:
-        sector.activo = True
-        changed = True
-    if changed:
-        sector.save()
     return zona
+
+
+# Compat: imports antiguos / scripts que aún llamen ensure_zona_norte_scope
+def ensure_zona_norte_scope():
+    return resolve_demo_zona()
 
 
 DEMO_USERS = [
@@ -74,7 +61,6 @@ DEMO_USERS = [
         "last_name": "Coronel",
         "role": SystemRole.DIRECTOR_ZONA,
         "rango_tipico": "Coroneles / Mayores",
-        "zona": "Zona Norte",
         "unidad": "Jefatura de Zona",
     },
     {
@@ -106,7 +92,6 @@ DEMO_USERS = [
         "role": SystemRole.FISCAL,
         "rango_tipico": "Fiscal de Turno / Ministerio Público",
         "unidad": "Fiscalía de Turno",
-        "zona": "Zona Norte",
     },
     {
         "username": "agente.urbano",
@@ -125,7 +110,18 @@ class Command(BaseCommand):
     help = "Crea usuarios demo (uno por rol de acceso)"
 
     def handle(self, *args, **options):
-        zona_norte = ensure_zona_norte_scope()
+        zona = resolve_demo_zona()
+        if zona:
+            self.stdout.write(
+                f"Zona demo oficial: {zona.codigo} — {zona.nombre}"
+            )
+        else:
+            self.stdout.write(
+                self.style.WARNING(
+                    "No hay zonas oficiales activas; usuarios operativos quedan sin zona."
+                )
+            )
+
         for item in DEMO_USERS:
             user, created = User.objects.get_or_create(
                 username=item["username"],
@@ -146,26 +142,25 @@ class Command(BaseCommand):
                 "role": item["role"],
                 "rango_tipico": item.get("rango_tipico", ""),
                 "unidad": item.get("unidad", ""),
-                "zona": item.get("zona", ""),
+                "zona": "",
+                "jurisdiccion": None,
             }
-            if item["role"] == SystemRole.DIRECTOR_ZONA:
-                defaults["jurisdiccion"] = zona_norte
-            if item["role"] == SystemRole.SUPERVISOR_UNIDAD:
-                defaults["jurisdiccion"] = zona_norte
-                defaults["zona"] = "Zona Norte"
-            if item["role"] == SystemRole.AGENTE_OPERATIVO:
-                defaults["jurisdiccion"] = zona_norte
-                defaults["zona"] = "Sector 12"
-            if item["role"] == SystemRole.DETECTIVE:
-                defaults["jurisdiccion"] = zona_norte
-                defaults["zona"] = "Zona Norte"
-            if item["role"] == SystemRole.FISCAL:
-                defaults["jurisdiccion"] = zona_norte
-                defaults["zona"] = "Zona Norte"
+            # Roles territoriales: asignar a zona oficial si existe
+            if zona and item["role"] in {
+                SystemRole.DIRECTOR_ZONA,
+                SystemRole.SUPERVISOR_UNIDAD,
+                SystemRole.AGENTE_OPERATIVO,
+                SystemRole.DETECTIVE,
+                SystemRole.FISCAL,
+            }:
+                defaults["jurisdiccion"] = zona
+                defaults["zona"] = zona.nombre
 
             UserProfile.objects.update_or_create(
                 user=user,
                 defaults=defaults,
             )
             state = "creado" if created else "actualizado"
-            self.stdout.write(self.style.SUCCESS(f"{state}: {item['email']} → {item['role']}"))
+            self.stdout.write(
+                self.style.SUCCESS(f"{state}: {item['email']} → {item['role']}")
+            )

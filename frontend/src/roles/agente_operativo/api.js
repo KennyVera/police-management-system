@@ -95,6 +95,20 @@ export const agenteApi = {
     }
     return data;
   },
+  fetchMultimediaBlob: async (id, { download = false } = {}) => {
+    const headers = {};
+    const token = getToken();
+    if (token) headers.Authorization = `Token ${token}`;
+    const q = download ? "?download=1" : "";
+    const response = await fetch(`${API_URL}${RO}/multimedia/${id}/archivo/${q}`, {
+      headers,
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.detail || "No se pudo cargar el archivo");
+    }
+    return response.blob();
+  },
 
   despachoResumen: () => apiFetch(`${DT}/resumen/`),
   miTurno: () => apiFetch(`${DT}/mi-turno/`),

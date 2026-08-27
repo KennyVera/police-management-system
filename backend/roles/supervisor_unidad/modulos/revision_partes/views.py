@@ -103,7 +103,7 @@ def parte_pdf(request, pk):
         return _parte_no_encontrado()
 
     try:
-        pdf_bytes = build_pdf_bytes(obj)
+        pdf_bytes = build_pdf_bytes(obj, generado_por=request.user)
     except Exception as exc:  # noqa: BLE001
         return Response(
             {"detail": f"No se pudo generar el PDF: {exc}"},
@@ -199,7 +199,7 @@ def aprobar_parte(request, pk):
     )
 
     try:
-        stored = generar_pdf_parte(obj)
+        stored = generar_pdf_parte(obj, generado_por=request.user)
         obj.pdf_bucket = stored["bucket"]
         obj.pdf_object_key = stored["object_key"]
         obj.save(update_fields=["pdf_bucket", "pdf_object_key", "actualizado_en"])

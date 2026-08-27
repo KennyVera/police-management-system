@@ -222,11 +222,14 @@ html[data-theme="dark"] .jur-map-popup .jur-map-zona {
   justify-content: center;
   padding: 0.4rem 0.75rem;
   border-radius: 10px;
+  border: none;
   background: #7c5cbf;
   color: #fff !important;
   font-weight: 700;
   font-size: 0.8rem;
+  font-family: inherit;
   text-decoration: none !important;
+  cursor: pointer;
 }
 
 .jur-map-cta:hover {

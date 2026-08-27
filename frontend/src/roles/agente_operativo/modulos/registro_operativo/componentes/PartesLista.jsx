@@ -10,7 +10,7 @@ function estadoClass(estado) {
   return "BAJA";
 }
 
-export default function PartesLista({ items, busyId, onConsult, onEdit, onEnviar }) {
+export default function PartesLista({ items, busyId, onEdit, onEnviar }) {
   const [pdfBusyId, setPdfBusyId] = useState(null);
   const [pdfError, setPdfError] = useState("");
 
@@ -121,9 +121,6 @@ export default function PartesLista({ items, busyId, onConsult, onEdit, onEnviar
                 </td>
                 <td>
                   <div className="row-actions">
-                    <button type="button" onClick={() => onConsult(row)}>
-                      Consultar
-                    </button>
                     {row.puede_editar && (
                       <button type="button" onClick={() => onEdit(row)}>
                         Editar

@@ -145,9 +145,10 @@ function ProvinceLayer({ data, onSelect }) {
 }
 
 function tileUrl(isDark) {
+  // Esri Canvas (sin API key) — evita watermark "API KEY REQUIRED" de CARTO.
   return isDark
-    ? "https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
-    : "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png";
+    ? "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+    : "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}";
 }
 
 function MiniGalapagos({ data, isDark }) {
@@ -206,7 +207,7 @@ export default function MapaChoropleth({ geojson, isDark, onSelectProvince }) {
       >
         <TileLayer
           url={tileUrl(isDark)}
-          attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+          attribution='Tiles &copy; Esri'
         />
         <FitMainland geojson={enriched} />
         <ProvinceLayer data={enriched} onSelect={onSelectProvince} />

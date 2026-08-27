@@ -30,6 +30,11 @@ export default function EscuadrasPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const escuadrasSinVehiculo = useMemo(
+    () => items.filter((e) => !e.vehiculo && !e.vehiculo_info?.id),
+    [items]
+  );
+
   async function load(fecha = applied.fecha) {
     setLoading(true);
     setError("");
@@ -115,7 +120,7 @@ export default function EscuadrasPage() {
             type="button"
             className="btn-ghost"
             onClick={() => setShowAsignar(true)}
-            disabled={!items.length}
+            disabled={!escuadrasSinVehiculo.length}
           >
             <MaterialIcon name="directions_car" />
             Asignar vehículo
@@ -249,7 +254,7 @@ export default function EscuadrasPage() {
 
       {showAsignar && (
         <AsignarVehiculoModal
-          escuadras={items}
+          escuadras={escuadrasSinVehiculo}
           vehiculos={vehiculos}
           onClose={() => setShowAsignar(false)}
           onSaved={() => {

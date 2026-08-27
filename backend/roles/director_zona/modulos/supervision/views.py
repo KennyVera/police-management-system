@@ -68,7 +68,7 @@ def parte_pdf(request, pk):
         )
 
     try:
-        pdf_bytes = build_pdf_bytes(obj)
+        pdf_bytes = build_pdf_bytes(obj, generado_por=request.user)
     except Exception as exc:  # noqa: BLE001
         return Response(
             {"detail": f"No se pudo generar el PDF: {exc}"},

@@ -77,6 +77,19 @@ export const ROLES = {
           },
         ],
       },
+      {
+        slug: "suscripcion_uso",
+        label: "Suscripción y Uso",
+        icon: "credit_card",
+        children: [
+          {
+            slug: "panel",
+            label: "Plan y consumo",
+            icon: "monitoring",
+            path: "suscripcion_uso",
+          },
+        ],
+      },
     ],
   },
   superadmin: {

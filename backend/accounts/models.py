@@ -22,6 +22,7 @@ ASSIGNABLE_ROLES = (
     SystemRole.FISCAL,
     SystemRole.DETECTIVE,
     SystemRole.AGENTE_OPERATIVO,
+    SystemRole.ADMIN_SISTEMA,
 )
 
 

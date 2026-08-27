@@ -1,5 +1,6 @@
-from django.http import HttpResponse
 from django.db.models import Q
+from django.http import HttpResponse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -7,8 +8,10 @@ from rest_framework.response import Response
 
 from accounts.permissions import DetectiveOnly
 from catalogos.models import TipoDelito
+from operativo.bitacora_service import registrar_bitacora
+from operativo.expediente_gates import expediente_edit_blocked
 from operativo.minio_service import download_object, upload_evidencia
-from operativo.models import ExpedienteCaso, InvolucradoExpediente
+from operativo.models import BitacoraInvestigacion, ExpedienteCaso, InvolucradoExpediente
 from operativo.notifications import notify_user
 from operativo.serializers import (
     ExpedienteCasoSerializer,
@@ -25,13 +28,8 @@ def _expedientes_qs(user):
     )
 
 
-def _locked(exp):
-    if exp.bloqueado:
-        return Response(
-            {"detail": "Expediente bloqueado (Cerrado / Enviado a Fiscalía)."},
-            status=status.HTTP_403_FORBIDDEN,
-        )
-    return None
+def _locked(exp, *, require_started=True):
+    return expediente_edit_blocked(exp, require_started=require_started)
 
 
 @api_view(["GET"])
@@ -151,7 +149,18 @@ def expediente_detail(request, pk):
     ser.validated_data.pop("detective_asignado", None)
     ser.validated_data.pop("bloqueado", None)
     ser.validated_data.pop("estado", None)
+    ser.validated_data.pop("investigacion_iniciada", None)
+    prev_obs = obj.observaciones
     obj = ser.save()
+    if "observaciones" in request.data and (request.data.get("observaciones") or "") != (
+        prev_obs or ""
+    ):
+        registrar_bitacora(
+            expediente=obj,
+            user=request.user,
+            tipo=BitacoraInvestigacion.TipoAccion.SISTEMA,
+            relato="Se actualizaron las notas / observaciones del expediente.",
+        )
     return Response(ExpedienteCasoSerializer(obj).data)
 
 
@@ -166,8 +175,7 @@ def expediente_cambiar_estado(request, pk):
         return Response(
             {
                 "detail": (
-                    "Para cerrar y enviar a Fiscalía usa Actividades → "
-                    "Informe Investigativo Final."
+                    "Para completar el expediente usa «Establecer como completado»."
                 )
             },
             status=400,
@@ -181,10 +189,97 @@ def expediente_cambiar_estado(request, pk):
     if locked:
         return locked
 
+    prev = obj.estado
     obj.estado = estado
     if request.data.get("observaciones") is not None:
         obj.observaciones = request.data.get("observaciones") or ""
     obj.save(update_fields=["estado", "observaciones", "actualizado_en"])
+    if prev != estado:
+        registrar_bitacora(
+            expediente=obj,
+            user=request.user,
+            tipo=BitacoraInvestigacion.TipoAccion.ESTADO,
+            relato=f"Estado cambiado de {prev} a {estado}.",
+        )
+    return Response(ExpedienteCasoSerializer(obj).data)
+
+
+@api_view(["POST"])
+@permission_classes([DetectiveOnly])
+def expediente_iniciar(request, pk):
+    """Marca el inicio formal de la investigación (habilita edición)."""
+    try:
+        obj = _expedientes_qs(request.user).get(pk=pk)
+    except ExpedienteCaso.DoesNotExist:
+        return Response({"detail": "Expediente no encontrado."}, status=404)
+
+    if obj.bloqueado or obj.estado == ExpedienteCaso.Estado.CERRADO:
+        return Response(
+            {"detail": "El expediente ya está cerrado."},
+            status=403,
+        )
+
+    if obj.investigacion_iniciada:
+        return Response(ExpedienteCasoSerializer(obj).data)
+
+    obj.investigacion_iniciada = True
+    obj.investigacion_iniciada_en = timezone.now()
+    if obj.estado == ExpedienteCaso.Estado.SUSPENDIDO:
+        obj.estado = ExpedienteCaso.Estado.INDAGACION_PREVIA
+        obj.save(
+            update_fields=[
+                "investigacion_iniciada",
+                "investigacion_iniciada_en",
+                "estado",
+                "actualizado_en",
+            ]
+        )
+    else:
+        obj.save(
+            update_fields=[
+                "investigacion_iniciada",
+                "investigacion_iniciada_en",
+                "actualizado_en",
+            ]
+        )
+
+    registrar_bitacora(
+        expediente=obj,
+        user=request.user,
+        tipo=BitacoraInvestigacion.TipoAccion.SISTEMA,
+        relato="Investigación iniciada. El detective puede registrar involucrados, evidencias y diligencias.",
+    )
+    return Response(ExpedienteCasoSerializer(obj).data)
+
+
+@api_view(["POST"])
+@permission_classes([DetectiveOnly])
+def expediente_completar(request, pk):
+    """Cierra el expediente cuando el detective considera terminada la investigación."""
+    try:
+        obj = _expedientes_qs(request.user).get(pk=pk)
+    except ExpedienteCaso.DoesNotExist:
+        return Response({"detail": "Expediente no encontrado."}, status=404)
+
+    if obj.bloqueado or obj.estado == ExpedienteCaso.Estado.CERRADO:
+        return Response(ExpedienteCasoSerializer(obj).data)
+
+    if not obj.investigacion_iniciada:
+        return Response(
+            {"detail": "Debes iniciar la investigación antes de completarla."},
+            status=400,
+        )
+
+    obj.estado = ExpedienteCaso.Estado.CERRADO
+    obj.bloqueado = True
+    obj.cerrado_en = timezone.now()
+    obj.save(update_fields=["estado", "bloqueado", "cerrado_en", "actualizado_en"])
+    registrar_bitacora(
+        expediente=obj,
+        user=request.user,
+        tipo=BitacoraInvestigacion.TipoAccion.ESTADO,
+        relato="Expediente marcado como completado. Queda bloqueado para edición.",
+    )
     return Response(ExpedienteCasoSerializer(obj).data)
 
 
@@ -279,6 +374,15 @@ def involucrados_collection(request, pk):
                 {"detail": f"Involucrado creado, pero la foto falló: {exc}"},
                 status=status.HTTP_201_CREATED,
             )
+    nombre = f"{obj.nombres} {obj.apellidos}".strip()
+    registrar_bitacora(
+        expediente=exp,
+        user=request.user,
+        tipo=BitacoraInvestigacion.TipoAccion.INVOLUCRADO,
+        relato=f"Se registró involucrado ({obj.get_tipo_display()}): {nombre}"
+        + (f" · CI {obj.cedula}" if obj.cedula else "")
+        + ".",
+    )
     return Response(InvolucradoExpedienteSerializer(obj).data, status=201)
 
 
@@ -300,7 +404,15 @@ def involucrado_detail(request, pk, inv_id):
         return locked
 
     if request.method == "DELETE":
+        nombre = f"{obj.nombres} {obj.apellidos}".strip()
+        tipo_label = obj.get_tipo_display()
         obj.delete()
+        registrar_bitacora(
+            expediente=exp,
+            user=request.user,
+            tipo=BitacoraInvestigacion.TipoAccion.INVOLUCRADO,
+            relato=f"Se eliminó involucrado ({tipo_label}): {nombre}.",
+        )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     data = _payload_involucrado(request)
@@ -314,6 +426,13 @@ def involucrado_detail(request, pk, inv_id):
             _guardar_foto_involucrado(obj, foto)
         except Exception as exc:  # noqa: BLE001
             return Response({"detail": f"Datos guardados, pero la foto falló: {exc}"}, status=400)
+    nombre = f"{obj.nombres} {obj.apellidos}".strip()
+    registrar_bitacora(
+        expediente=exp,
+        user=request.user,
+        tipo=BitacoraInvestigacion.TipoAccion.INVOLUCRADO,
+        relato=f"Se actualizó involucrado ({obj.get_tipo_display()}): {nombre}.",
+    )
     return Response(InvolucradoExpedienteSerializer(obj).data)
 
 

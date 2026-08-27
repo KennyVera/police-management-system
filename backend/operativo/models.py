@@ -198,6 +198,48 @@ class ParteAprehension(models.Model):
         super().save(*args, **kwargs)
 
 
+class InvolucradoParte(models.Model):
+    """Personas relacionadas al parte: sospechosos, víctimas u otras."""
+
+    class Tipo(models.TextChoices):
+        SOSPECHOSO = "SOSPECHOSO", "Sospechoso inicial"
+        VICTIMA = "VICTIMA", "Víctima"
+        TESTIGO = "TESTIGO", "Testigo"
+        DENUNCIANTE = "DENUNCIANTE", "Denunciante"
+        OTRO = "OTRO", "Otra persona"
+
+    class Genero(models.TextChoices):
+        NO_ESPECIFICADO = "NO_ESPECIFICADO", "No especificado"
+        MASCULINO = "MASCULINO", "Masculino"
+        FEMENINO = "FEMENINO", "Femenino"
+        OTRO = "OTRO", "Otro"
+
+    parte = models.ForeignKey(
+        ParteAprehension, on_delete=models.CASCADE, related_name="involucrados"
+    )
+    tipo = models.CharField(max_length=20, choices=Tipo.choices)
+    nombres = models.CharField(max_length=150)
+    apellidos = models.CharField(max_length=150, blank=True)
+    cedula = models.CharField(max_length=20, blank=True)
+    alias = models.CharField(max_length=120, blank=True)
+    genero = models.CharField(
+        max_length=20, choices=Genero.choices, default=Genero.NO_ESPECIFICADO
+    )
+    telefono = models.CharField(max_length=40, blank=True)
+    direccion = models.CharField(max_length=255, blank=True)
+    observaciones = models.TextField(blank=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["tipo", "id"]
+        verbose_name = "Involucrado de parte"
+        verbose_name_plural = "Involucrados de parte"
+
+    def __str__(self) -> str:
+        return f"{self.get_tipo_display()}: {self.nombres} {self.apellidos}".strip()
+
+
 class NovedadIncidente(models.Model):
     class TipoNovedad(models.TextChoices):
         CHOQUE_LEVE = "CHOQUE_LEVE", "Choque leve"
@@ -700,6 +742,11 @@ class ExpedienteCaso(models.Model):
     observaciones = models.TextField(blank=True)
     bloqueado = models.BooleanField(default=False)
     cerrado_en = models.DateTimeField(null=True, blank=True)
+    investigacion_iniciada = models.BooleanField(
+        default=False,
+        help_text="True cuando el detective pulsa Iniciar investigación.",
+    )
+    investigacion_iniciada_en = models.DateTimeField(null=True, blank=True)
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
 
@@ -905,6 +952,10 @@ class BitacoraInvestigacion(models.Model):
         ENTREVISTA = "ENTREVISTA", "Entrevista a testigo"
         DILIGENCIA = "DILIGENCIA", "Diligencia de campo"
         ANALISIS = "ANALISIS", "Análisis documental"
+        INVOLUCRADO = "INVOLUCRADO", "Registro de involucrado"
+        EVIDENCIA = "EVIDENCIA", "Registro de evidencia"
+        ESTADO = "ESTADO", "Cambio de estado"
+        SISTEMA = "SISTEMA", "Auditoría del sistema"
         OTRO = "OTRO", "Otro"
 
     expediente = models.ForeignKey(

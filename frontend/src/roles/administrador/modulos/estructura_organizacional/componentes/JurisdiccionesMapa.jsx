@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { GeoJSON, MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -139,7 +140,7 @@ function ProvinciaLabels({ labels }) {
   ));
 }
 
-function ProvinciasLayer({ geojson, items }) {
+function ProvinciasLayer({ geojson, items, onAdministrar }) {
   const ref = useRef(null);
 
   const onEachFeature = (feature, layer) => {
@@ -150,7 +151,7 @@ function ProvinciasLayer({ geojson, items }) {
     const qs = new URLSearchParams();
     if (idProv !== "") qs.set("provincia_id", String(idProv));
     if (sub?.id) qs.set("jurisdiccion_id", String(sub.id));
-    const href = `${ASIGNACION_PATH}?${qs.toString()}`;
+    const path = `${ASIGNACION_PATH}?${qs.toString()}`;
     const jefe = sub?.jefe_zona?.nombre || "Sin jefe asignado";
     const personal = sub?.personal_count ?? 0;
 
@@ -159,12 +160,24 @@ function ProvinciasLayer({ geojson, items }) {
         <strong>${nombre}</strong>
         <p class="jur-map-zona">${zona}</p>
         <p>${sub ? `${sub.codigo} · ${jefe} · ${personal} en mando` : "Provincia aún no vinculada al directorio"}</p>
-        <a class="jur-map-cta" href="${href}">Administrar Personal</a>
+        <button type="button" class="jur-map-cta" data-path="${path}">Administrar Personal</button>
       </div>`,
       { maxWidth: 300 }
     );
 
     layer.on({
+      popupopen: (e) => {
+        const root = e.popup.getElement();
+        const btn = root?.querySelector(".jur-map-cta");
+        if (!btn || btn.dataset.bound === "1") return;
+        btn.dataset.bound = "1";
+        btn.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          const target = btn.getAttribute("data-path");
+          if (target && onAdministrar) onAdministrar(target);
+        });
+      },
       mouseover: (e) => {
         e.target.setStyle({ weight: 2.4, fillOpacity: 0.55, color: "#c4b5fd" });
         e.target.bringToFront();
@@ -188,6 +201,7 @@ function ProvinciasLayer({ geojson, items }) {
 }
 
 export default function JurisdiccionesMapa({ items = [], refreshing = false }) {
+  const navigate = useNavigate();
   const [geojson, setGeojson] = useState(null);
   const [error, setError] = useState("");
 
@@ -223,6 +237,11 @@ export default function JurisdiccionesMapa({ items = [], refreshing = false }) {
     [items]
   );
 
+  function goAdministrar(pathWithQuery) {
+    // Navegación SPA: evita recargar toda la app (Leaflet, auth, shell…).
+    navigate(pathWithQuery);
+  }
+
   return (
     <div className="jur-map-wrap h-[600px] overflow-hidden rounded-2xl border border-gray-700/50 bg-gray-800/90 shadow-xl">
       {refreshing && <p className="jur-map-refresh">Actualizando mando…</p>}
@@ -242,7 +261,12 @@ export default function JurisdiccionesMapa({ items = [], refreshing = false }) {
             url={OSM_TILES}
           />
           <FitMainland geojson={geojson} />
-          <ProvinciasLayer key={layerKey} geojson={geojson} items={items} />
+          <ProvinciasLayer
+            key={layerKey}
+            geojson={geojson}
+            items={items}
+            onAdministrar={goAdministrar}
+          />
           <ProvinciaLabels labels={labels} />
         </MapContainer>
       )}

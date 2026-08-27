@@ -64,8 +64,15 @@ def parte_en_zona_or_404(user, pk: int) -> ParteAprehension | None:
     """Devuelve el parte si existe y pertenece a la zona; None si no."""
     return (
         partes_en_zona_qs(user)
-        .select_related("tipo_delito", "creado_por", "alerta", "revisado_por")
-        .prefetch_related("multimedia")
+        .select_related(
+            "tipo_delito",
+            "creado_por",
+            "creado_por__profile",
+            "alerta",
+            "revisado_por",
+            "revisado_por__profile",
+        )
+        .prefetch_related("multimedia", "involucrados")
         .filter(pk=pk)
         .first()
     )

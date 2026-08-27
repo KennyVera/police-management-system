@@ -1,0 +1,354 @@
+/* Documentación Legal — layout elegante */
+
+.act-page .mod-header {
+  margin-bottom: 1rem;
+}
+
+.act-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.85rem 1.25rem;
+  padding: 1rem 1.15rem;
+  background: #fff;
+  border: 1px solid #e8ecf3;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(30, 42, 74, 0.04);
+}
+
+.act-toolbar label {
+  display: grid;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: min(100%, 280px);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.act-toolbar select {
+  border: 1px solid #e5e9f2;
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #1a2338;
+  background: #fafbff;
+}
+
+.act-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.35rem;
+  background: #f3f4f8;
+  border-radius: 14px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.act-tabs button {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.55rem 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: #5b6478;
+  background: transparent;
+}
+
+.act-tabs button .material-symbols-outlined {
+  font-size: 1.15rem;
+}
+
+.act-tabs button.active {
+  background: #fff;
+  color: #5b3d9a;
+  box-shadow: 0 2px 10px rgba(30, 42, 74, 0.08);
+}
+
+.act-split {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .act-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* —— Informe final —— */
+.act-informe {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(240px, 0.7fr);
+  gap: 1.15rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .act-informe {
+    grid-template-columns: 1fr;
+  }
+}
+
+.act-informe-doc {
+  background: #fff;
+  border: 1px solid #e8ecf3;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(30, 42, 74, 0.06);
+}
+
+.act-informe-banner {
+  background: linear-gradient(135deg, #12284f 0%, #3d2a6d 55%, #6b4db3 100%);
+  color: #fff;
+  padding: 1.15rem 1.35rem 1.25rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.act-informe-banner .mod-kicker,
+.act-informe-banner .act-step {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.act-informe-banner h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.act-informe-banner p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 42rem;
+  line-height: 1.45;
+}
+
+.act-informe-body {
+  padding: 1.25rem 1.35rem 1.4rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.act-field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.act-field > span {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.act-field input,
+.act-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #e5e9f2;
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  font: inherit;
+  font-size: 0.95rem;
+  color: #1a2338;
+  background: #fafbff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.act-field textarea {
+  resize: vertical;
+  min-height: 8rem;
+  line-height: 1.55;
+}
+
+.act-field textarea.act-field-lg {
+  min-height: 14rem;
+}
+
+.act-field input:focus,
+.act-field textarea:focus {
+  outline: none;
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 3px rgba(124, 92, 191, 0.18);
+  background: #fff;
+}
+
+.act-informe-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid #eef1f6;
+  margin-top: 0.25rem;
+}
+
+.act-informe-actions .btn-accent {
+  min-width: 220px;
+  justify-content: center;
+}
+
+.act-informe-aside {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.act-aside-card {
+  background: #fff;
+  border: 1px solid #e8ecf3;
+  border-radius: 16px;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 8px 24px rgba(30, 42, 74, 0.04);
+}
+
+.act-aside-card h4 {
+  margin: 0 0 0.55rem;
+  font-size: 0.95rem;
+  color: #1a2338;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.act-aside-card h4 .material-symbols-outlined {
+  color: #7c5cbf;
+  font-size: 1.2rem;
+}
+
+.act-aside-card p,
+.act-aside-card li {
+  margin: 0;
+  font-size: 0.86rem;
+  color: #5b6478;
+  line-height: 1.45;
+}
+
+.act-aside-card ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.act-meta-row {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.86rem;
+}
+
+.act-meta-row div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid #eef1f6;
+}
+
+.act-meta-row div:last-child {
+  border-bottom: 0;
+}
+
+.act-meta-row span {
+  color: #8b95a8;
+}
+
+.act-meta-row strong {
+  color: #1a2338;
+  text-align: right;
+}
+
+.act-informe-view {
+  padding: 1.35rem 1.5rem 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.act-informe-view .act-doc-title {
+  margin: 0;
+  font-size: 1.35rem;
+  color: #12284f;
+}
+
+.act-informe-view .act-doc-block {
+  background: #f8fafc;
+  border: 1px solid #e8ecf3;
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+}
+
+.act-informe-view .act-doc-block h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #7c5cbf;
+}
+
+.act-informe-view .act-doc-block p {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.55;
+  color: #1a2338;
+}
+
+html[data-theme="dark"] .act-toolbar,
+html[data-theme="dark"] .act-informe-doc,
+html[data-theme="dark"] .act-aside-card {
+  background: #141414;
+  border-color: #2e2e2e;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .act-toolbar select,
+html[data-theme="dark"] .act-field input,
+html[data-theme="dark"] .act-field textarea {
+  background: #1a1a1a;
+  border-color: #333;
+  color: #e8e8e8;
+}
+
+html[data-theme="dark"] .act-tabs {
+  background: #1a1a1a;
+}
+
+html[data-theme="dark"] .act-tabs button.active {
+  background: #222;
+  color: #c4b5fd;
+}
+
+html[data-theme="dark"] .act-aside-card h4,
+html[data-theme="dark"] .act-meta-row strong,
+html[data-theme="dark"] .act-informe-view .act-doc-title,
+html[data-theme="dark"] .act-informe-view .act-doc-block p {
+  color: #e8e8e8;
+}
+
+html[data-theme="dark"] .act-informe-view .act-doc-block {
+  background: #1a1a1a;
+  border-color: #333;
+}
+
+html[data-theme="dark"] .act-informe-actions {
+  border-top-color: #2e2e2e;
+}

@@ -3,6 +3,7 @@ import MaterialIcon from "../../../../shared/components/MaterialIcon";
 import { useConfirm } from "../../../../shared/components/ConfirmContext";
 import { detectiveApi } from "../../api";
 import "../../../../shared/styles/ModuloPage.css";
+import "./Actividades.css";
 
 const TABS = [
   { id: "bitacora", label: "Bitácora", icon: "menu_book" },
@@ -10,6 +11,54 @@ const TABS = [
   { id: "solicitudes", label: "Solicitudes Fiscalía", icon: "gavel" },
   { id: "informe", label: "Informe final", icon: "description" },
 ];
+
+/** Formato YYYY-MM-DDTHH:mm para input datetime-local */
+function toLocalInputValue(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function bitacoraDateBounds(expediente) {
+  const now = new Date();
+  const max = toLocalInputValue(now);
+  let minDate = null;
+  if (expediente?.investigacion_iniciada_en) {
+    minDate = new Date(expediente.investigacion_iniciada_en);
+  } else if (expediente?.creado_en) {
+    minDate = new Date(expediente.creado_en);
+  } else {
+    minDate = new Date(now);
+    minDate.setFullYear(now.getFullYear() - 1);
+  }
+  // No permitir min posterior a max
+  if (minDate > now) minDate = new Date(now.getTime() - 60 * 1000);
+  return { min: toLocalInputValue(minDate), max };
+}
+
+function validateBitacoraFecha(fechaHora, bounds) {
+  if (!fechaHora) {
+    return "Indica la fecha y hora de la diligencia.";
+  }
+  const value = new Date(fechaHora);
+  if (Number.isNaN(value.getTime())) {
+    return "Fecha / hora inválida.";
+  }
+  if (bounds.min) {
+    const min = new Date(bounds.min);
+    if (value < min) {
+      return "La fecha no puede ser anterior al inicio del expediente / investigación.";
+    }
+  }
+  if (bounds.max) {
+    const max = new Date(bounds.max);
+    if (value > max) {
+      return "La fecha / hora no puede ser futura.";
+    }
+  }
+  return "";
+}
 
 export default function ActividadesPage() {
   const confirm = useConfirm();
@@ -122,10 +171,17 @@ export default function ActividadesPage() {
   const tiposBit = useMemo(() => meta.tipos_bitacora || [], [meta]);
   const tiposBien = useMemo(() => meta.tipos_bien || [], [meta]);
   const tiposSol = useMemo(() => meta.tipos_solicitud || [], [meta]);
+  const fechaBounds = useMemo(() => bitacoraDateBounds(selected), [selected]);
 
   async function addBitacora(e) {
     e.preventDefault();
     if (!expId || locked) return;
+    const fechaErr = validateBitacoraFecha(bitForm.fecha_hora, fechaBounds);
+    if (fechaErr) {
+      setError(fechaErr);
+      setOk("");
+      return;
+    }
     setBusy(true);
     setError("");
     setOk("");
@@ -225,7 +281,7 @@ export default function ActividadesPage() {
   }
 
   return (
-    <div className="mod-page">
+    <div className="mod-page act-page">
       <header className="mod-header">
         <div>
           <p className="mod-kicker">Actividades y Documentación Legal</p>
@@ -237,14 +293,10 @@ export default function ActividadesPage() {
         </div>
       </header>
 
-      <div className="panel-card" style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", alignItems: "center" }}>
-        <label style={{ display: "flex", gap: "0.5rem", alignItems: "center", flex: 1, minWidth: 220 }}>
+      <div className="act-toolbar">
+        <label>
           Expediente
-          <select
-            value={expId}
-            onChange={(e) => setExpId(e.target.value)}
-            style={{ flex: 1 }}
-          >
+          <select value={expId} onChange={(e) => setExpId(e.target.value)}>
             <option value="">Seleccione...</option>
             {expedientes.map((c) => (
               <option key={c.id} value={c.id}>
@@ -255,7 +307,7 @@ export default function ActividadesPage() {
           </select>
         </label>
         {selected && (
-          <span className="badge-estado ACTIVO">
+          <span className={`badge-estado ${selected.bloqueado ? "BAJA" : "ACTIVO"}`}>
             {selected.estado_label}
             {selected.bloqueado ? " · Bloqueado" : ""}
           </span>
@@ -263,14 +315,7 @@ export default function ActividadesPage() {
       </div>
 
       {error && <p className="mod-error">{error}</p>}
-      {ok && (
-        <p
-          className="mod-muted"
-          className="mod-ok"
-        >
-          {ok}
-        </p>
-      )}
+      {ok && <p className="mod-ok">{ok}</p>}
 
       {loading ? (
         <p className="mod-muted">Cargando...</p>
@@ -278,19 +323,19 @@ export default function ActividadesPage() {
         <p className="mod-muted">Selecciona un expediente asignado.</p>
       ) : (
         <>
-          <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+          <nav className="act-tabs" aria-label="Secciones de documentación">
             {TABS.map((t) => (
               <button
                 key={t.id}
                 type="button"
-                className={tab === t.id ? "btn-accent" : "btn-ghost"}
+                className={tab === t.id ? "active" : ""}
                 onClick={() => setTab(t.id)}
               >
                 <MaterialIcon name={t.icon} />
                 {t.label}
               </button>
             ))}
-          </div>
+          </nav>
 
           {tab === "bitacora" && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
@@ -345,9 +390,24 @@ export default function ActividadesPage() {
                   Fecha / hora
                   <input
                     type="datetime-local"
+                    required
                     disabled={locked || busy}
+                    min={fechaBounds.min}
+                    max={fechaBounds.max}
                     value={bitForm.fecha_hora}
-                    onChange={(e) => setBitForm({ ...bitForm, fecha_hora: e.target.value })}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v && fechaBounds.max && v > fechaBounds.max) {
+                        setBitForm({ ...bitForm, fecha_hora: fechaBounds.max });
+                        return;
+                      }
+                      if (v && fechaBounds.min && v < fechaBounds.min) {
+                        setBitForm({ ...bitForm, fecha_hora: fechaBounds.min });
+                        return;
+                      }
+                      setBitForm({ ...bitForm, fecha_hora: v });
+                    }}
+                    title="Desde el inicio del caso hasta ahora"
                   />
                 </label>
                 <label className="full">
@@ -537,66 +597,131 @@ export default function ActividadesPage() {
           )}
 
           {tab === "informe" && (
-            <div className="panel-card" style={{ maxWidth: 820 }}>
-              {informe || locked ? (
-                <>
-                  <p className="mod-kicker">Informe emitido</p>
-                  <h3 style={{ marginTop: 0 }}>{informe?.titulo || "Informe Investigativo Final"}</h3>
-                  <p style={{ whiteSpace: "pre-wrap" }}>{informe?.contenido}</p>
-                  {informe?.conclusiones && (
-                    <>
-                      <p className="mod-kicker">Conclusiones</p>
-                      <p style={{ whiteSpace: "pre-wrap" }}>{informe.conclusiones}</p>
-                    </>
-                  )}
-                  {informe?.paquete_url && (
-                    <a className="btn-accent" href={informe.paquete_url} target="_blank" rel="noreferrer">
-                      Descargar paquete digital
-                    </a>
-                  )}
-                  <p className="mod-muted" style={{ marginTop: "0.75rem" }}>
-                    Expediente bloqueado tras el envío a Fiscalía.
+            <div className="act-informe">
+              <div className="act-informe-doc">
+                <div className="act-informe-banner">
+                  <p className="act-step">Paso 5 · Cierre documental</p>
+                  <h3>
+                    {informe || locked
+                      ? "Informe investigativo emitido"
+                      : "Informe investigativo final"}
+                  </h3>
+                  <p>
+                    {informe || locked
+                      ? "Documento oficial generado para remisión a Fiscalía. El expediente queda bloqueado."
+                      : "Redacta el informe de cierre. Al enviarlo, el expediente se bloqueará y se generará el paquete digital."}
                   </p>
-                </>
-              ) : (
-                <form className="form-grid" onSubmit={cerrarCaso}>
-                  <p className="full mod-kicker" style={{ margin: 0 }}>
-                    Paso 5 — Cierre y emisión del Informe Investigativo Final
-                  </p>
-                  <label className="full">
-                    Título
-                    <input
-                      required
-                      value={infForm.titulo}
-                      onChange={(e) => setInfForm({ ...infForm, titulo: e.target.value })}
-                    />
-                  </label>
-                  <label className="full">
-                    Contenido del informe
-                    <textarea
-                      required
-                      rows={8}
-                      value={infForm.contenido}
-                      onChange={(e) => setInfForm({ ...infForm, contenido: e.target.value })}
-                      className="det-file-input"
-                      placeholder="Redacte el Informe Investigativo (no un Parte de Novedad)..."
-                    />
-                  </label>
-                  <label className="full">
-                    Conclusiones
-                    <textarea
-                      rows={3}
-                      value={infForm.conclusiones}
-                      onChange={(e) => setInfForm({ ...infForm, conclusiones: e.target.value })}
-                      className="det-file-input"
-                    />
-                  </label>
-                  <button type="submit" className="btn-accent full" disabled={busy}>
-                    <MaterialIcon name="lock" />
-                    Cerrar / Enviar a Fiscalía
-                  </button>
-                </form>
-              )}
+                </div>
+
+                {informe || locked ? (
+                  <div className="act-informe-view">
+                    <h3 className="act-doc-title">
+                      {informe?.titulo || "Informe Investigativo Final"}
+                    </h3>
+                    <div className="act-doc-block">
+                      <h4>Contenido</h4>
+                      <p>{informe?.contenido || "Sin contenido registrado."}</p>
+                    </div>
+                    {informe?.conclusiones ? (
+                      <div className="act-doc-block">
+                        <h4>Conclusiones</h4>
+                        <p>{informe.conclusiones}</p>
+                      </div>
+                    ) : null}
+                    <div className="act-informe-actions">
+                      {informe?.paquete_url ? (
+                        <a
+                          className="btn-accent"
+                          href={informe.paquete_url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <MaterialIcon name="download" />
+                          Descargar paquete digital
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : (
+                  <form className="act-informe-body" onSubmit={cerrarCaso}>
+                    <label className="act-field">
+                      <span>Título del informe</span>
+                      <input
+                        required
+                        value={infForm.titulo}
+                        onChange={(e) => setInfForm({ ...infForm, titulo: e.target.value })}
+                      />
+                    </label>
+                    <label className="act-field">
+                      <span>Contenido del informe</span>
+                      <textarea
+                        required
+                        className="act-field-lg"
+                        value={infForm.contenido}
+                        onChange={(e) => setInfForm({ ...infForm, contenido: e.target.value })}
+                        placeholder="Redacte el Informe Investigativo: hechos investigados, diligencias, hallazgos y análisis…"
+                      />
+                    </label>
+                    <label className="act-field">
+                      <span>Conclusiones</span>
+                      <textarea
+                        rows={4}
+                        value={infForm.conclusiones}
+                        onChange={(e) =>
+                          setInfForm({ ...infForm, conclusiones: e.target.value })
+                        }
+                        placeholder="Síntesis de conclusiones y remisión a Fiscalía…"
+                      />
+                    </label>
+                    <div className="act-informe-actions">
+                      <button type="submit" className="btn-accent" disabled={busy}>
+                        <MaterialIcon name="lock" />
+                        {busy ? "Enviando..." : "Cerrar / Enviar a Fiscalía"}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+
+              <aside className="act-informe-aside">
+                <div className="act-aside-card">
+                  <h4>
+                    <MaterialIcon name="folder_open" />
+                    Expediente
+                  </h4>
+                  <div className="act-meta-row">
+                    <div>
+                      <span>Código</span>
+                      <strong>
+                        {selected?.codigo_caso || selected?.numero_expediente || "—"}
+                      </strong>
+                    </div>
+                    <div>
+                      <span>Caso</span>
+                      <strong>{selected?.titulo || "—"}</strong>
+                    </div>
+                    <div>
+                      <span>Estado</span>
+                      <strong>{selected?.estado_label || "—"}</strong>
+                    </div>
+                    <div>
+                      <span>Detective</span>
+                      <strong>{selected?.detective_info?.nombre || "—"}</strong>
+                    </div>
+                  </div>
+                </div>
+                <div className="act-aside-card">
+                  <h4>
+                    <MaterialIcon name="info" />
+                    Antes de emitir
+                  </h4>
+                  <ul>
+                    <li>Verifica bitácora, evidencias e involucrados.</li>
+                    <li>El informe debe ser investigativo, no un parte de novedad.</li>
+                    <li>Al enviar, el expediente quedará bloqueado de forma definitiva.</li>
+                  </ul>
+                </div>
+              </aside>
             </div>
           )}
         </>

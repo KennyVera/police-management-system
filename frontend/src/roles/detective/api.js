@@ -44,6 +44,10 @@ export const detectiveApi = {
     apiFetch(`${CASOS}/${id}/`, { method: "PATCH", body: JSON.stringify(body) }),
   cambiarEstado: (id, body) =>
     apiFetch(`${CASOS}/${id}/estado/`, { method: "POST", body: JSON.stringify(body) }),
+  iniciarInvestigacion: (id) =>
+    apiFetch(`${CASOS}/${id}/iniciar/`, { method: "POST", body: "{}" }),
+  completarExpediente: (id) =>
+    apiFetch(`${CASOS}/${id}/completar/`, { method: "POST", body: "{}" }),
   listInvolucrados: (id) => apiFetch(`${CASOS}/${id}/involucrados/`),
   createInvolucrado: async (id, body, fotoFile = null) => {
     if (fotoFile) {

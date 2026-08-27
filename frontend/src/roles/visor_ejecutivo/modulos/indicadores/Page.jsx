@@ -123,7 +123,9 @@ function FichaDetalle({ ficha, onBack, loading }) {
           </header>
           <div className="ft-metric-big">
             <strong>{carga.esta_semana}</strong>
-            <span>Partes esta semana</span>
+            <span>
+              {carga.ventana === "30d" ? "Partes últimos 30 días" : "Partes esta semana"}
+            </span>
           </div>
           <div className="ft-compare">
             <div>
@@ -147,7 +149,7 @@ function FichaDetalle({ ficha, onBack, loading }) {
           </header>
           <div className="ft-metric-big">
             <strong>{tasa.tasa_pct}%</strong>
-            <span>Casos graves resueltos</span>
+            <span>Casos resueltos</span>
           </div>
           <ul className="ft-stat-list">
             <li>

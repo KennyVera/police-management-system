@@ -6,6 +6,7 @@ import AlertasListaPanel from "./componentes/AlertasListaPanel";
 import AlertaDetallePanel from "./componentes/AlertaDetallePanel";
 import ParteFormulario from "../registro_operativo/componentes/ParteFormulario";
 import "../../../../shared/styles/ModuloPage.css";
+import "../registro_operativo/RegistroOperativo.css";
 import "./DespachoTareas.css";
 
 export default function AlertasPage() {

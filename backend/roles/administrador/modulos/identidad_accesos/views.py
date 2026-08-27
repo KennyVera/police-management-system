@@ -27,7 +27,7 @@ def usuarios_collection(request):
             User.objects.select_related(
                 "profile", "profile__departamento", "profile__jurisdiccion"
             )
-            .exclude(profile__role__in=[SystemRole.ADMIN_SISTEMA, SystemRole.SUPERADMIN_SAAS])
+            .exclude(profile__role=SystemRole.SUPERADMIN_SAAS)
             .order_by("last_name", "first_name")
         )
         if institucion:

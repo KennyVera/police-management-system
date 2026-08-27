@@ -68,7 +68,9 @@ def _users_qs(institucion=None):
         "profile", "profile__departamento", "profile__jurisdiccion"
     ).exclude(profile__isnull=True)
     if institucion:
-        qs = qs.filter(profile__institucion=institucion)
+        qs = qs.filter(
+            Q(profile__institucion=institucion) | Q(profile__institucion__isnull=True)
+        )
     return qs
 
 
@@ -83,27 +85,73 @@ def _jefe_payload(jefe):
     }
 
 
+def _zona_raiz(jur: Jurisdiction) -> Jurisdiction:
+    """Sube el árbol hasta la Zona (nivel mando del Jefe de Zona)."""
+    current = jur
+    seen = set()
+    while current is not None and current.id not in seen:
+        seen.add(current.id)
+        if current.tipo == JurisdictionType.ZONA:
+            return current
+        parent_id = current.parent_id
+        if not parent_id:
+            break
+        nxt = current.parent if getattr(current, "parent_id", None) == parent_id else None
+        if nxt is None:
+            nxt = (
+                Jurisdiction.objects.select_related("parent")
+                .filter(pk=parent_id)
+                .first()
+            )
+        current = nxt
+    return jur
+
+
 def _load_jefes_por_zona(institucion=None):
-    qs = User.objects.select_related("profile").filter(
+    """Mapa jurisdiccion_id -> User (solo jefes activos con zona)."""
+    qs = User.objects.select_related("profile", "profile__jurisdiccion").filter(
         profile__role=SystemRole.DIRECTOR_ZONA,
         profile__jurisdiccion_id__isnull=False,
         profile__estado=AccountStatus.ACTIVO,
     )
     if institucion:
-        qs = qs.filter(profile__institucion=institucion)
+        qs = qs.filter(
+            Q(profile__institucion=institucion) | Q(profile__institucion__isnull=True)
+        )
     return {u.profile.jurisdiccion_id: u for u in qs}
+
+
+def _jefe_for_jurisdiction(jur, jefes: dict):
+    """Jefe asignado a esta jurisdicción o a su Zona padre."""
+    current = jur
+    seen = set()
+    while current is not None and current.id not in seen:
+        seen.add(current.id)
+        jefe = jefes.get(current.id)
+        if jefe:
+            return jefe
+        current = current.parent
+    return None
 
 
 def _jefe_de_zona(jurisdiccion_id, institucion=None, cache=None):
     if cache is not None:
-        return cache.get(jurisdiccion_id)
+        if jurisdiccion_id in cache:
+            return cache.get(jurisdiccion_id)
+        # cache keyed by exact id; try walking parents via DB
+        jur = Jurisdiction.objects.select_related("parent").filter(pk=jurisdiccion_id).first()
+        if jur:
+            return _jefe_for_jurisdiction(jur, cache)
+        return None
     qs = User.objects.select_related("profile").filter(
         profile__role=SystemRole.DIRECTOR_ZONA,
         profile__jurisdiccion_id=jurisdiccion_id,
         profile__estado=AccountStatus.ACTIVO,
     )
     if institucion:
-        qs = qs.filter(profile__institucion=institucion)
+        qs = qs.filter(
+            Q(profile__institucion=institucion) | Q(profile__institucion__isnull=True)
+        )
     return qs.first()
 
 
@@ -185,12 +233,23 @@ def _jurisdicciones_payload(qs, institucion, all_jurs=None):
     jefes = _load_jefes_por_zona(institucion)
     trees = _descendant_index(all_jurs)
     rows = _profile_rows(institucion)
+    by_id = {j.id: j for j in all_jurs}
     data = JurisdictionSerializer(qs, many=True).data
     for row in data:
-        jefe = jefes.get(row["id"])
+        jur = by_id.get(row["id"])
+        jefe = _jefe_for_jurisdiction(jur, jefes) if jur else jefes.get(row["id"])
         counts = _counts_for_tree(rows, trees.get(row["id"], [row["id"]]), row["nombre"])
         row["jefe_zona"] = (
-            {"id": jefe.id, "nombre": f"{jefe.first_name} {jefe.last_name}".strip() or jefe.email}
+            {
+                "id": jefe.id,
+                "nombre": f"{jefe.first_name} {jefe.last_name}".strip() or jefe.email,
+                "email": jefe.email,
+                "role_label": (
+                    jefe.profile.get_role_display()
+                    if hasattr(jefe, "profile")
+                    else "Director / Jefe de Zona"
+                ),
+            }
             if jefe
             else None
         )
@@ -275,7 +334,7 @@ def _personal_payload(obj: Jurisdiction, institucion):
     )
 
     jefes = _load_jefes_por_zona(institucion)
-    jefe = jefes.get(obj.id)
+    jefe = _jefe_for_jurisdiction(obj, jefes)
     users = list(qs.order_by("profile__role", "last_name", "first_name"))
     return {
         "jurisdiccion": JurisdictionSerializer(obj).data,
@@ -439,20 +498,32 @@ def plazas(request):
             continue
 
         try:
-            jur = Jurisdiction.objects.get(pk=jur_id, activo=True)
+            jur = Jurisdiction.objects.select_related("parent").get(pk=jur_id, activo=True)
         except Jurisdiction.DoesNotExist:
             return Response(
                 {"detail": "Zona no encontrada o inactiva."}, status=404
             )
 
+        # El Jefe de Zona siempre se ancla a la Zona raíz (no a subzona/distrito).
         if role == SystemRole.DIRECTOR_ZONA:
+            jur = _zona_raiz(jur)
+            if jur.tipo != JurisdictionType.ZONA:
+                errors.append(
+                    {
+                        "user_id": uid,
+                        "detail": "El Jefe de Zona solo puede asignarse a una Zona.",
+                    }
+                )
+                continue
             prev = UserProfile.objects.filter(
                 role=SystemRole.DIRECTOR_ZONA,
                 jurisdiccion_id=jur.id,
                 estado=AccountStatus.ACTIVO,
             ).exclude(user_id=user.id)
             if institucion:
-                prev = prev.filter(institucion=institucion)
+                prev = prev.filter(
+                    Q(institucion=institucion) | Q(institucion__isnull=True)
+                )
             for other in prev.select_related("user"):
                 other.jurisdiccion = None
                 other.zona = ""
@@ -462,11 +533,16 @@ def plazas(request):
         profile.jurisdiccion = jur
         profile.zona = jur.nombre
         profile.departamento = None
-        profile.save(update_fields=["jurisdiccion", "zona", "departamento"])
+        update_fields = ["jurisdiccion", "zona", "departamento"]
+        if institucion and not profile.institucion_id:
+            profile.institucion = institucion
+            update_fields.append("institucion")
+        profile.save(update_fields=update_fields)
         user = User.objects.select_related(
             "profile", "profile__jurisdiccion", "profile__departamento"
         ).get(pk=user.id)
         _notify_asignacion_zona(user, jur)
+        jefes = _load_jefes_por_zona(institucion)
         results.append(_serialize_asignacion(user, institucion, jefes))
 
     return Response({"results": results, "errors": errors})
@@ -487,7 +563,7 @@ def catalogos(request):
     rows = _profile_rows(institucion)
     zonas_data = []
     for z in zonas:
-        jefe = jefes.get(z.id)
+        jefe = _jefe_for_jurisdiction(z, jefes)
         payload = _jefe_payload(jefe)
         zonas_data.append(
             {
@@ -498,7 +574,7 @@ def catalogos(request):
                 "codigo": z.codigo,
                 "parent_id": z.parent_id,
                 "parent_nombre": z.parent.nombre if z.parent_id else None,
-                "disponible_jefe": jefe is None,
+                "disponible_jefe": jefe is None if z.tipo == JurisdictionType.ZONA else None,
                 "jefe_zona": payload,
                 "conteos": _counts_for_tree(rows, trees.get(z.id, [z.id]), z.nombre),
             }

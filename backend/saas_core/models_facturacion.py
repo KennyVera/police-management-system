@@ -40,6 +40,12 @@ class Factura(models.Model):
         max_length=20, choices=Modalidad.choices, default=Modalidad.SAAS
     )
     nota = models.TextField(blank=True)
+    pdf_url = models.CharField(
+        max_length=512,
+        blank=True,
+        default="",
+        help_text="URL/archivo PDF externo (opcional). Si vacío, se genera al vuelo.",
+    )
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
     anulado_en = models.DateTimeField(null=True, blank=True)
@@ -143,3 +149,31 @@ class EventoFinanciero(models.Model):
 
     def __str__(self) -> str:
         return f"{self.accion} · {self.entidad_tipo}"
+
+
+class UsageLog(models.Model):
+    """Consumo diario por institución (partes, usuarios activos, etc.) para gráficas."""
+
+    class Metrica(models.TextChoices):
+        PARTES = "partes", "Partes policiales"
+        USUARIOS_ACTIVOS = "usuarios_activos", "Usuarios activos"
+        ALMACENAMIENTO_MB = "almacenamiento_mb", "Almacenamiento (MB)"
+
+    institucion = models.ForeignKey(
+        "saas_core.Institucion",
+        on_delete=models.CASCADE,
+        related_name="usage_logs",
+    )
+    fecha = models.DateField()
+    metrica = models.CharField(max_length=40, choices=Metrica.choices)
+    cantidad = models.PositiveIntegerField(default=0)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["fecha", "metrica"]
+        unique_together = [("institucion", "fecha", "metrica")]
+        verbose_name = "Registro de uso"
+        verbose_name_plural = "Registros de uso"
+
+    def __str__(self) -> str:
+        return f"{self.institucion_id} · {self.fecha} · {self.metrica}={self.cantidad}"

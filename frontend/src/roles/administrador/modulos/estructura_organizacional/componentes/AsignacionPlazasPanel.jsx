@@ -156,14 +156,11 @@ export default function AsignacionPlazasPanel({ zonas: zonasProp, onChanged }) {
     setLoading(true);
     setError("");
     try {
-      const list = await estructuraApi.listPlazas();
-      const source = (zonasProp && zonasProp.length ? zonasProp : zonas) || [];
-      let catZonas = source;
-      if (!catZonas.length) {
-        const cat = await estructuraApi.catalogos();
-        catZonas = cat.zonas || [];
-        setZonas(catZonas);
-      }
+      const listPromise = estructuraApi.listPlazas();
+      const catPromise = estructuraApi.catalogos();
+      const [list, cat] = await Promise.all([listPromise, catPromise]);
+      const catZonas = cat.zonas || [];
+      setZonas(catZonas);
       const wanted = resolveDestino(catZonas, {
         jurisdiccionId: searchParams.get("jurisdiccion_id") || zonaIdRef.current,
         provinciaId: searchParams.get("provincia_id"),

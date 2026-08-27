@@ -7,6 +7,8 @@ urlpatterns = [
     path("", views.expedientes_collection, name="det-expedientes"),
     path("<int:pk>/", views.expediente_detail, name="det-expediente-detail"),
     path("<int:pk>/estado/", views.expediente_cambiar_estado, name="det-expediente-estado"),
+    path("<int:pk>/iniciar/", views.expediente_iniciar, name="det-expediente-iniciar"),
+    path("<int:pk>/completar/", views.expediente_completar, name="det-expediente-completar"),
     path("<int:pk>/involucrados/", views.involucrados_collection, name="det-involucrados"),
     path(
         "<int:pk>/involucrados/<int:inv_id>/",

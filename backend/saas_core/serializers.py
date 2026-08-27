@@ -219,6 +219,10 @@ class OnboardingRegistroSerializer(serializers.Serializer):
 
     def validate_ruc(self, value):
         value = value.strip()
+        if not value.isdigit() or len(value) != 13:
+            raise serializers.ValidationError(
+                "El RUC debe tener exactamente 13 dígitos numéricos."
+            )
         if Institucion.objects.filter(ruc__iexact=value).exists():
             raise serializers.ValidationError("Ya existe una institución con este RUC.")
         return value

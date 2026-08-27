@@ -8,10 +8,11 @@ from rest_framework.response import Response
 
 from accounts.permissions import AgenteOnly
 from catalogos.models import TipoDelito
-from operativo.minio_service import upload_evidencia
+from operativo.minio_service import download_object, upload_evidencia
 from operativo.models import (
     AlertaDespacho,
     AsignacionDiaria,
+    InvolucradoParte,
     MultimediaEvidencia,
     NovedadIncidente,
     ParteAprehension,
@@ -92,6 +93,12 @@ def meta(request):
                 {"value": c.value, "label": c.label} for c in ParteAprehension.FuenteReporte
             ],
             "si_no": [{"value": c.value, "label": c.label} for c in ParteAprehension.SiNo],
+            "tipos_involucrado": [
+                {"value": c.value, "label": c.label} for c in InvolucradoParte.Tipo
+            ],
+            "generos_involucrado": [
+                {"value": c.value, "label": c.label} for c in InvolucradoParte.Genero
+            ],
             "oficial": {
                 "nombre": f"{request.user.first_name} {request.user.last_name}".strip()
                 or request.user.username
@@ -108,6 +115,7 @@ def partes_collection(request):
         qs = (
             ParteAprehension.objects.filter(creado_por=request.user)
             .select_related("tipo_delito", "creado_por", "alerta")
+            .prefetch_related("involucrados", "multimedia")
             .order_by("-creado_en", "-id")
         )
         q = (request.query_params.get("q") or "").strip()
@@ -188,7 +196,7 @@ def parte_detail(request, pk):
     try:
         obj = ParteAprehension.objects.select_related(
             "tipo_delito", "creado_por", "alerta"
-        ).get(pk=pk, creado_por=request.user)
+        ).prefetch_related("involucrados", "multimedia").get(pk=pk, creado_por=request.user)
     except ParteAprehension.DoesNotExist:
         return Response({"detail": "Parte no encontrado."}, status=404)
 
@@ -220,9 +228,14 @@ def parte_pdf(request, pk):
     try:
         obj = (
             ParteAprehension.objects.select_related(
-                "tipo_delito", "creado_por", "alerta", "revisado_por"
+                "tipo_delito",
+                "creado_por",
+                "creado_por__profile",
+                "alerta",
+                "revisado_por",
+                "revisado_por__profile",
             )
-            .prefetch_related("multimedia")
+            .prefetch_related("multimedia", "involucrados")
             .get(pk=pk, creado_por=request.user)
         )
     except ParteAprehension.DoesNotExist:
@@ -236,7 +249,7 @@ def parte_pdf(request, pk):
 
     try:
         # Siempre se regenera para incluir evidencias iniciales embebidas.
-        pdf_bytes = build_pdf_bytes(obj)
+        pdf_bytes = build_pdf_bytes(obj, generado_por=request.user)
     except Exception as exc:  # noqa: BLE001
         return Response(
             {"detail": f"No se pudo obtener el PDF: {exc}"},
@@ -418,3 +431,48 @@ def multimedia_collection(request):
         object_key=stored["object_key"],
     )
     return Response(MultimediaEvidenciaSerializer(obj).data, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET"])
+@permission_classes([AgenteOnly])
+def multimedia_archivo(request, pk):
+    """Sirve el archivo vía backend (evita fallos de URL firmada MinIO en el navegador)."""
+    try:
+        obj = MultimediaEvidencia.objects.get(pk=pk, subido_por=request.user)
+    except MultimediaEvidencia.DoesNotExist:
+        return Response({"detail": "Evidencia no encontrada."}, status=404)
+    if not obj.object_key:
+        return Response({"detail": "Esta evidencia no tiene archivo digital."}, status=404)
+
+    try:
+        data = download_object(obj.object_key, obj.bucket or None)
+    except Exception as exc:  # noqa: BLE001
+        return Response(
+            {"detail": f"No se pudo leer el archivo en MinIO: {exc}"},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    filename = (obj.nombre_archivo or f"evidencia-{obj.id}").replace('"', "")
+    as_download = request.query_params.get("download") in ("1", "true", "True")
+    disposition = "attachment" if as_download else "inline"
+    content_type = obj.content_type or "application/octet-stream"
+    # Inferir tipo si falta (p. ej. subidas antiguas)
+    if content_type == "application/octet-stream":
+        lower = filename.lower()
+        if lower.endswith(".png"):
+            content_type = "image/png"
+        elif lower.endswith((".jpg", ".jpeg")):
+            content_type = "image/jpeg"
+        elif lower.endswith(".webp"):
+            content_type = "image/webp"
+        elif lower.endswith(".gif"):
+            content_type = "image/gif"
+        elif lower.endswith(".pdf"):
+            content_type = "application/pdf"
+
+    response = HttpResponse(data, content_type=content_type)
+    response["Content-Disposition"] = f'{disposition}; filename="{filename}"'
+    response["Content-Length"] = str(len(data))
+    response["Cache-Control"] = "private, max-age=300"
+    response["X-Content-Type-Options"] = "nosniff"
+    return response

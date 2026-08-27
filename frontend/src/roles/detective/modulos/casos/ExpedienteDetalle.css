@@ -9,6 +9,80 @@
   overflow: auto;
 }
 
+.exp-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  background: rgba(16, 24, 40, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.exp-confirm-card {
+  width: min(420px, 100%);
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.25rem 1.35rem;
+  box-shadow: 0 24px 48px rgba(16, 24, 40, 0.28);
+  display: grid;
+  gap: 0.65rem;
+  text-align: center;
+}
+
+.exp-confirm-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.exp-confirm-icon .material-symbols-outlined {
+  font-size: 1.6rem;
+}
+
+.exp-confirm-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #1a2338;
+}
+
+.exp-confirm-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #5b6478;
+  line-height: 1.45;
+}
+
+.exp-confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+html[data-theme="dark"] .exp-confirm-card {
+  background: #1a1a1a;
+  color: #e8e8e8;
+}
+
+html[data-theme="dark"] .exp-confirm-card h3 {
+  color: #f3f3f3;
+}
+
+html[data-theme="dark"] .exp-confirm-card p {
+  color: #a8a8a8;
+}
+
+html[data-theme="dark"] .exp-confirm-icon {
+  background: #2a1f14;
+  color: #fb923c;
+}
+
 .exp-shell {
   width: min(1180px, 100%);
   margin: 0.5rem auto 1.5rem;
@@ -732,4 +806,57 @@
   .exp-layout {
     grid-template-columns: 1fr;
   }
+}
+
+.exp-lock-banner {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid #e9d5ff;
+  background: #faf5ff;
+  margin-bottom: 1rem;
+  color: #4c1d95;
+}
+
+.exp-lock-banner .material-symbols-outlined {
+  font-size: 1.4rem;
+  margin-top: 0.1rem;
+}
+
+.exp-lock-banner strong {
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+.exp-lock-banner p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #5b6478;
+}
+
+.exp-lock-banner.is-done {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.exp-autosave {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #7c5cbf;
+  white-space: nowrap;
+}
+
+.exp-feed--audit article {
+  border-left: 3px solid #7c5cbf;
+  padding-left: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.exp-notes textarea:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background: #f8fafc;
 }

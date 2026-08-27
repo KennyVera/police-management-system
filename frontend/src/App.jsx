@@ -13,6 +13,7 @@ import AdminEstructuraPlazas from "./roles/administrador/modulos/estructura_orga
 import AdminCatalogosDelitos from "./roles/administrador/modulos/parametros_catalogos/TiposDelitosPage";
 import AdminCatalogosOperativos from "./roles/administrador/modulos/parametros_catalogos/CatalogosOperativosPage";
 import AdminCatalogosVariables from "./roles/administrador/modulos/parametros_catalogos/VariablesGlobalesPage";
+import AdminSuscripcionUso from "./roles/administrador/modulos/suscripcion_uso/Page";
 
 import SuperAdminLayout from "./roles/superadmin/Layout";
 import SuperAdminDashboard from "./roles/superadmin/modulos/dashboard/Page";
@@ -198,6 +199,7 @@ export default function App() {
           path="parametros_catalogos/variables_globales"
           element={<AdminCatalogosVariables />}
         />
+        <Route path="suscripcion_uso" element={<AdminSuscripcionUso />} />
       </Route>
 
       <Route

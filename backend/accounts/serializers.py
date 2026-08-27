@@ -210,13 +210,8 @@ class PoliceUserCreateSerializer(serializers.Serializer):
         return value
 
     def validate_role(self, value):
-        if value not in ASSIGNABLE_ROLES and value != SystemRole.ADMIN_SISTEMA:
-            if value not in dict(SystemRole.choices):
-                raise serializers.ValidationError("Rol no válido.")
         if value not in ASSIGNABLE_ROLES:
-            raise serializers.ValidationError(
-                "Solo se pueden asignar roles operativos/policiales."
-            )
+            raise serializers.ValidationError("Rol no válido para alta institucional.")
         return value
 
     def create(self, validated_data):

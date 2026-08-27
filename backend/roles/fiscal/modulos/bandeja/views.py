@@ -174,7 +174,7 @@ def caso_pdf(request, pk):
 
     if not pdf_bytes:
         try:
-            pdf_bytes = build_pdf_bytes(parte)
+            pdf_bytes = build_pdf_bytes(parte, generado_por=request.user)
         except Exception as exc:  # noqa: BLE001
             return Response(
                 {"detail": f"No se pudo obtener el PDF: {exc}"},

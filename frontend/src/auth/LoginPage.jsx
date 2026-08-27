@@ -12,7 +12,6 @@ export default function LoginPage() {
   const { branding, assetUrl } = useBranding();
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const [tab, setTab] = useState("sesion");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
@@ -111,106 +110,66 @@ export default function LoginPage() {
             <p>Inicia sesión para continuar en {brandName}.</p>
           </header>
 
-          <div className="login-tabs" role="tablist">
-            <button
-              type="button"
-              role="tab"
-              className={tab === "sesion" ? "active" : ""}
-              onClick={() => setTab("sesion")}
-            >
-              <MaterialIcon name="person" />
-              Iniciar Sesión
-            </button>
-            <button
-              type="button"
-              role="tab"
-              className={tab === "institucional" ? "active" : ""}
-              onClick={() => setTab("institucional")}
-            >
-              <MaterialIcon name="account_balance" />
-              Acceso Institucional
-            </button>
-          </div>
+          <form className="login-form" onSubmit={handleSubmit}>
+            <label>
+              Correo electrónico
+              <div className="field">
+                <MaterialIcon name="mail" />
+                <input
+                  type="email"
+                  placeholder="ejemplo@institucion.gob.ec"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="username"
+                />
+              </div>
+            </label>
 
-          {tab === "sesion" ? (
-            <form className="login-form" onSubmit={handleSubmit}>
-              <label>
-                Correo electrónico
-                <div className="field">
-                  <MaterialIcon name="mail" />
-                  <input
-                    type="email"
-                    placeholder="ejemplo@institucion.gob.ec"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoComplete="username"
-                  />
-                </div>
-              </label>
-
-              <label>
-                Contraseña
-                <div className="field">
-                  <MaterialIcon name="lock" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Ingresa tu contraseña"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoComplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    className="icon-btn"
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-label="Mostrar u ocultar contraseña"
-                  >
-                    <MaterialIcon name={showPassword ? "visibility_off" : "visibility"} />
-                  </button>
-                </div>
-              </label>
-
-              <div className="form-row">
-                <label className="remember">
-                  <input
-                    type="checkbox"
-                    checked={remember}
-                    onChange={(e) => setRemember(e.target.checked)}
-                  />
-                  Recordarme
-                </label>
-                <button type="button" className="text-link">
-                  ¿Olvidaste tu contraseña?
+            <label>
+              Contraseña
+              <div className="field">
+                <MaterialIcon name="lock" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Ingresa tu contraseña"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  className="icon-btn"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label="Mostrar u ocultar contraseña"
+                >
+                  <MaterialIcon name={showPassword ? "visibility_off" : "visibility"} />
                 </button>
               </div>
+            </label>
 
-              {error && <p className="form-error">{error}</p>}
-
-              <button type="submit" className="btn-primary" disabled={submitting}>
-                <MaterialIcon name="lock" />
-                {submitting ? "Ingresando..." : "Iniciar Sesión"}
+            <div className="form-row">
+              <label className="remember">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                />
+                Recordarme
+              </label>
+              <button type="button" className="text-link">
+                ¿Olvidaste tu contraseña?
               </button>
-            </form>
-          ) : (
-            <div className="institutional-box">
-              <MaterialIcon name="domain" />
-              <p>
-                El acceso institucional SSO se habilitará en una siguiente
-                iteración. Usa tu cuenta asignada por rol en <strong>Iniciar Sesión</strong>.
-              </p>
             </div>
-          )}
 
-          <div className="divider">
-            <span>o continúa con</span>
-          </div>
+            {error && <p className="form-error">{error}</p>}
 
-          <button type="button" className="btn-outline">
-            <MaterialIcon name="shield" />
-            Iniciar sesión con SSO Institucional
-          </button>
+            <button type="submit" className="btn-primary" disabled={submitting}>
+              <MaterialIcon name="lock" />
+              {submitting ? "Ingresando..." : "Iniciar Sesión"}
+            </button>
+          </form>
 
           <p className="signup-hint">
             ¿No tienes una cuenta?{" "}

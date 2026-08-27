@@ -50,7 +50,6 @@ export default function CasosPage() {
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
   const [busy, setBusy] = useState(false);
-  const [menuOpenId, setMenuOpenId] = useState(null);
   const selectedIdRef = useRef(null);
   selectedIdRef.current = selected?.id ?? null;
 
@@ -148,7 +147,6 @@ export default function CasosPage() {
     setBusy(true);
     setError("");
     setOk("");
-    setMenuOpenId(null);
     try {
       setHighlightId(item.id);
       setSelected(await detectiveApi.getExpediente(item.id));
@@ -193,8 +191,13 @@ export default function CasosPage() {
         <button
           type="button"
           className="btn-accent"
-          disabled={busy}
-          onClick={() => openExpediente(highlighted || pageItems[0])}
+          disabled={busy || !highlighted}
+          title={
+            highlighted
+              ? `Abrir ${highlighted.codigo_caso || highlighted.numero_expediente}`
+              : "Selecciona un expediente en la tabla"
+          }
+          onClick={() => openExpediente(highlighted)}
         >
           <MaterialIcon name="folder_open" />
           Abrir Mesa de Trabajo
@@ -287,7 +290,6 @@ export default function CasosPage() {
                     <th>Prioridad</th>
                     <th>Estado</th>
                     <th>Unidad</th>
-                    <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -334,50 +336,11 @@ export default function CasosPage() {
                         </span>
                       </td>
                       <td>{c.unidad || "—"}</td>
-                      <td>
-                        <div className="row-actions" style={{ position: "relative" }}>
-                          <button
-                            type="button"
-                            title="Ver expediente"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openExpediente(c);
-                            }}
-                          >
-                            <MaterialIcon name="visibility" />
-                          </button>
-                          <button
-                            type="button"
-                            title="Más acciones"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setMenuOpenId(menuOpenId === c.id ? null : c.id);
-                            }}
-                          >
-                            <MaterialIcon name="more_vert" />
-                          </button>
-                          {menuOpenId === c.id && (
-                            <div className="casos-row-menu">
-                              <button
-                                type="button"
-                                className="btn-ghost"
-                                style={{ width: "100%", justifyContent: "flex-start" }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openExpediente(c);
-                                }}
-                              >
-                                Abrir Mesa de Trabajo
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </td>
                     </tr>
                   ))}
                   {!pageItems.length && (
                     <tr>
-                      <td colSpan={8} className="mod-muted">
+                      <td colSpan={7} className="mod-muted">
                         No hay casos asignados con esos criterios.
                       </td>
                     </tr>
@@ -426,14 +389,14 @@ export default function CasosPage() {
           onClose={() => {
             setSelected(null);
             setHighlightId(null);
-            setMenuOpenId(null);
             load(filters, { restoreSelected: false });
           }}
           onUpdated={(fresh) => {
-            setSelected(fresh);
+            // Solo refrescar la fila en la tabla; no reabrir el modal si ya se cerró.
             setItems((prev) =>
               prev.map((x) => (x.id === fresh.id ? { ...x, ...fresh } : x))
             );
+            setSelected((cur) => (cur?.id === fresh?.id ? fresh : cur));
           }}
           onNotify={notify}
         />

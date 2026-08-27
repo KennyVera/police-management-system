@@ -25,37 +25,25 @@ const META = {
 
 export default function EstructuraOrganizacionalPage({ section = "jurisdicciones" }) {
   const meta = META[section] || META.jurisdicciones;
-  const [zonas, setZonas] = useState([]);
   const [jurisdicciones, setJurisdicciones] = useState(() =>
     section === "jurisdicciones" ? readJurisdiccionesMapCache() || [] : []
   );
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(section === "plazas");
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async ({ force = false } = {}) => {
+    if (section === "plazas") return;
+
     setError("");
-
-    if (section === "plazas") {
-      setLoading(true);
-      try {
-        const cat = await estructuraApi.catalogos();
-        setZonas(cat.zonas || []);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-
     const cached = !force ? readJurisdiccionesMapCache() : null;
     if (cached?.length) setJurisdicciones(cached);
     setRefreshing(true);
 
     try {
       if (force) clearJurisdiccionesMapCache();
-      const jurs = await refreshJurisdiccionesMapa(() => estructuraApi.listJurisdiccionesMapa());
+      const jurs = await refreshJurisdiccionesMapa(() =>
+        estructuraApi.listJurisdiccionesMapa()
+      );
       setJurisdicciones(jurs);
       writeJurisdiccionesMapCache(jurs);
     } catch (err) {
@@ -90,15 +78,13 @@ export default function EstructuraOrganizacionalPage({ section = "jurisdicciones
           onChanged={() => load({ force: true })}
         />
       )}
-      {section === "plazas" &&
-        (loading ? (
-          <p className="mod-muted">Cargando...</p>
-        ) : (
-          <AsignacionPlazasPanel
-            zonas={zonas}
-            onChanged={() => clearJurisdiccionesMapCache()}
-          />
-        ))}
+      {section === "plazas" && (
+        <AsignacionPlazasPanel
+          onChanged={() => {
+            clearJurisdiccionesMapCache();
+          }}
+        />
+      )}
     </div>
   );
 }

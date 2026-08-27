@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -33,9 +33,13 @@ def _user_label(u):
 @api_view(["GET"])
 @permission_classes([SupervisorOnly])
 def home(request):
-    hoy = date.today()
+    # Usar zona horaria de Django (no date.today() del contenedor UTC)
+    hoy = timezone.localdate()
     ahora = timezone.localtime()
-    inicio_dia = timezone.make_aware(datetime.combine(hoy, datetime.min.time()))
+    inicio_dia = timezone.make_aware(
+        datetime.combine(hoy, datetime.min.time()),
+        timezone.get_current_timezone(),
+    )
 
     # —— Personal / fuerza efectiva (solo zona del supervisor) ——
     agentes_zona = agentes_en_zona_qs(request.user)
@@ -54,21 +58,15 @@ def home(request):
     fuerza_pct = _pct(agentes_activos, agentes_total) if agentes_total else 0
 
     # —— Control de calidad / partes (solo zona) ——
+    # Aprobados/devueltos del día = por fecha de revisión, no de creación del parte.
     partes_zona = partes_en_zona_qs(request.user)
-    partes_hoy = partes_zona.filter(creado_en__gte=inicio_dia)
-    aprobados = partes_hoy.filter(
-        estado_revision=ParteAprehension.EstadoRevision.APROBADO
-    ).count()
+    aprobados = partes_zona.filter(aprobado_en__gte=inicio_dia).count()
+    devueltos = partes_zona.filter(rechazado_en__gte=inicio_dia).count()
     pendientes = partes_zona.filter(
         estado_revision=ParteAprehension.EstadoRevision.EN_REVISION
     ).count()
-    pendientes_hoy = partes_hoy.filter(
-        estado_revision=ParteAprehension.EstadoRevision.EN_REVISION
-    ).count()
-    devueltos = partes_hoy.filter(
-        estado_revision=ParteAprehension.EstadoRevision.OBSERVADO
-    ).count()
-    total_calidad = aprobados + pendientes_hoy + devueltos
+    # En el donut de “hoy”: revisados hoy + cola actual pendiente
+    total_calidad = aprobados + pendientes + devueltos
     revisados_hoy = aprobados + devueltos
     procesados_den = total_calidad or (revisados_hoy + pendientes)
     procesados_pct = _pct(revisados_hoy, procesados_den) if procesados_den else 0
@@ -95,12 +93,16 @@ def home(request):
             estado_revision=ParteAprehension.EstadoRevision.EN_REVISION
         )
         .select_related("creado_por", "tipo_delito")
-        .order_by("-creado_en")[:6]
+        .order_by("-enviado_revision_en", "-creado_en")[:6]
     )
     partes_revision = [
         {
             "id": p.id,
-            "hora": timezone.localtime(p.creado_en).strftime("%H:%M") if p.creado_en else "—",
+            "hora": timezone.localtime(
+                p.enviado_revision_en or p.creado_en
+            ).strftime("%H:%M")
+            if (p.enviado_revision_en or p.creado_en)
+            else "—",
             "agente": _user_label(p.creado_por),
             "tipo_delito": getattr(p.tipo_delito, "nombre", None) or p.titulo or "—",
             "sector": p.sector_zona or p.lugar or "—",
@@ -110,24 +112,50 @@ def home(request):
         for p in pendientes_qs
     ]
 
-    # —— Actividad por escuadra (solo del supervisor) ——
-    escuadras = (
-        Escuadra.objects.filter(fecha=hoy, activo=True, supervisor=request.user)
-        .annotate(n_asig=Count("asignaciones", filter=Q(asignaciones__activo=True)))
-        .order_by("-n_asig", "nombre")[:8]
+    # —— Actividad por escuadra ——
+    # Preferir escuadras de hoy; si no hay (desfase de fecha), usar la fecha más reciente.
+    escuadras_qs = Escuadra.objects.filter(
+        fecha=hoy, activo=True, supervisor=request.user
     )
-    actividad_escuadras = [
-        {"nombre": e.nombre or f"Escuadra {e.id}", "total": int(e.n_asig or 0)}
-        for e in escuadras
-    ]
-    # Si no hay escuadras con asignaciones, listar escuadras en 0
-    if not actividad_escuadras:
-        actividad_escuadras = [
-            {"nombre": e.nombre or f"Escuadra {e.id}", "total": 0}
-            for e in Escuadra.objects.filter(
-                fecha=hoy, activo=True, supervisor=request.user
-            ).order_by("nombre")[:6]
-        ]
+    if not escuadras_qs.exists():
+        ultima_fecha = (
+            Escuadra.objects.filter(activo=True, supervisor=request.user)
+            .order_by("-fecha")
+            .values_list("fecha", flat=True)
+            .first()
+        )
+        if ultima_fecha:
+            escuadras_qs = Escuadra.objects.filter(
+                fecha=ultima_fecha, activo=True, supervisor=request.user
+            )
+
+    # Actividad = agentes asignados + partes creados hoy por esos agentes
+    escuadras = list(
+        escuadras_qs.annotate(
+            n_asig=Count("asignaciones", filter=Q(asignaciones__activo=True))
+        ).order_by("-n_asig", "nombre")[:8]
+    )
+    actividad_escuadras = []
+    for e in escuadras:
+        agente_ids_esc = list(
+            AsignacionDiaria.objects.filter(escuadra=e, activo=True).values_list(
+                "agente_id", flat=True
+            )
+        )
+        partes_count = 0
+        if agente_ids_esc:
+            partes_count = partes_zona.filter(
+                creado_por_id__in=agente_ids_esc,
+                creado_en__gte=inicio_dia,
+            ).count()
+        actividad_escuadras.append(
+            {
+                "nombre": e.nombre or f"Escuadra {e.id}",
+                "total": int(e.n_asig or 0) + partes_count,
+                "agentes": int(e.n_asig or 0),
+                "partes": partes_count,
+            }
+        )
 
     # —— Distribución por sector (asignaciones de agentes de la zona) ——
     sectores_raw = (
@@ -139,6 +167,25 @@ def home(request):
         .annotate(total=Count("id"))
         .order_by("-total")[:6]
     )
+    # Fallback: última fecha con asignaciones en zona
+    if not sectores_raw and agente_ids:
+        ultima_asig = (
+            AsignacionDiaria.objects.filter(activo=True, agente_id__in=agente_ids)
+            .order_by("-fecha")
+            .values_list("fecha", flat=True)
+            .first()
+        )
+        if ultima_asig:
+            sectores_raw = (
+                AsignacionDiaria.objects.filter(
+                    fecha=ultima_asig, activo=True, agente_id__in=agente_ids
+                )
+                .exclude(cuadrante="")
+                .values("cuadrante")
+                .annotate(total=Count("id"))
+                .order_by("-total")[:6]
+            )
+
     distribucion_sectores = [
         {
             "sector": r["cuadrante"] or "Sin sector",
@@ -149,7 +196,7 @@ def home(request):
     ]
 
     apro_pct = _pct(aprobados, total_calidad) if total_calidad else 0
-    pend_pct = _pct(pendientes_hoy, total_calidad) if total_calidad else 0
+    pend_pct = _pct(pendientes, total_calidad) if total_calidad else 0
     dev_pct = _pct(devueltos, total_calidad) if total_calidad else 0
 
     return Response(
@@ -184,7 +231,7 @@ def home(request):
             "calidad_partes": {
                 "total": total_calidad,
                 "aprobados": aprobados,
-                "pendientes": pendientes_hoy,
+                "pendientes": pendientes,
                 "devueltos": devueltos,
                 "aprobados_pct": apro_pct,
                 "pendientes_pct": pend_pct,
@@ -196,12 +243,15 @@ def home(request):
             "distribucion_sectores": distribucion_sectores,
             "stats": {
                 "partes_pendientes": pendientes,
-                "escuadras_hoy": Escuadra.objects.filter(fecha=hoy, activo=True).count(),
+                "escuadras_hoy": Escuadra.objects.filter(
+                    fecha=hoy, activo=True, supervisor=request.user
+                ).count(),
                 "asignaciones_hoy": AsignacionDiaria.objects.filter(
-                    fecha=hoy, activo=True
+                    fecha=hoy, activo=True, agente_id__in=agente_ids or [-1]
                 ).count(),
                 "horarios_pendientes": GestionHorario.objects.filter(
-                    estado=GestionHorario.Estado.PENDIENTE
+                    estado=GestionHorario.Estado.PENDIENTE,
+                    supervisor=request.user,
                 ).count(),
             },
         }

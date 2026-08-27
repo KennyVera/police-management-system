@@ -12,6 +12,7 @@ from operativo.models import (
     GestionHorario,
     InformeInvestigativo,
     InvolucradoExpediente,
+    InvolucradoParte,
     MultimediaEvidencia,
     MovimientoCustodia,
     Notificacion,
@@ -28,6 +29,13 @@ class ParteAprehensionAdmin(admin.ModelAdmin):
     list_display = ("id", "numero_caso", "estado_revision", "titulo", "lugar", "creado_por")
     list_filter = ("estado_revision", "bloqueado")
     search_fields = ("numero_caso", "titulo", "lugar")
+
+
+@admin.register(InvolucradoParte)
+class InvolucradoParteAdmin(admin.ModelAdmin):
+    list_display = ("id", "parte", "tipo", "nombres", "apellidos", "cedula")
+    list_filter = ("tipo",)
+    search_fields = ("nombres", "apellidos", "cedula", "parte__numero_caso")
 
 
 @admin.register(NovedadIncidente)

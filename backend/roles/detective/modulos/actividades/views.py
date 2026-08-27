@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from accounts.permissions import DetectiveOnly
+from operativo.expediente_gates import expediente_edit_blocked
 from operativo.minio_service import upload_evidencia
 from operativo.models import (
     BienInvestigado,
@@ -29,11 +30,8 @@ def _get_exp(user, pk):
     return _expedientes_qs(user).get(pk=pk)
 
 
-def _locked_response():
-    return Response(
-        {"detail": "Expediente bloqueado (Cerrado / Enviado a Fiscalía)."},
-        status=status.HTTP_403_FORBIDDEN,
-    )
+def _locked(exp):
+    return expediente_edit_blocked(exp, require_started=True)
 
 
 @api_view(["GET"])
@@ -69,8 +67,9 @@ def bitacora_collection(request, pk):
         qs = exp.bitacora.select_related("registrado_por")
         return Response(BitacoraInvestigacionSerializer(qs, many=True).data)
 
-    if exp.bloqueado:
-        return _locked_response()
+    blocked = _locked(exp)
+    if blocked:
+        return blocked
 
     data = {**request.data, "expediente": exp.id}
     ser = BitacoraInvestigacionSerializer(data=data)
@@ -87,8 +86,9 @@ def bitacora_detail(request, pk, entry_id):
         obj = exp.bitacora.get(pk=entry_id)
     except (ExpedienteCaso.DoesNotExist, BitacoraInvestigacion.DoesNotExist):
         return Response({"detail": "Entrada no encontrada."}, status=404)
-    if exp.bloqueado:
-        return _locked_response()
+    blocked = _locked(exp)
+    if blocked:
+        return blocked
     obj.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -104,8 +104,9 @@ def bienes_collection(request, pk):
     if request.method == "GET":
         return Response(BienInvestigadoSerializer(exp.bienes.all(), many=True).data)
 
-    if exp.bloqueado:
-        return _locked_response()
+    blocked = _locked(exp)
+    if blocked:
+        return blocked
 
     data = {**request.data, "expediente": exp.id}
     ser = BienInvestigadoSerializer(data=data)
@@ -122,8 +123,9 @@ def bien_detail(request, pk, bien_id):
         obj = exp.bienes.get(pk=bien_id)
     except (ExpedienteCaso.DoesNotExist, BienInvestigado.DoesNotExist):
         return Response({"detail": "Bien no encontrado."}, status=404)
-    if exp.bloqueado:
-        return _locked_response()
+    blocked = _locked(exp)
+    if blocked:
+        return blocked
     obj.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -140,8 +142,9 @@ def solicitudes_collection(request, pk):
         qs = exp.solicitudes_fiscal.select_related("creado_por")
         return Response(SolicitudFiscalSerializer(qs, many=True).data)
 
-    if exp.bloqueado:
-        return _locked_response()
+    blocked = _locked(exp)
+    if blocked:
+        return blocked
 
     data = {**request.data, "expediente": exp.id}
     ser = SolicitudFiscalSerializer(data=data)
@@ -168,8 +171,9 @@ def solicitud_enviar(request, pk, sol_id):
         obj = exp.solicitudes_fiscal.get(pk=sol_id)
     except (ExpedienteCaso.DoesNotExist, SolicitudFiscal.DoesNotExist):
         return Response({"detail": "Solicitud no encontrada."}, status=404)
-    if exp.bloqueado:
-        return _locked_response()
+    blocked = _locked(exp)
+    if blocked:
+        return blocked
     if obj.estado == SolicitudFiscal.Estado.ENVIADA:
         return Response(SolicitudFiscalSerializer(obj).data)
     obj.estado = SolicitudFiscal.Estado.ENVIADA

@@ -14,7 +14,6 @@ const TABS = [
   { id: "entrevistas", label: "Entrevistas", icon: "record_voice_over" },
   { id: "documentos", label: "Documentos", icon: "folder" },
   { id: "bitacora", label: "Bitácora", icon: "menu_book" },
-  { id: "actividades", label: "Actividades", icon: "task_alt" },
 ];
 
 const emptyInv = {
@@ -57,6 +56,57 @@ function initials(nombre = "") {
     .join("");
 }
 
+/** Solo dígitos, máximo `max` caracteres. */
+function onlyDigits(value, max = 10) {
+  return String(value || "")
+    .replace(/\D/g, "")
+    .slice(0, max);
+}
+
+/** Edad en años cumplidos a partir de YYYY-MM-DD. */
+function ageFromIsoDate(iso) {
+  if (!iso) return null;
+  const born = new Date(`${iso}T12:00:00`);
+  if (Number.isNaN(born.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - born.getFullYear();
+  const m = today.getMonth() - born.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < born.getDate())) age -= 1;
+  return age;
+}
+
+function birthDateBounds() {
+  const today = new Date();
+  const max = new Date(today);
+  max.setFullYear(today.getFullYear() - 18);
+  const min = new Date(today);
+  min.setFullYear(today.getFullYear() - 70);
+  const toIso = (d) => d.toISOString().slice(0, 10);
+  return { min: toIso(min), max: toIso(max) };
+}
+
+function validateInvolucradoForm(form) {
+  const cedula = (form.cedula || "").trim();
+  if (cedula) {
+    if (!/^\d{10}$/.test(cedula)) {
+      return "La identificación debe tener exactamente 10 dígitos numéricos.";
+    }
+  }
+  const telefono = (form.telefono || "").trim();
+  if (telefono) {
+    if (!/^\d{10}$/.test(telefono)) {
+      return "El teléfono debe tener exactamente 10 dígitos numéricos.";
+    }
+  }
+  if (form.fecha_nacimiento) {
+    const age = ageFromIsoDate(form.fecha_nacimiento);
+    if (age == null) return "Fecha de nacimiento inválida.";
+    if (age < 18) return "La persona debe tener al menos 18 años.";
+    if (age > 70) return "La persona no puede tener más de 70 años.";
+  }
+  return "";
+}
+
 export default function ExpedienteDetalle({
   expediente: initial,
   meta,
@@ -70,10 +120,11 @@ export default function ExpedienteDetalle({
   const [invFilter, setInvFilter] = useState("TODOS");
   const [evidencias, setEvidencias] = useState([]);
   const [bitacora, setBitacora] = useState([]);
-  const [bienes, setBienes] = useState([]);
   const [solicitudes, setSolicitudes] = useState([]);
   const [informe, setInforme] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [autoSaveLabel, setAutoSaveLabel] = useState("");
+  const [confirmCompletar, setConfirmCompletar] = useState(false);
   const [editingNota, setEditingNota] = useState(false);
   const [nota, setNota] = useState(initial?.observaciones || "");
   const [invForm, setInvForm] = useState(emptyInv);
@@ -83,25 +134,27 @@ export default function ExpedienteDetalle({
   const [fotoFile, setFotoFile] = useState(null);
   const [fotoPreview, setFotoPreview] = useState("");
   const fotoInputRef = useRef(null);
+  const notaTimerRef = useRef(null);
   const [bitForm, setBitForm] = useState({
     tipo: "ENTREVISTA",
     lugar: "",
     relato: "",
   });
 
-  const locked = Boolean(exp?.bloqueado);
+  const locked = Boolean(exp?.bloqueado) || exp?.estado === "CERRADO";
+  const investigacionIniciada = Boolean(exp?.investigacion_iniciada);
+  const canEdit = investigacionIniciada && !locked;
   const codigo = exp?.codigo_caso || exp?.numero_expediente || "—";
+  const birthBounds = useMemo(() => birthDateBounds(), []);
 
   async function refreshRelated(id = exp.id) {
-    const [ev, bits, biens, sols] = await Promise.all([
+    const [ev, bits, sols] = await Promise.all([
       detectiveApi.listEvidencias({ expediente: id }),
       detectiveApi.listBitacora(id),
-      detectiveApi.listBienes(id),
       detectiveApi.listSolicitudes(id),
     ]);
     setEvidencias(ev);
     setBitacora(bits);
-    setBienes(biens);
     setSolicitudes(sols);
     try {
       setInforme(await detectiveApi.getInforme(id));
@@ -146,10 +199,11 @@ export default function ExpedienteDetalle({
       {
         key: "indagacion",
         label: "Investigación iniciada",
-        done: ["INDAGACION_PREVIA", "INSTRUCCION_FISCAL", "CERRADO"].includes(exp?.estado),
-        current: exp?.estado === "INDAGACION_PREVIA",
-        when:
-          exp?.estado === "INDAGACION_PREVIA" || exp?.estado === "INSTRUCCION_FISCAL"
+        done: investigacionIniciada || ["INSTRUCCION_FISCAL", "CERRADO"].includes(exp?.estado),
+        current: investigacionIniciada && exp?.estado === "INDAGACION_PREVIA",
+        when: exp?.investigacion_iniciada_en
+          ? formatWhen(exp.investigacion_iniciada_en)
+          : investigacionIniciada
             ? formatWhen(exp?.actualizado_en)
             : null,
       },
@@ -175,7 +229,7 @@ export default function ExpedienteDetalle({
       },
     ];
     return steps;
-  }, [exp, evidencias, locked]);
+  }, [exp, evidencias, locked, investigacionIniciada]);
 
   async function reloadExp() {
     const fresh = await detectiveApi.getExpediente(exp.id);
@@ -187,12 +241,12 @@ export default function ExpedienteDetalle({
   }
 
   async function iniciarInvestigacion() {
-    if (locked) return;
+    if (locked || investigacionIniciada) return;
     setBusy(true);
     try {
-      await detectiveApi.cambiarEstado(exp.id, { estado: "INDAGACION_PREVIA" });
+      await detectiveApi.iniciarInvestigacion(exp.id);
       await reloadExp();
-      onNotify?.("Investigación iniciada / en indagación previa.");
+      onNotify?.("Investigación iniciada. Ya puedes registrar cambios (se guardan solos).");
     } catch (err) {
       onNotify?.(err.message, true);
     } finally {
@@ -200,32 +254,75 @@ export default function ExpedienteDetalle({
     }
   }
 
-  async function marcarCompletado() {
-    if (locked) return;
-    setTab("documentos");
-    onNotify?.(
-      "Para completar el caso, redacta el Informe Investigativo Final en Documentos."
-    );
+  function pedirCompletar() {
+    if (!canEdit || busy) return;
+    setConfirmCompletar(true);
   }
 
-  async function saveNota() {
-    if (locked) return;
+  async function confirmarCompletado() {
+    if (!canEdit) return;
     setBusy(true);
+    try {
+      const fresh = await detectiveApi.completarExpediente(exp.id);
+      setConfirmCompletar(false);
+      onNotify?.("Expediente marcado como completado.");
+      // Cerrar primero; el padre actualiza la lista sin reabrir el modal.
+      onClose?.();
+      onUpdated?.(fresh);
+    } catch (err) {
+      onNotify?.(err.message || "No se pudo completar el expediente.", true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveNota({ silent = false } = {}) {
+    if (!canEdit) return;
+    setBusy(true);
+    if (!silent) setAutoSaveLabel("Guardando...");
     try {
       await detectiveApi.updateExpediente(exp.id, { observaciones: nota });
       setEditingNota(false);
       await reloadExp();
-      onNotify?.("Nota del expediente actualizada.");
+      if (silent) {
+        setAutoSaveLabel("Guardado automáticamente");
+        setTimeout(() => setAutoSaveLabel(""), 2000);
+      } else {
+        onNotify?.("Nota del expediente actualizada.");
+      }
     } catch (err) {
       onNotify?.(err.message, true);
+      setAutoSaveLabel("");
     } finally {
       setBusy(false);
     }
   }
 
+  function onNotaChange(value) {
+    setNota(value);
+    setEditingNota(true);
+    if (!canEdit) return;
+    if (notaTimerRef.current) clearTimeout(notaTimerRef.current);
+    setAutoSaveLabel("Cambios pendientes...");
+    notaTimerRef.current = setTimeout(() => {
+      saveNota({ silent: true });
+    }, 900);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (notaTimerRef.current) clearTimeout(notaTimerRef.current);
+    };
+  }, []);
+
   async function saveInvolucrado(e) {
     e.preventDefault();
-    if (locked) return;
+    if (!canEdit) return;
+    const errMsg = validateInvolucradoForm(invForm);
+    if (errMsg) {
+      onNotify?.(errMsg, true);
+      return;
+    }
     setBusy(true);
     try {
       const body = {
@@ -260,6 +357,10 @@ export default function ExpedienteDetalle({
   }
 
   function openAddInvolucrado() {
+    if (!canEdit) {
+      onNotify?.("Inicia la investigación para registrar involucrados.", true);
+      return;
+    }
     setEditingInvId(null);
     setInvForm({
       ...emptyInv,
@@ -334,7 +435,7 @@ export default function ExpedienteDetalle({
   }
 
   async function removeInvolucrado(id) {
-    if (locked) return;
+    if (!canEdit) return;
     const ok = await confirm({
       title: "Eliminar involucrado",
       message: "¿Eliminar involucrado? Esta acción no se puede deshacer.",
@@ -355,7 +456,7 @@ export default function ExpedienteDetalle({
 
   async function addBitacora(e, forceTipo) {
     e.preventDefault();
-    if (locked) return;
+    if (!canEdit) return;
     setBusy(true);
     try {
       const body = {
@@ -377,6 +478,48 @@ export default function ExpedienteDetalle({
 
   return (
     <div className="exp-overlay" role="dialog" aria-modal="true">
+      {confirmCompletar && (
+        <div
+          className="exp-confirm-backdrop"
+          role="presentation"
+          onClick={() => !busy && setConfirmCompletar(false)}
+        >
+          <div
+            className="exp-confirm-card"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="exp-confirm-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="exp-confirm-icon">
+              <MaterialIcon name="error" />
+            </div>
+            <h3 id="exp-confirm-title">¿Marcar como completado?</h3>
+            <p>
+              ¿Estás seguro de marcar el expediente <strong>{codigo}</strong> como
+              completado? Quedará bloqueado y no podrás editarlo.
+            </p>
+            <div className="exp-confirm-actions">
+              <button
+                type="button"
+                className="btn-ghost"
+                disabled={busy}
+                onClick={() => setConfirmCompletar(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn-accent"
+                disabled={busy}
+                onClick={confirmarCompletado}
+              >
+                {busy ? "Completando..." : "Sí, completar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="exp-shell">
         <header className="exp-top">
           <div>
@@ -402,28 +545,31 @@ export default function ExpedienteDetalle({
             </p>
           </div>
           <div className="exp-actions">
-            {!locked && (
-              <>
-                <button
-                  type="button"
-                  className="btn-ghost"
-                  disabled={busy}
-                  onClick={iniciarInvestigacion}
-                >
-                  <MaterialIcon name="play_arrow" />
-                  Iniciar investigación
-                </button>
-                <button
-                  type="button"
-                  className="btn-accent"
-                  disabled={busy}
-                  onClick={marcarCompletado}
-                >
-                  <MaterialIcon name="check_circle" />
-                  Establecer como completado
-                </button>
-              </>
+            {!locked && !investigacionIniciada && (
+              <button
+                type="button"
+                className="btn-accent"
+                disabled={busy}
+                onClick={iniciarInvestigacion}
+              >
+                <MaterialIcon name="play_arrow" />
+                Iniciar investigación
+              </button>
             )}
+            {canEdit && (
+              <button
+                type="button"
+                className="btn-accent"
+                disabled={busy}
+                onClick={pedirCompletar}
+              >
+                <MaterialIcon name="check_circle" />
+                Establecer como completado
+              </button>
+            )}
+            {autoSaveLabel ? (
+              <span className="exp-autosave">{autoSaveLabel}</span>
+            ) : null}
             <button type="button" className="btn-ghost" onClick={onClose} title="Cerrar">
               <MaterialIcon name="close" />
             </button>
@@ -445,6 +591,27 @@ export default function ExpedienteDetalle({
         </nav>
 
         <div className="exp-body">
+          {!investigacionIniciada && !locked && (
+            <div className="exp-lock-banner">
+              <MaterialIcon name="lock" />
+              <div>
+                <strong>Investigación no iniciada</strong>
+                <p>
+                  Pulsa <em>Iniciar investigación</em> para habilitar el registro de involucrados,
+                  evidencias, entrevistas y notas. La bitácora auditará cada cambio con fecha y hora.
+                </p>
+              </div>
+            </div>
+          )}
+          {locked && (
+            <div className="exp-lock-banner is-done">
+              <MaterialIcon name="lock" />
+              <div>
+                <strong>Expediente completado</strong>
+                <p>Este caso está bloqueado. Solo puedes consultar la información y la bitácora.</p>
+              </div>
+            </div>
+          )}
           {tab === "resumen" && (
             <div className="exp-layout">
               <div className="exp-main">
@@ -542,47 +709,21 @@ export default function ExpedienteDetalle({
                 <section className="exp-card exp-notes">
                   <div className="exp-card-head">
                     <h3>Notas del expediente</h3>
-                    {!locked && !editingNota && (
-                      <button
-                        type="button"
-                        className="exp-link"
-                        onClick={() => setEditingNota(true)}
-                      >
-                        Editar nota
-                      </button>
-                    )}
+                    {canEdit && autoSaveLabel ? (
+                      <span className="exp-autosave">{autoSaveLabel}</span>
+                    ) : null}
                   </div>
-                  {editingNota ? (
-                    <>
-                      <textarea
-                        rows={5}
-                        value={nota}
-                        onChange={(e) => setNota(e.target.value)}
-                      />
-                      <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.5rem" }}>
-                        <button
-                          type="button"
-                          className="btn-accent"
-                          disabled={busy}
-                          onClick={saveNota}
-                        >
-                          Guardar
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-ghost"
-                          onClick={() => {
-                            setEditingNota(false);
-                            setNota(exp.observaciones || "");
-                          }}
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <p>{exp.observaciones || "Sin notas internas todavía."}</p>
-                  )}
+                  <textarea
+                    rows={5}
+                    value={nota}
+                    disabled={!canEdit}
+                    onChange={(e) => onNotaChange(e.target.value)}
+                    placeholder={
+                      canEdit
+                        ? "Escribe notas… se guardan automáticamente"
+                        : "Inicia la investigación para editar notas"
+                    }
+                  />
                 </section>
 
                 <section className="exp-card">
@@ -659,7 +800,7 @@ export default function ExpedienteDetalle({
                       </button>
                     ))}
                   </div>
-                  {!locked && (
+                  {canEdit && (
                     <button
                       type="button"
                       className="exp-add-btn"
@@ -690,8 +831,17 @@ export default function ExpedienteDetalle({
           {tab === "evidencias" && (
             <ExpedienteEvidencias
               expedienteId={exp.id}
-              locked={locked}
-              onNotify={onNotify}
+              locked={!canEdit}
+              onNotify={async (msg, isErr) => {
+                onNotify?.(msg, isErr);
+                if (!isErr) {
+                  try {
+                    await refreshRelated(exp.id);
+                  } catch {
+                    /* ignore */
+                  }
+                }
+              }}
             />
           )}
 
@@ -715,7 +865,7 @@ export default function ExpedienteDetalle({
                   )}
                 </div>
               </section>
-              {!locked && (
+              {canEdit && (
                 <form className="exp-card form-grid" onSubmit={(e) => addBitacora(e, "ENTREVISTA")}>
                   <p className="full mod-kicker" style={{ margin: 0 }}>
                     Nueva entrevista
@@ -795,94 +945,33 @@ export default function ExpedienteDetalle({
           )}
 
           {tab === "bitacora" && (
-            <div className="exp-split">
-              <section className="exp-card">
-                <h3>Bitácora de investigación</h3>
-                <div className="exp-feed">
-                  {bitacora.map((b) => (
-                    <article key={b.id}>
-                      <strong>{b.tipo_label}</strong>
-                      <small>
-                        {formatWhen(b.fecha_hora)}
-                        {b.lugar ? ` · ${b.lugar}` : ""}
-                      </small>
-                      <p>{b.relato}</p>
-                    </article>
-                  ))}
-                  {!bitacora.length && (
-                    <p className="mod-muted">Bitácora vacía.</p>
-                  )}
-                </div>
-              </section>
-              {!locked && (
-                <form className="exp-card form-grid" onSubmit={(e) => addBitacora(e)}>
-                  <p className="full mod-kicker" style={{ margin: 0 }}>
-                    Nueva entrada
-                  </p>
-                  <label>
-                    Tipo
-                    <select
-                      value={bitForm.tipo}
-                      onChange={(e) => setBitForm({ ...bitForm, tipo: e.target.value })}
-                    >
-                      <option value="VIGILANCIA">Vigilancia</option>
-                      <option value="ENTREVISTA">Entrevista</option>
-                      <option value="DILIGENCIA">Diligencia</option>
-                      <option value="ANALISIS">Análisis</option>
-                      <option value="OTRO">Otro</option>
-                    </select>
-                  </label>
-                  <label>
-                    Lugar
-                    <input
-                      value={bitForm.lugar}
-                      onChange={(e) => setBitForm({ ...bitForm, lugar: e.target.value })}
-                    />
-                  </label>
-                  <label className="full">
-                    Relato
-                    <textarea
-                      required
-                      rows={4}
-                      value={bitForm.relato}
-                      onChange={(e) => setBitForm({ ...bitForm, relato: e.target.value })}
-                    />
-                  </label>
-                  <button type="submit" className="btn-accent full" disabled={busy}>
-                    Registrar
-                  </button>
-                </form>
-              )}
-            </div>
-          )}
-
-          {tab === "actividades" && (
-            <div className="exp-split">
-              <section className="exp-card">
-                <h3>Bienes investigados</h3>
-                {bienes.map((b) => (
-                  <div key={b.id} className="exp-sol">
-                    <strong>
-                      {b.tipo_label}: {b.identificador}
-                    </strong>
-                    <p>{b.descripcion || "—"}</p>
-                  </div>
+            <section className="exp-card">
+              <div className="exp-card-head">
+                <h3>Bitácora de auditoría</h3>
+                <span className="mod-muted" style={{ fontSize: "0.8rem" }}>
+                  Registro automático de cada acción con fecha y hora
+                </span>
+              </div>
+              <div className="exp-feed exp-feed--audit">
+                {bitacora.map((b) => (
+                  <article key={b.id}>
+                    <strong>{b.tipo_label}</strong>
+                    <small>
+                      {formatWhen(b.fecha_hora)}
+                      {b.lugar ? ` · ${b.lugar}` : ""}
+                      {b.registrado_por_nombre ? ` · ${b.registrado_por_nombre}` : ""}
+                    </small>
+                    <p>{b.relato}</p>
+                  </article>
                 ))}
-                {!bienes.length && (
-                  <p className="mod-muted">Sin vehículos ni inmuebles registrados.</p>
+                {!bitacora.length && (
+                  <p className="mod-muted">
+                    Aún no hay movimientos. Al iniciar la investigación e ir registrando
+                    involucrados, evidencias o entrevistas, aparecerán aquí.
+                  </p>
                 )}
-              </section>
-              <section className="exp-card">
-                <h3>Más actividades</h3>
-                <p className="mod-muted">
-                  Solicitudes a Fiscalía, bitácora completa e informe final están en el módulo
-                  Documentación Legal.
-                </p>
-                <Link className="btn-accent" to="/app/detective/actividades">
-                  Abrir Documentación Legal
-                </Link>
-              </section>
-            </div>
+              </div>
+            </section>
           )}
         </div>
       </div>
@@ -891,7 +980,7 @@ export default function ExpedienteDetalle({
         <InvolucradoPerfil
           expedienteId={exp.id}
           involucradoId={perfilInvId}
-          locked={locked}
+          locked={!canEdit}
           onClose={() => setPerfilInvId(null)}
           onEdit={(inv) => openEditInvolucrado(inv)}
           onDelete={async (inv) => {
@@ -912,10 +1001,9 @@ export default function ExpedienteDetalle({
       )}
 
       {showInvForm && (
-        <div className="exp-perfil-backdrop" onClick={closeInvForm}>
+        <div className="exp-perfil-backdrop" role="presentation">
           <form
             className="exp-inv-modal-card"
-            onClick={(e) => e.stopPropagation()}
             onSubmit={saveInvolucrado}
           >
             <div className="exp-inv-modal-title">
@@ -983,15 +1071,23 @@ export default function ExpedienteDetalle({
               <label>
                 Identificación
                 <input
-                  placeholder="Cédula, pasaporte..."
+                  inputMode="numeric"
+                  pattern="\d{10}"
+                  maxLength={10}
+                  placeholder="10 dígitos"
+                  title="Exactamente 10 números"
                   value={invForm.cedula}
-                  onChange={(e) => setInvForm({ ...invForm, cedula: e.target.value })}
+                  onChange={(e) =>
+                    setInvForm({ ...invForm, cedula: onlyDigits(e.target.value, 10) })
+                  }
                 />
               </label>
               <label>
                 Fecha de nacimiento
                 <input
                   type="date"
+                  min={birthBounds.min}
+                  max={birthBounds.max}
                   value={invForm.fecha_nacimiento}
                   onChange={(e) =>
                     setInvForm({ ...invForm, fecha_nacimiento: e.target.value })
@@ -1033,8 +1129,15 @@ export default function ExpedienteDetalle({
               <label>
                 Teléfono
                 <input
+                  inputMode="numeric"
+                  pattern="\d{10}"
+                  maxLength={10}
+                  placeholder="10 dígitos"
+                  title="Exactamente 10 números"
                   value={invForm.telefono}
-                  onChange={(e) => setInvForm({ ...invForm, telefono: e.target.value })}
+                  onChange={(e) =>
+                    setInvForm({ ...invForm, telefono: onlyDigits(e.target.value, 10) })
+                  }
                 />
               </label>
               <label>

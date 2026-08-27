@@ -136,10 +136,18 @@ export default function CommercialSuite({ initialView = "landing" }) {
   async function submitOnboarding(e) {
     e.preventDefault();
     setObError("");
+    const ruc = String(form.ruc || "").replace(/\D/g, "").slice(0, 13);
+    if (ruc.length !== 13) {
+      setObError("El RUC debe tener exactamente 13 dígitos numéricos.");
+      setStep(1);
+      setForm((f) => ({ ...f, ruc }));
+      return;
+    }
     setObBusy(true);
     try {
       const data = await registrarYPersistir({
         ...form,
+        ruc,
         plan_id: Number(form.plan_id),
       });
       sessionStorage.removeItem("ct_plan_id");
@@ -449,8 +457,36 @@ function OnboardingView({
   onSubmit,
   onBackLanding,
 }) {
+  const [rucHint, setRucHint] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  function onlyDigits(value, max = 13) {
+    return String(value || "").replace(/\D/g, "").slice(0, max);
+  }
+
+  function generateRuc() {
+    // RUC Ecuador demo: código provincia (01–24) + 8 dígitos + establecimiento 001
+    const provincia = String(1 + Math.floor(Math.random() * 24)).padStart(2, "0");
+    let cuerpo = "";
+    for (let i = 0; i < 8; i += 1) {
+      cuerpo += String(Math.floor(Math.random() * 10));
+    }
+    const ruc = `${provincia}${cuerpo}001`;
+    setForm({ ...form, ruc });
+    setRucHint("RUC de demostración generado (opcional). Puedes editarlo.");
+  }
+
   function next() {
-    if (step === 1 && (!form.nombre_comercial.trim() || !form.ruc.trim())) return;
+    if (step === 1) {
+      if (!form.nombre_comercial.trim()) return;
+      const ruc = onlyDigits(form.ruc);
+      if (ruc.length !== 13) {
+        setRucHint("El RUC debe tener exactamente 13 dígitos numéricos.");
+        setForm({ ...form, ruc });
+        return;
+      }
+      setRucHint("");
+    }
     if (step === 2 && !form.plan_id) return;
     setStep((s) => Math.min(3, s + 1));
   }
@@ -491,14 +527,52 @@ function OnboardingView({
                   placeholder="Ej. Policía Metropolitana Zona 8"
                 />
               </label>
-              <label>
-                RUC
+              <label className="ruc-field">
+                <span className="ruc-label-row">
+                  RUC
+                  <button
+                    type="button"
+                    className="ruc-gen-btn"
+                    onClick={generateRuc}
+                    title="Generar un RUC de 13 dígitos (opcional)"
+                  >
+                    <MaterialIcon name="auto_awesome" />
+                    Generar automáticamente
+                  </button>
+                </span>
                 <input
                   required
+                  inputMode="numeric"
+                  pattern="\d{13}"
+                  maxLength={13}
                   value={form.ruc}
-                  onChange={(e) => setForm({ ...form, ruc: e.target.value })}
-                  placeholder="Identificador fiscal"
+                  onChange={(e) => {
+                    const ruc = onlyDigits(e.target.value);
+                    setForm({ ...form, ruc });
+                    if (ruc.length === 13) setRucHint("");
+                    else if (ruc.length > 0) {
+                      setRucHint(`${ruc.length}/13 dígitos`);
+                    } else {
+                      setRucHint("");
+                    }
+                  }}
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    const ruc = onlyDigits(e.clipboardData.getData("text"));
+                    setForm({ ...form, ruc });
+                  }}
+                  placeholder="13 dígitos (solo números)"
+                  aria-describedby="ruc-hint"
                 />
+                {rucHint ? (
+                  <small id="ruc-hint" className="ruc-hint">
+                    {rucHint}
+                  </small>
+                ) : (
+                  <small id="ruc-hint" className="ruc-hint muted">
+                    Solo números · exactamente 13 dígitos. Generar es opcional.
+                  </small>
+                )}
               </label>
               <label className="full">
                 Dirección
@@ -583,13 +657,25 @@ function OnboardingView({
               </label>
               <label className="full">
                 Contraseña
-                <input
-                  required
-                  type="password"
-                  minLength={8}
-                  value={form.admin_password}
-                  onChange={(e) => setForm({ ...form, admin_password: e.target.value })}
-                />
+                <div className="password-field">
+                  <input
+                    required
+                    type={showPassword ? "text" : "password"}
+                    minLength={8}
+                    value={form.admin_password}
+                    onChange={(e) => setForm({ ...form, admin_password: e.target.value })}
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    title={showPassword ? "Ocultar" : "Mostrar"}
+                  >
+                    <MaterialIcon name={showPassword ? "visibility_off" : "visibility"} />
+                  </button>
+                </div>
               </label>
             </div>
           )}

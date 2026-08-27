@@ -6,22 +6,18 @@ import MaterialIcon from "../../../../shared/components/MaterialIcon";
 import { supervisorApi } from "../../api";
 import "./CuadranteMapaModal.css";
 
-function FitBounds({ features }) {
+function FitZone({ bounds }) {
   const map = useMap();
   useEffect(() => {
-    if (!features?.length) return;
-    const latLngs = [];
-    for (const f of features) {
-      const ring = f?.poligono?.coordinates?.[0];
-      if (!ring) continue;
-      for (const [lng, lat] of ring) {
-        latLngs.push([lat, lng]);
-      }
-    }
-    if (!latLngs.length) return;
-    const bounds = L.latLngBounds(latLngs);
-    map.fitBounds(bounds, { padding: [28, 28], maxZoom: 15 });
-  }, [map, features]);
+    if (!bounds) return;
+    const ll = L.latLngBounds(
+      [bounds.south, bounds.west],
+      [bounds.north, bounds.east]
+    );
+    if (!ll.isValid()) return;
+    map.fitBounds(ll, { padding: [28, 28], maxZoom: 15 });
+    map.setMaxBounds(ll.pad(0.08));
+  }, [map, bounds]);
   return null;
 }
 
@@ -97,7 +93,8 @@ export default function CuadranteMapaModal({ open, onClose, onConfirm }) {
           <div>
             <h3 id="sector-map-title">Seleccionar cuadrante en mapa</h3>
             <p className="mod-muted" style={{ margin: 0 }}>
-              Zona: <strong>{data?.zona || "…"}</strong>. Haz clic en un bloque y confirma.
+              Zona operativa: <strong>{data?.zona || "…"}</strong>. Solo puedes elegir
+              dentro de tu territorio asignado.
             </p>
           </div>
           <button type="button" className="btn-ghost" onClick={onClose} aria-label="Cerrar">
@@ -114,6 +111,8 @@ export default function CuadranteMapaModal({ open, onClose, onConfirm }) {
               <MapContainer
                 center={center}
                 zoom={data?.zoom || 14}
+                minZoom={11}
+                maxZoom={18}
                 style={{ height: "100%", width: "100%" }}
                 scrollWheelZoom
               >
@@ -121,7 +120,7 @@ export default function CuadranteMapaModal({ open, onClose, onConfirm }) {
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <FitBounds features={data?.cuadrantes || []} />
+                <FitZone bounds={data?.bounds} />
                 {(data?.cuadrantes || []).map((c) => {
                   const active = c.id === selectedId;
                   return (

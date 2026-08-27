@@ -123,3 +123,18 @@ export const catalogosApi = {
       body: JSON.stringify(body),
     }),
 };
+
+const SU = "/api/roles/administrador/suscripcion_uso";
+
+export const suscripcionApi = {
+  dashboard: (params = {}) => {
+    const q = new URLSearchParams(cleanParams(params)).toString();
+    return apiFetch(`${SU}/dashboard/${q ? `?${q}` : ""}`);
+  },
+  cancelar: (body) =>
+    apiFetch(`${SU}/cancelar/`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  facturaPdf: (id) => fetchBlob(`${SU}/facturas/${id}/pdf/`),
+};

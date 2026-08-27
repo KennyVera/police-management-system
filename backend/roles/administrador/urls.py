@@ -14,4 +14,8 @@ urlpatterns = [
         "parametros_catalogos/",
         include("roles.administrador.modulos.parametros_catalogos.urls"),
     ),
+    path(
+        "suscripcion_uso/",
+        include("roles.administrador.modulos.suscripcion_uso.urls"),
+    ),
 ]
